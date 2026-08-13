@@ -1,0 +1,29 @@
+schema_version = "1.2"
+
+[task]
+name = "skillbench/team-roster-list-performance-and-storage_pytest_without_skills"
+description = "Fix a Next.js HR team roster panel so large member lists render efficiently and expanded-row persistence uses safe, versioned localStorage access."
+authors = []
+keywords = []
+
+[metadata]
+task_id = "task_200068"
+difficulty = "easy"
+task_description = "Fix a Next.js HR team roster panel so large member lists render efficiently and expanded-row persistence uses safe, versioned localStorage access."
+source = "skillbench"
+
+[environment]
+build_timeout_sec = 600.0
+cpus = 1
+memory_mb = 2048
+storage_mb = 10240
+gpus = 0
+allow_internet = true
+mcp_servers = []
+workdir = "/root"
+
+[agent]
+timeout_sec = 900.0
+
+[verifier]
+timeout_sec = 900.0

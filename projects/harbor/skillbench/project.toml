@@ -1,0 +1,13 @@
+[project]
+name = "skillbench"
+type = "harbor"
+description = "SkillBench Harbor-format tasks (React/performance skill evaluations)"
+
+[paths]
+tasks = "tasks"
+checks = "checks"
+rubrics = "rubrics/task-implementation.toml"
+extra_references = "extra_references"
+
+[validation]
+mode = "oracle_nop"  # harbor: run oracle (expect 1) and nop (expect 0)
