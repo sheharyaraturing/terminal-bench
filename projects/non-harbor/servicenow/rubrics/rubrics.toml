@@ -1,0 +1,157 @@
+[[criteria]]
+name = "persona_definition"
+description = "System prompt names a specific role/title and mission consistent with the persona field"
+guidance = """
+Stage: scenario_config.system_prompt (+ persona / user_persona for consistency). Must name a specific role/title and primary purpose/mission, consistent with the persona field. FAIL if there is no persona identity — just bare rules without who the agent is. Do NOT evaluate the user prompt or verifiers. PASS if role + mission are clear and aligned."""
+
+[[criteria]]
+name = "environment_context"
+description = "System prompt names the platform and explains enough domain context to operate in it"
+guidance = """
+Stage: system_prompt. Must name the platform/system and explain enough domain concepts, data models, workflows, or state transitions that the agent knows where it operates. FAIL if the agent would have no idea what system it is in. Do NOT penalize length/detail preferences. PASS if platform + usable domain context are present."""
+
+[[criteria]]
+name = "tool_awareness"
+description = "System prompt acknowledges tool/API capabilities (categories are enough)"
+guidance = """
+Stage: system_prompt (+ tool_descriptions as context). Must acknowledge tool/API capabilities — categories like search/create/update are enough; does NOT need every tool listed by name. FAIL if the prompt reads as purely conversational with no tool acknowledgment. Do NOT require enumerating every tool. PASS if tool use is clearly in scope."""
+
+[[criteria]]
+name = "behavioral_constraints"
+description = "System prompt includes positive obligations and negative constraints for integrity, privacy, and errors"
+guidance = """
+Stage: system_prompt. Must include BOTH positive obligations and negative constraints (DO / DO NOT), covering data integrity, security/privacy, and error handling where relevant. Example anchors: "Do Not Assume: Never invent information…"; "never expose Restricted data". FAIL if constraints are missing or one-sided. PASS if both obligation and prohibition sides are present and load-bearing."""
+
+[[criteria]]
+name = "naturalness"
+description = "User prompt reads as a real end-user request — no API params, internal IDs, or test-case style"
+guidance = """
+Stage: scenario_config.prompt. HIGH PRIORITY. Flag: API parameter names (state=resolved, assignment_group_id=); internal IDs users would never know (sys_id GUIDs, SVC_020, GROUP_004, CI_00123, USER_045, GRP-12345, U-6789); function-call / test-case style ("Execute update_incident"); markdown/backticks/code formatting; unnaturally rigid templating. ALLOWED (do NOT flag): user-facing ticket numbers (INC0010023, CHG0030045, PRB0040012, RITM0010045), user-facing KB/asset refs (KB0001234, ITAM-4471), casual typos, informal language, natural domain terms. Quote the offending text. PASS if the prompt reads as natural user speech; FAIL on any disallowed tell."""
+
+[[criteria]]
+name = "environment_grounding"
+description = "User prompt fits the persona and available tools — no cross-domain or persona mismatch"
+guidance = """
+Stage: user prompt vs persona / user_persona and tool_descriptions. Flag cross-domain asks (tools cannot touch the referenced entities) and persona mismatch. Persona→expected tasks: Service Desk Analyst (log/triage/update/resolve incidents, notify users); Change Manager (raise/schedule/approve changes, link CIs); Problem Manager (investigate, link incidents, document root cause/KB); Asset/CMDB Manager (CIs, asset lifecycle, relationships); Knowledge Manager (author/review/publish KB); Service Owner/SLA Manager (services, SLAs, availability, escalations). Adjacent persona tasks OK (e.g. Service Desk linking a KB to an incident). Vendor/product names as CIs (Okta, Zoom, Salesforce) are VALID. Multi-domain platforms make cross-product refs OK when tools support them. PASS if grounded; FAIL on mismatch or unreachable entities."""
+
+[[criteria]]
+name = "complexity"
+description = "User prompt requires tool use and a meaningful action or expert retrieval"
+guidance = """
+Stage: user prompt. Flag: answerable without tools; trivial lookup only with no state change; general-knowledge questions. Complex read-only / find-then-act tasks that require tool expertise are OK. PASS if the request genuinely needs the tool environment; FAIL if a capable agent could answer from general knowledge alone."""
+
+[[criteria]]
+name = "grammar"
+description = "User prompt is clear enough — no meaning-changing spelling or structure errors"
+guidance = """
+Stage: user prompt. Flag spelling/structure errors that change meaning or omit critical info. Do NOT flag casual capitalization, minor typos, clear fragments, or contractions. PASS if the request is unambiguous; FAIL when meaning is damaged or critical info is missing."""
+
+[[criteria]]
+name = "target_accuracy"
+description = "SQL verifiers select the correct entity/table with filters matching trajectory ground truth"
+guidance = """
+Stage: verifier_configs sql_query entries vs golden trajectory. Flag: no WHERE, wrong table, filters too broad, wrong entity vs request, values contradicting trajectory, wrong role ref (caller vs assignee vs approver). Carve-outs: CREATE tasks may use attribute-based identity when sys_id/number is unknown at authoring; optional extra joins are fine when filters are already specific. Validate emails/IDs/names/statuses against tool results. PASS if every verifier targets the right entity; FAIL on mis-targeting."""
+
+[[criteria]]
+name = "state_validation"
+description = "SQL verifiers check the required post-task state, not an already-true condition"
+guidance = """
+Stage: SQL verifiers vs trajectory initial/final state. Flag: existence-only when a state check is needed; wrong state value; state contradicting the task goal; verifier testing a condition already true before the task. Carve-outs: COUNT(*) with state filters; COUNT=0 for hard deletes; cancel/retire/close may leave the row (COUNT>0 + terminal-state check is valid). PASS if state checks are meaningful and post-task; FAIL otherwise."""
+
+[[criteria]]
+name = "robustness"
+description = "SQL verifiers fail on the seed/unchanged DB and on incomplete agent work"
+guidance = """
+Stage: SQL verifiers. Flag: passes on seed/unchanged DB; no filters / always-true condition; broad state-only filter matching unrelated records. Carve-outs: strict queries that fail when the task is not done; CREATE attribute queries whose combo is unlikely in seed. PASS if an idle or partial agent cannot satisfy the suite; FAIL if seed data alone would pass."""
+
+[[criteria]]
+name = "sql_completeness"
+description = "Verifier suite shape covers multi-part requests and stated invariances (breadth)"
+guidance = """
+Stage: SQL verifier suite vs user prompt. Flag: multi-part request only partially verified; prompt says "others unchanged" / "N of them" with no invariance verifiers; prompt mentions N entities but only some are verified. Do NOT put unmapped-outcome gaps here — those belong in sql_coverage. Extra verifiers for the same requirement are fine. Invariance checks are required ONLY when the prompt mentions unchanged/only-these. PASS if suite breadth matches the request shape; FAIL on partial multi-part coverage or missing stated invariance."""
+
+[[criteria]]
+name = "sql_correctness"
+description = "SQL verifier queries are syntactically valid"
+guidance = """
+Stage: sql_query strings. Flag missing quotes, invalid operators, malformed WHERE, unclosed parens, wrong keywords. Do NOT flag keyword case, missing semicolons between newline-separated queries, or "concatenated" appearance of multi-query suites. PASS if all queries would parse; FAIL on any concrete syntax defect."""
+
+[[criteria]]
+name = "sql_coverage"
+description = "Every required prompt outcome maps to a verifier that would fail if the agent skipped it"
+guidance = """
+Stage: SQL verifiers vs user prompt (+ system-prompt mandatory-field rules) and trajectory. CRITICAL — a SINGLE genuine unmapped required outcome is a fail. Never pass while issues still name an unmapped outcome. Scores 5 and 4 both mean fully covered (use 4 only for redundancy/stylistic observation with no gap).
+
+Mandatory method: (1) enumerate required outcomes with strict literal grounding — each action, conjunct, list item, invariance, secondary-entity constraint; (2) map each to verifier(s) that would FAIL if skipped; (3) false-PASS test — name a concrete agent behavior that passes all verifiers while violating the outcome; if you cannot, do not report.
+
+Recurring gap shapes: side-effect/secondary objects (notifications, messages, linked records, counters); relationship role (used_as / linked_as / primary vs secondary); incomplete terminal/closure state; invariance ("only these" / rest unchanged); CREATE satisfied by mutating a pre-existing row; cardinality ("exactly one") allowing duplicates.
+
+Do NOT report: transitively implied outcomes; implicit checks that would still fail skippers; stronger variants when the current verifier already fails skippers; anything not tied to literal prompt wording. Per issue: quote prompt words, name table/field needing check, state false-PASS behavior, state expected count when non-obvious — do NOT write SQL.
+
+PASS only with zero genuine gaps; FAIL on any unmapped required outcome."""
+
+[[criteria]]
+name = "llm_judge_coverage"
+description = "Every text-generating tool call is covered by an LLM-judge / response_check verifier"
+guidance = """
+Stage: verifier_configs vs golden trajectory. Text-generating ops: creating replies/messages/emails (agent-written body), notes/comments, descriptions/summaries/free-text fields, updating fields with descriptive text. Flag: text-generating call with no response_check; generated text verified only by SQL existence (COUNT>0); user requires specific text content but no judge evaluates it. Do NOT require LLM-judge for: read-only ops (search/get/list), state-only numeric/enum changes, deterministic exact values. PASS if all agent-authored text is judged; FAIL on any uncovered text-generating call."""
+
+[[criteria]]
+name = "verification_strategy"
+description = "Exact-match SQL is used for deterministic fields; LLM-judge for agent-generated text"
+guidance = """
+Stage: verifier_configs strategy. Rules: database_state / exact match → numeric, enum, counts, booleans, IDs; response_check LLM-judge → text content, descriptions, notes, emails, subjective/long-form. Flag: database_state exact string match on agent-generated text; long description/note verified by existence only without content check; long expected_value in database_state that should use an LLM-judge (wording variance → false negatives). OK: SQL for numeric/status/count/boolean; SQL COUNT existence paired with a separate response_check; simple deterministic exact-match fields. Do NOT require LLM-judge for numeric/status changes or verifiers for read-only ops. PASS if strategy matches artifact type; FAIL on mis-strategy."""
+
+[[criteria]]
+name = "tool_selection"
+description = "Golden trajectory uses the right tools from the available set"
+guidance = """
+Stage: manual_tool_executions / task_trajectory vs tool_descriptions and selected_tools. HIGH PRIORITY. Flag: tool not in tool descriptions; wrong tool type (list_ vs get_by_id, update vs create); missing required tool; selected_tools entry never used. OK: lookup before action; multiple same-tool calls with different params. PASS if selection is correct and complete; FAIL on wrong/missing/unused tools."""
+
+[[criteria]]
+name = "parameter_accuracy"
+description = "Trajectory arguments match schemas and are grounded — no Magic IDs"
+guidance = """
+Stage: trajectory arguments vs tool schemas and prior outputs. HIGH PRIORITY. Formal defect Magic ID: an ID appears in arguments before it was retrieved from any prior tool output. Also flag: wrong schema type, missing required param, fabricated value not from user or prior output, param contradicting user constraints. OK: optional defaults, IDs from prior outputs, pagination (page: 1). Trace every ID to a prior output. PASS if all params are accurate and grounded; FAIL on any Magic ID or fabricated/mismatched param."""
+
+[[criteria]]
+name = "sequencing"
+description = "Trajectory looks up entities before acting on them — no backwards ID use"
+guidance = """
+Stage: trajectory step order. Flag: action before lookup; ID used in step N but retrieved in step N+1; backwards logical flow. OK: multiple lookups to find an entity; verification after action. PASS if dependencies flow forward; FAIL on any premature ID use or inverted order."""
+
+[[criteria]]
+name = "execution_completeness"
+description = "Trajectory performs every part of the user request and achieves the goal"
+guidance = """
+Stage: trajectory vs user prompt (execution lens). Flag: user-request part not done; tool error continued as success; fabricated IDs/names/values in results; final step does not achieve the goal. OK: extra verification steps; searching multiple entities. PASS if the request is fully executed; FAIL on skipped parts or fake success after errors."""
+
+[[criteria]]
+name = "efficiency"
+description = "Trajectory has no redundant identical calls or unnecessary re-fetches"
+guidance = """
+Stage: trajectory call pattern. Flag: same tool + identical parameters twice (redundant); re-fetching already-available data; unnecessary intermediate calls. Do NOT flag same tool + different parameters (valid exploration), verification calls, or pagination. PASS if there is no true waste; FAIL on identical-param repeats or needless re-fetches."""
+
+[[criteria]]
+name = "task_completeness"
+description = "Trajectory finishes every distinct user request without stopping early"
+guidance = """
+Stage: trajectory vs user prompt (completeness lens). HIGH PRIORITY. Parse the prompt for all distinct requests; flag multi-part request partially done, early stop, final call not achieving the goal, or violated user constraints. OK: extra verification; multi-entity search to find the target. PASS if every distinct request is finished; FAIL on any unfinished part."""
+
+[[criteria]]
+name = "data_grounding"
+description = "Every ID and value in trajectory arguments is grounded in prior outputs or the user prompt"
+guidance = """
+Stage: trajectory factual integrity. Formal defect Fabricated ID: an ID in arguments is not present in any prior tool output. Also flag: value/name/status/amount mismatch vs tool results; ID format that does not match the domain. OK: IDs correctly from prior outputs; reasonable interpretation of results; pagination params. Trace every ID. PASS if all data is grounded; FAIL on any Fabricated ID or mismatched value."""
+
+[[criteria]]
+name = "output_chaining"
+description = "Later steps consume the correct entity and field from earlier tool results"
+guidance = """
+Stage: trajectory entity flow. Flag: Entity A ID used when Entity B was the target; wrong field extracted (caller_id vs incident_id); wrong selection from a multi-result output; action on an unintended entity. OK: correct nested extraction; multi-entity search; same ID reused across related actions on that entity. PASS if chaining is correct end-to-end; FAIL on any wrong-entity or wrong-field handoff."""
+
+[[criteria]]
+name = "confirmation_integrity"
+description = "Success is claimed only when tool results actually support success"
+guidance = """
+Stage: trajectory success claims vs tool_execution_results. Formal defect False Confirmation: success claimed when success:false, 4xx/5xx, or an error payload is present. Also flag: tool error treated as success; partial/pending claimed as complete; misrepresentation of results. OK: accurate success with supporting results; proper error handling/recovery; reasonable interpretation of ambiguous results. Check success flags and status codes. PASS if claims match results; FAIL on any False Confirmation."""

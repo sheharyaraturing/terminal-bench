@@ -1,0 +1,13 @@
+[project]
+name = "terminal-bench"
+type = "harbor"
+description = "Legacy Terminal-Bench 3.0 task set"
+
+[paths]
+tasks = "tasks"
+checks = "checks"
+rubrics = "rubrics/task-implementation.toml"
+extra_references = "extra_references"
+
+[validation]
+mode = "oracle_nop"

@@ -1,0 +1,13 @@
+[project]
+name = "servicenow"
+type = "non-harbor"
+description = "ServiceNow Teams assistant scenario tasks (non-Harbor JSON payloads)"
+
+[paths]
+tasks = "tasks"
+checks = "checks"
+rubrics = "rubrics/rubrics.toml"
+extra_references = "extra_references"
+
+[validation]
+mode = "skip"  # non-harbor PoC: no oracle/nop harness yet
