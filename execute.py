@@ -14,11 +14,13 @@ import argparse
 import os
 import subprocess
 import sys
+import threading
 import time
+import uuid
 from pathlib import Path
 
 from core.deterministic import run_deterministic
-from core.registry import list_projects, load_project, resolve_task
+from core.registry import REPO_ROOT, list_projects, load_project, resolve_task
 from core.report import compile_report
 from core.rubric import run_rubric
 from core.validation import run_validation
@@ -126,6 +128,50 @@ def _print_status() -> None:
             pass
 
 
+def _heartbeat_loop(stop_event: threading.Event, interval: int = 15) -> None:
+    """Print container status every `interval` seconds until stopped."""
+    start = time.time()
+    while not stop_event.is_set():
+        elapsed = int(time.time() - start)
+        if not _docker_available():
+            print(f"\r  [heartbeat {elapsed:4d}s] Docker not available", end="", flush=True)
+        else:
+            proc = subprocess.run(
+                ["docker", "ps", "--format", "{{.Names}}"],
+                capture_output=True,
+                text=True,
+            )
+            names = [n for n in proc.stdout.splitlines() if "check-" in n or "rubric" in n]
+            if not names:
+                print(f"\r  [heartbeat {elapsed:4d}s] no review containers", end="", flush=True)
+            else:
+                name = names[0]
+                try:
+                    log = subprocess.run(
+                        ["docker", "exec", name, "tail", "-c", "2000", "/logs/agent/claude-code.txt"],
+                        capture_output=True,
+                        text=True,
+                        timeout=5,
+                    )
+                    tokens = "?"
+                    tools = "?"
+                    if log.returncode == 0:
+                        import re
+                        m = re.findall(r'"estimated_tokens":(\d+)', log.stdout)
+                        if m:
+                            tokens = m[-1]
+                        tools = str(log.stdout.count('"type":"tool_use"'))
+                    print(
+                        f"\r  [heartbeat {elapsed:4d}s] {name} tokens={tokens} tool_calls={tools}",
+                        end="",
+                        flush=True,
+                    )
+                except Exception:
+                    print(f"\r  [heartbeat {elapsed:4d}s] {name} (log unavailable)", end="", flush=True)
+        stop_event.wait(interval)
+    print()  # newline after last heartbeat
+
+
 def main(argv: list[str] | None = None) -> int:
     _load_dotenv(Path(__file__).resolve().parent / ".env")
     args = parse_args(argv)
@@ -177,7 +223,14 @@ def main(argv: list[str] | None = None) -> int:
         print("  (no checks)")
 
     print("\n[2/3] LLM rubric review")
-    rub = run_rubric(project, task_path)
+    stop_heartbeat = threading.Event()
+    heartbeat = threading.Thread(target=_heartbeat_loop, args=(stop_heartbeat,), daemon=True)
+    heartbeat.start()
+    try:
+        rub = run_rubric(project, task_path)
+    finally:
+        stop_heartbeat.set()
+        heartbeat.join(timeout=5)
     if rub.skipped:
         print(f"  skipped: {rub.skip_reason}")
     else:
@@ -192,9 +245,18 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  oracle={val.oracle_reward} nop={val.nop_reward} {val.details}")
 
     report = compile_report(project.name, args.taskid, det, rub, val)
+
+    # Always write to reports/<task_id>_<uuid>.json
+    reports_dir = REPO_ROOT / "reports"
+    reports_dir.mkdir(exist_ok=True)
+    auto_path = reports_dir / f"{args.taskid}_{uuid.uuid4().hex[:8]}.json"
+    report.write(auto_path)
+    print(f"\nreport written to {auto_path}")
+
+    # Also write to user-specified path if provided
     if args.output:
         report.write(args.output)
-        print(f"\nreport written to {args.output}")
+        print(f"report also written to {args.output}")
 
     print(f"\noverall: {'PASS' if report.passed else 'FAIL'}")
     return 0 if report.passed else 1
