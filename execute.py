@@ -55,19 +55,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Write JSON report to this path",
     )
     parser.add_argument(
-        "--gates",
+        "--serve",
         action="store_true",
-        help="Run the full three-gate QA flow via run-qa-gates.sh",
-    )
-    parser.add_argument(
-        "--skip-review",
-        action="store_true",
-        help="With --gates: skip Gate 2 (LLM rubric review)",
-    )
-    parser.add_argument(
-        "--skip-validate",
-        action="store_true",
-        help="With --gates: skip Gate 3 (oracle/nop validation)",
+        help="Start the HTTP API and test UI instead of running a single task",
     )
     parser.add_argument(
         "--status",
@@ -180,6 +170,17 @@ def main(argv: list[str] | None = None) -> int:
         _print_status()
         return 0
 
+    if args.serve:
+        import uvicorn
+
+        uvicorn.run(
+            "api.main:app",
+            host=os.environ.get("HOST", "127.0.0.1"),
+            port=int(os.environ.get("PORT", "8000")),
+            reload=True,
+        )
+        return 0
+
     if args.list_projects:
         for p in list_projects():
             print(f"{p.name}\t{p.type}\t{p.root}")
@@ -188,16 +189,6 @@ def main(argv: list[str] | None = None) -> int:
     if not args.project or not args.taskid:
         print("error: --project and --taskid are required", file=sys.stderr)
         return 2
-
-    if args.gates:
-        import subprocess
-
-        cmd = ["bash", "run-qa-gates.sh", args.project, args.taskid]
-        if args.skip_review:
-            cmd.append("--skip-review")
-        if args.skip_validate:
-            cmd.append("--skip-validate")
-        return subprocess.run(cmd, cwd=Path(__file__).resolve().parent).returncode
 
     try:
         project = load_project(args.project)
@@ -218,7 +209,7 @@ def main(argv: list[str] | None = None) -> int:
     det = run_deterministic(project, task_path)
     for c in det.checks:
         status = "PASS" if c.passed else "FAIL"
-        print(f"  {status}  {c.name}")
+        print(f"  {status}  [{c.source}] {c.name}")
     if not det.checks:
         print("  (no checks)")
 

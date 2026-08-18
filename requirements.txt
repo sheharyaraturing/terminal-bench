@@ -1,0 +1,5 @@
+# Autoreviewer API + pipeline
+fastapi>=0.116
+uvicorn[standard]>=0.30
+python-multipart>=0.0.9
+anthropic>=0.54
