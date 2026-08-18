@@ -64,12 +64,13 @@ class RunControl:
             except Exception:
                 proc.kill()
 
-        # harbor does not tear its containers down when killed mid-run.
+        # harbor tears its compose project down on a clean finish, but not when
+        # it is killed mid-run: both the container and its network survive.
+        from .docker_cleanup import teardown_container
+
         for name in containers:
-            subprocess.run(
-                ["docker", "rm", "-f", name], capture_output=True, timeout=30
-            )
-            self.emit(f"removed container: {name}")
+            for removed in teardown_container(name):
+                self.emit(f"removed {removed}")
 
 
 def describe_agent_event(line: str) -> str | None:

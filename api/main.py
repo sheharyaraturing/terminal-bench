@@ -13,7 +13,7 @@ from fastapi.staticfiles import StaticFiles
 
 from core.registry import REPO_ROOT
 
-from . import routes_projects, routes_runs, routes_tasks
+from . import routes_maintenance, routes_projects, routes_runs, routes_tasks
 
 UI_DIR = REPO_ROOT / "ui"
 
@@ -36,6 +36,7 @@ app.add_middleware(
 app.include_router(routes_projects.router)
 app.include_router(routes_tasks.router)
 app.include_router(routes_runs.router)
+app.include_router(routes_maintenance.router)
 
 
 @app.get("/api/health", tags=["meta"])
@@ -58,6 +59,32 @@ def _load_dotenv(path: Path) -> None:
 
 
 _load_dotenv(REPO_ROOT / ".env")
+
+
+@app.on_event("startup")
+def _reap_orphaned_runs() -> None:
+    """Close out runs the previous process was executing when it stopped.
+
+    Their worker threads died with it, so nothing will ever finish them; left
+    alone they sit at "running" forever and their containers leak.
+    """
+    from . import store
+
+    for status in store.list_runs(limit=500):
+        if status.get("state") in store.TERMINAL_STATES:
+            continue
+        run_id = status["run_id"]
+        for leg, detail in status.get("legs", {}).items():
+            if detail.get("state") in ("running", "pending"):
+                store.set_leg(run_id, leg, "interrupted", detail.get("summary", ""))
+        store.append_log(run_id, "run interrupted: the API process stopped while it was executing")
+        store.update_status(
+            run_id,
+            state="error",
+            passed=False,
+            error="interrupted by an API restart",
+            finished_at=store.now_iso(),
+        )
 
 if UI_DIR.is_dir():
     app.mount("/", StaticFiles(directory=str(UI_DIR), html=True), name="ui")

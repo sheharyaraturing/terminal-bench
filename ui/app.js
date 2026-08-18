@@ -26,7 +26,7 @@ document.querySelectorAll(".tab").forEach((tab) =>
     document.querySelectorAll(".tab-panel").forEach((p) =>
       p.classList.toggle("active", p.id === `tab-${tab.dataset.tab}`)
     );
-    if (tab.dataset.tab === "trainer") { loadTrainerProjects(); loadRuns(); }
+    if (tab.dataset.tab === "trainer") { loadTrainerProjects(); loadRuns(); syncRunListTimer(); loadDockerState(); }
   })
 );
 
@@ -253,6 +253,10 @@ $("#task-form").addEventListener("submit", async (ev) => {
 /* ── runs ───────────────────────────────────────────────────────────────── */
 let pollTimer = null;
 let activeRunId = null;
+let runListTimer = null;
+
+const TERMINAL = ["passed", "failed", "error", "cancelled"];
+const isActive = (state) => !TERMINAL.includes(state);
 
 async function runTask(project, taskId) {
   clearInterval(pollTimer);
@@ -313,9 +317,9 @@ function watchRun(runId) {
       pre.scrollTop = pre.scrollHeight;
     }
 
-    setStopEnabled(!["passed", "failed", "error", "cancelled"].includes(status.state));
+    setStopEnabled(isActive(status.state));
 
-    if (["passed", "failed", "error", "cancelled"].includes(status.state)) {
+    if (!isActive(status.state)) {
       clearInterval(pollTimer);
       setStopEnabled(false);
       loadRuns();
@@ -328,11 +332,23 @@ function watchRun(runId) {
   pollTimer = setInterval(tick, 2000);
 }
 
+function elapsedOf(s) {
+  const start = Date.parse(s.started_at || s.created_at);
+  if (!start) return "";
+  const end = s.finished_at ? Date.parse(s.finished_at) : Date.now();
+  const secs = Math.max(0, Math.round((end - start) / 1000));
+  const m = Math.floor(secs / 60);
+  return m ? `${m}m ${secs % 60}s` : `${secs}s`;
+}
+
 function renderStatus(s) {
+  const running = isActive(s.state);
   $("#run-status").replaceChildren(
-    el("strong", {}, `${s.project} / ${s.task_id} `),
+    running ? el("span", { className: "spin" }, "◐") : el("span", {}, ""),
+    el("strong", {}, ` ${s.project} / ${s.task_id} `),
     badge(s.state, s.state),
-    el("span", { className: "muted" }, ` run ${s.run_id.slice(0, 8)}${s.reviewer_email ? ` · ${s.reviewer_email}` : ""}`)
+    el("span", { className: "muted elapsed" }, ` ${elapsedOf(s)}`),
+    el("span", { className: "muted" }, ` · run ${s.run_id.slice(0, 8)}${s.reviewer_email ? ` · ${s.reviewer_email}` : ""}`)
   );
   $("#run-legs").replaceChildren(
     ...["deterministic", "rubric", "validation"].map((k) =>
@@ -398,14 +414,71 @@ async function loadRuns() {
   list.replaceChildren();
   if (!runs.length) { list.append(el("li", {}, el("span", { className: "muted" }, "No runs yet."))); return; }
   for (const r of runs) {
-    list.append(el("li", {},
+    const row = el("li", { className: r.run_id === activeRunId ? "selected" : "" },
       el("span", { className: "name", onclick: () => watchRun(r.run_id) }, r.task_id),
       badge(r.state, r.state),
-      el("span", { className: "muted" }, r.created_at)
-    ));
+      el("span", { className: "muted elapsed" }, elapsedOf(r))
+    );
+    // Any in-flight run can be stopped from here, not just the one on screen.
+    if (isActive(r.state)) {
+      row.append(el("button", {
+        className: "danger tiny",
+        onclick: async (ev) => {
+          ev.stopPropagation();
+          ev.target.disabled = true;
+          try { await api(`/api/runs/${r.run_id}/cancel`, { method: "POST" }); } catch {}
+          loadRuns();
+        },
+      }, "Stop"));
+    }
+    list.append(row);
   }
 }
+
+function syncRunListTimer() {
+  clearInterval(runListTimer);
+  if ($("#auto-refresh").checked) runListTimer = setInterval(loadRuns, 5000);
+}
+$("#auto-refresh").addEventListener("change", syncRunListTimer);
+
+/* ── docker housekeeping ────────────────────────────────────────────────── */
+async function loadDockerState() {
+  const box = $("#docker-state");
+  box.textContent = "Checking…";
+  try {
+    const d = await api("/api/maintenance/docker");
+    const running = d.containers.filter((c) => c.running);
+    const stopped = d.containers.filter((c) => !c.running);
+    box.replaceChildren(
+      el("div", {}, `${running.length} review container(s) running, ${stopped.length} stopped, ${d.networks.length} network(s).`),
+      running.length
+        ? el("div", { className: "muted" }, `running: ${running.map((c) => c.name).join(", ")}`)
+        : el("span"),
+      el("div", { className: "muted" }, d.reclaimable ? `${d.reclaimable} item(s) can be cleaned up.` : "Nothing to clean up.")
+    );
+  } catch (e) {
+    box.className = "result err";
+    box.textContent = `Error: ${e.message}`;
+  }
+}
+$("#docker-refresh").addEventListener("click", loadDockerState);
+$("#docker-cleanup").addEventListener("click", async () => {
+  const out = $("#docker-result");
+  out.className = "result";
+  out.textContent = "Cleaning…";
+  try {
+    const r = await api("/api/maintenance/docker/cleanup", { method: "POST" });
+    out.className = "result ok";
+    out.textContent = r.removed.length ? `Removed: ${r.removed.join(", ")}` : "Nothing to remove.";
+    if (r.skipped.length) out.textContent += ` — left alone: ${r.skipped.join(", ")}`;
+    loadDockerState();
+  } catch (e) {
+    out.className = "result err";
+    out.textContent = `Error: ${e.message}`;
+  }
+});
 
 /* ── boot ───────────────────────────────────────────────────────────────── */
 loadProjects();
 loadTrainerProjects();
+syncRunListTimer();
