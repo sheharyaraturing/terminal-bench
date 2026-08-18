@@ -1,6 +1,7 @@
 *tasks/*
 *data/
 *report*.json
+reports/
 *.ipynb
 
 # Environment
