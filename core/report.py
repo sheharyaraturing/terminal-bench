@@ -37,7 +37,7 @@ def compile_report(
         "passed": deterministic.passed,
         "applicable": bool(deterministic.checks),
         "checks": [
-            {"name": c.name, "passed": c.passed, "output": c.output}
+            {"name": c.name, "source": c.source, "passed": c.passed, "output": c.output}
             for c in deterministic.checks
         ],
     }
