@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Autoreviewer</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header>
+    <h1>Autoreviewer</h1>
+    <nav class="tabs">
+      <button class="tab active" data-tab="dm">Delivery Manager</button>
+      <button class="tab" data-tab="trainer">Trainer</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- ───────────────────────── Delivery Manager ───────────────────────── -->
+    <section id="tab-dm" class="tab-panel active">
+      <div class="cols">
+        <div class="card">
+          <h2>Create project</h2>
+          <form id="create-form">
+            <label>Name
+              <input name="name" required placeholder="my-project"
+                     pattern="[a-z0-9][a-z0-9-]{1,63}"
+                     title="lowercase letters, digits and hyphens; 2-64 chars">
+            </label>
+            <label>Format
+              <select name="type" id="create-type">
+                <option value="harbor">Harbor</option>
+                <option value="non-harbor">Non-Harbor</option>
+              </select>
+            </label>
+            <p class="hint" id="type-hint"></p>
+            <label>Description
+              <input name="description" placeholder="what this project covers">
+            </label>
+            <label>Validation
+              <select name="validation_mode" id="create-validation">
+                <option value="">(default for format)</option>
+                <option value="oracle_nop">oracle_nop</option>
+                <option value="skip">skip</option>
+              </select>
+            </label>
+            <label>rubrics.toml — write it
+              <textarea name="rubric_text" rows="8" placeholder='[[criteria]]
+name = "example"
+description = "what is being judged"
+guidance = "PASS if ... FAIL if ..."'></textarea>
+            </label>
+            <label>…or upload it
+              <input type="file" name="rubric_file" accept=".toml">
+            </label>
+            <label>Deterministic checks (.sh / .py, multiple)
+              <input type="file" name="checks" multiple accept=".sh,.py">
+            </label>
+            <label>Extra references (optional, multiple)
+              <input type="file" name="extra_references" multiple>
+            </label>
+            <button type="submit" class="primary">Create project</button>
+          </form>
+          <div id="create-result" class="result"></div>
+        </div>
+
+        <div class="card">
+          <h2>Projects</h2>
+          <button id="refresh-projects" class="ghost">Refresh</button>
+          <ul id="project-list" class="list"></ul>
+          <div id="project-detail"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────────────────────────── Trainer ───────────────────────────── -->
+    <section id="tab-trainer" class="tab-panel">
+      <div class="cols">
+        <div class="card">
+          <h2>Submit a task</h2>
+          <label>Project
+            <select id="trainer-project"></select>
+          </label>
+          <p class="hint" id="trainer-hint"></p>
+
+          <form id="task-form">
+            <label>Task file (.zip for a task folder, .json for non-Harbor)
+              <input type="file" name="file" id="task-file" accept=".zip,.json" required>
+            </label>
+            <label>Task id <span class="muted">(optional — defaults to the filename)</span>
+              <input name="task_id" placeholder="my-task">
+            </label>
+            <button type="submit" class="primary">Upload task</button>
+          </form>
+          <div id="task-result" class="result"></div>
+
+          <h3>Tasks in this project</h3>
+          <label>Reviewer email <span class="muted">(optional)</span>
+            <input id="reviewer-email" type="email" placeholder="reviewer@example.com">
+          </label>
+          <ul id="task-list" class="list"></ul>
+        </div>
+
+        <div class="card">
+          <h2>Run</h2>
+          <div id="run-status" class="muted">No run yet.</div>
+          <div id="run-legs" class="legs"></div>
+          <div id="run-report"></div>
+          <details id="log-wrap" open>
+            <summary>Live log</summary>
+            <pre id="run-log"></pre>
+          </details>
+          <h3>Recent runs</h3>
+          <ul id="run-list" class="list"></ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>
