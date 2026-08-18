@@ -105,7 +105,7 @@ guidance = "PASS if ... FAIL if ..."'></textarea>
           <h2>Run</h2>
           <div class="run-head">
             <div id="run-status" class="muted">No run yet.</div>
-            <button id="stop-run" class="ghost" disabled>Stop run</button>
+            <button id="stop-run" class="danger" disabled>■ Stop review</button>
           </div>
           <div id="run-legs" class="legs"></div>
           <div id="run-report"></div>
@@ -113,8 +113,19 @@ guidance = "PASS if ... FAIL if ..."'></textarea>
             <summary>Live log</summary>
             <pre id="run-log"></pre>
           </details>
-          <h3>Recent runs</h3>
+          <div class="section-head">
+            <h3>Recent runs</h3>
+            <label class="inline-toggle"><input type="checkbox" id="auto-refresh" checked> auto-refresh</label>
+          </div>
           <ul id="run-list" class="list"></ul>
+
+          <div class="section-head">
+            <h3>Docker</h3>
+            <button id="docker-refresh" class="ghost tiny">Refresh</button>
+          </div>
+          <div id="docker-state" class="muted">Not checked.</div>
+          <button id="docker-cleanup" class="ghost">Clean up finished containers</button>
+          <div id="docker-result" class="result"></div>
         </div>
       </div>
     </section>
