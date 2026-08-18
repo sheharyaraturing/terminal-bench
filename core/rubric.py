@@ -28,21 +28,87 @@ class RubricResult:
     skip_reason: str = ""
 
 
+# Budget for the reference blob. Delivery managers drop whole spec documents in
+# extra_references/, and every byte here is either an environment variable or
+# prompt tokens, so it has to be bounded.
+MAX_EXTRA_REFERENCE_BYTES = 200_000
+MAX_TASK_SNAPSHOT_CHARS = 200_000
+
+
+def _strip_nulls(text: str) -> str:
+    """NUL is valid UTF-8, so errors='replace' leaves it in place — but it is
+    illegal in environment variables and meaningless to a model."""
+    return text.replace("\x00", "")
+
+
+def _pdf_text(path: Path) -> str | None:
+    """Extract text from a PDF, or None if no extractor is available."""
+    try:
+        from pypdf import PdfReader
+    except ImportError:
+        return None
+    try:
+        reader = PdfReader(str(path))
+        return "\n".join((page.extract_text() or "") for page in reader.pages)
+    except Exception:
+        return None
+
+
+def _reference_text(path: Path) -> str | None:
+    """Readable text for one reference file, or None if it is not usable text."""
+    if path.suffix.lower() == ".pdf":
+        return _pdf_text(path)
+    try:
+        raw = path.read_bytes()
+    except Exception:
+        return None
+    # Sniff for binary: a NUL in the first block means this is not a text file,
+    # and decoding it would only produce mojibake.
+    if b"\x00" in raw[:8192]:
+        return None
+    try:
+        return raw.decode()
+    except UnicodeDecodeError:
+        return raw.decode(errors="replace")
+
+
 def _collect_extra_references(project: Project) -> str:
-    """Read extra_references/ into a single context blob for the reviewer."""
+    """Read extra_references/ into a single bounded, text-only context blob.
+
+    Binary files that cannot be turned into text are named but not inlined, so
+    the reviewer knows they exist rather than silently losing them.
+    """
     refs_dir = project.extra_references_dir
     if not refs_dir.is_dir():
         return ""
     chunks: list[str] = []
+    skipped: list[str] = []
+    budget = MAX_EXTRA_REFERENCE_BYTES
+
     for path in sorted(refs_dir.rglob("*")):
         if not path.is_file() or path.name.startswith("."):
             continue
-        try:
-            text = path.read_text(errors="replace")
-        except Exception:
-            continue
         rel = path.relative_to(refs_dir)
+        text = _reference_text(path)
+        if text is None:
+            skipped.append(f"{rel} ({path.stat().st_size:,} bytes, not readable as text)")
+            continue
+        text = _strip_nulls(text).strip()
+        if not text:
+            skipped.append(f"{rel} (no extractable text)")
+            continue
+        if budget <= 0:
+            skipped.append(f"{rel} (reference size budget exhausted)")
+            continue
+        if len(text) > budget:
+            text = text[:budget] + f"\n[truncated at {budget:,} characters]"
+        budget -= len(text)
         chunks.append(f"--- extra_reference: {rel} ---\n{text}")
+
+    if skipped:
+        chunks.append(
+            "--- extra_references not inlined ---\n" + "\n".join(skipped)
+        )
     return "\n\n".join(chunks)
 
 
@@ -116,7 +182,9 @@ def _run_harbor_check(
         ]
         env = os.environ.copy()
         if extra_refs:
-            env["AUTOREVIEWER_EXTRA_REFERENCES"] = extra_refs
+            refs_file = Path(tmp) / "extra_references.txt"
+            refs_file.write_text(extra_refs)
+            env["AUTOREVIEWER_EXTRA_REFERENCES_FILE"] = str(refs_file)
         proc = subprocess.run(
             cmd,
             cwd=REPO_ROOT,
@@ -184,17 +252,23 @@ def _run_anthropic_check(
     return _parse_verdicts_from_text(text)
 
 
-def _read_task_snapshot(task_path: Path, max_chars: int = 200_000) -> str:
+def _read_task_snapshot(task_path: Path, max_chars: int = MAX_TASK_SNAPSHOT_CHARS) -> str:
+    """Flatten a task into text. Binary assets are listed, never inlined."""
     if task_path.is_file():
-        return task_path.read_text(errors="replace")[:max_chars]
+        return _strip_nulls(_reference_text(task_path) or "")[:max_chars]
     chunks: list[str] = []
+    binaries: list[str] = []
     for path in sorted(task_path.rglob("*")):
-        if path.is_file() and not path.name.startswith("."):
-            rel = path.relative_to(task_path)
-            try:
-                chunks.append(f"--- {rel} ---\n{path.read_text(errors='replace')}")
-            except Exception:
-                continue
+        if not path.is_file() or path.name.startswith("."):
+            continue
+        rel = path.relative_to(task_path)
+        text = _reference_text(path)
+        if text is None:
+            binaries.append(f"{rel} ({path.stat().st_size:,} bytes)")
+            continue
+        chunks.append(f"--- {rel} ---\n{_strip_nulls(text)}")
+    if binaries:
+        chunks.append("--- binary files (not inlined) ---\n" + "\n".join(binaries))
     return "\n\n".join(chunks)[:max_chars]
 
 
