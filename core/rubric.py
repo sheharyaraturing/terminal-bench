@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -112,6 +113,66 @@ def _collect_extra_references(project: Project) -> str:
     return "\n\n".join(chunks)
 
 
+# `harbor check` copies the reviewed task into its wrapper task's
+# environment/task/ and uploads that to the sandbox workdir (/app), so the task
+# lands at /app/task. Staging the references inside the copy is what puts them
+# in the container; the path below is what rubric authors write against.
+EXTRA_REFERENCES_DIRNAME = "extra_references"
+CONTAINER_TASK_PATH = "/app/task"
+CONTAINER_REFERENCES_PATH = f"{CONTAINER_TASK_PATH}/{EXTRA_REFERENCES_DIRNAME}"
+
+CHECK_PROMPT_PATH = REPO_ROOT / "prompts" / "check-with-references.txt"
+
+
+def has_extra_references(project: Project) -> bool:
+    """True when the project ships at least one real reference file."""
+    refs_dir = project.extra_references_dir
+    if not refs_dir.is_dir():
+        return False
+    return any(
+        p.is_file() and not p.name.startswith(".") for p in refs_dir.rglob("*")
+    )
+
+
+def _stage_task_with_references(project: Project, task_path: Path, staging_root: Path) -> Path:
+    """Copy the task, with extra_references/ inside it, into staging_root.
+
+    The copy keeps the task's own directory name: harbor derives the reported
+    task name and its wrapper directory from it.
+
+    Returns the staged task directory.
+    """
+    staged = staging_root / task_path.name
+    shutil.copytree(task_path, staged, ignore=shutil.ignore_patterns(".git"))
+
+    dest = staged / EXTRA_REFERENCES_DIRNAME
+    if dest.exists():
+        # The task already has a directory by that name; don't clobber the
+        # author's files, park the references beside it instead.
+        dest = staged / f"{EXTRA_REFERENCES_DIRNAME}_project"
+    if project.extra_references_dir.is_dir():
+        shutil.copytree(
+            project.extra_references_dir, dest, ignore=shutil.ignore_patterns(".git")
+        )
+    else:
+        # The directory is always present in the container even when the project
+        # ships nothing, so rubrics can reference the path unconditionally.
+        dest.mkdir(parents=True)
+
+    # An agent in a slim container cannot parse a PDF, so drop a readable
+    # sibling next to any reference we can extract text from.
+    for path in sorted(dest.rglob("*")):
+        if not path.is_file() or path.name.startswith("."):
+            continue
+        if _reference_text(path) is None or path.suffix.lower() not in (".pdf",):
+            continue
+        text = _strip_nulls(_reference_text(path) or "").strip()
+        if text:
+            path.with_suffix(path.suffix + ".extracted.txt").write_text(text)
+
+    return staged
+
+
 def run_rubric(project: Project, task_path: Path) -> RubricResult:
     """Run the LLM rubric review for a task.
 
@@ -169,37 +230,116 @@ def _docker_available() -> bool:
 def _run_harbor_check(
     project: Project, task_path: Path, rubric_path: Path, extra_refs: str
 ) -> RubricResult:
+    """Run `harbor check`, always shipping extra_references/ into the container.
+
+    The references are staged inside a throwaway copy of the task rather than
+    handed to harbor separately: harbor copies whatever directory it is given
+    into the sandbox, so that copy is the only place a file can be added and be
+    guaranteed to arrive.
+    """
     with tempfile.TemporaryDirectory() as tmp:
-        out_path = Path(tmp) / "verdicts.json"
+        review_path = task_path
+        cmd_extra: list[str] = []
+        if task_path.is_dir():
+            staging_root = Path(tmp) / "staged"
+            staging_root.mkdir()
+            review_path = _stage_task_with_references(project, task_path, staging_root)
+            if CHECK_PROMPT_PATH.is_file():
+                # Tells the evaluator the references are reference material, not
+                # task content it should grade.
+                cmd_extra = ["-p", str(CHECK_PROMPT_PATH)]
+
+        # -o is harbor's --jobs-dir: a directory it fills with
+        # <timestamp>/check_report.json, not a file it writes verdicts to.
+        jobs_dir = Path(tmp) / "jobs"
         cmd = [
             "harbor",
             "check",
-            str(task_path),
+            str(review_path),
             "-r",
             str(rubric_path),
             "-o",
-            str(out_path),
+            str(jobs_dir),
+            *cmd_extra,
         ]
-        env = os.environ.copy()
-        if extra_refs:
-            refs_file = Path(tmp) / "extra_references.txt"
-            refs_file.write_text(extra_refs)
-            env["AUTOREVIEWER_EXTRA_REFERENCES_FILE"] = str(refs_file)
+        # The evaluator agent runs inside the container and has no credentials
+        # of its own; without this it fails with "Not logged in".
+        api_key = os.environ.get("ANTHROPIC_API_KEY")
+        if api_key:
+            cmd += ["--ae", f"ANTHROPIC_API_KEY={api_key}"]
+
         proc = subprocess.run(
             cmd,
             cwd=REPO_ROOT,
             capture_output=True,
             text=True,
-            env=env,
             timeout=1800,
         )
-        if not out_path.is_file():
+
+        report_path = _latest_check_report(jobs_dir)
+        if report_path is None:
             return RubricResult(
                 passed=False,
                 skipped=True,
                 skip_reason=f"harbor check failed: {proc.stderr.strip() or proc.stdout.strip()}",
             )
-        return _parse_verdicts(out_path)
+        return _parse_check_report(report_path)
+
+
+def _latest_check_report(jobs_dir: Path) -> Path | None:
+    """Newest check_report.json under a harbor jobs directory."""
+    if not jobs_dir.is_dir():
+        return None
+    reports = sorted(
+        jobs_dir.rglob("check_report.json"), key=lambda p: p.stat().st_mtime, reverse=True
+    )
+    return reports[0] if reports else None
+
+
+def _parse_check_report(path: Path) -> RubricResult:
+    """Parse harbor's check_report.json.
+
+    Shape: {"results": [{"task_name", "error", "checks": {
+        "<criterion>": {"outcome": "pass|fail|not_applicable", "explanation": ...}}}]}
+    """
+    try:
+        data = json.loads(path.read_text())
+    except Exception as exc:
+        return RubricResult(
+            passed=False, skipped=True, skip_reason=f"invalid check_report.json: {exc}"
+        )
+
+    results = data.get("results") or []
+    if not results:
+        return RubricResult(
+            passed=False, skipped=True, skip_reason="harbor check produced no results"
+        )
+
+    verdicts: list[CriterionVerdict] = []
+    errors: list[str] = []
+    for result in results:
+        if not isinstance(result, dict):
+            continue
+        if result.get("error"):
+            # Keep it short: harbor echoes the whole agent command into `error`.
+            errors.append(str(result["error"]).splitlines()[0][:300])
+        for name, check in (result.get("checks") or {}).items():
+            if not isinstance(check, dict):
+                continue
+            verdicts.append(
+                CriterionVerdict(
+                    name=str(name),
+                    verdict=str(check.get("outcome", "fail")).lower(),
+                    reason=str(check.get("explanation", "")),
+                )
+            )
+
+    if not verdicts:
+        reason = errors[0] if errors else "harbor check returned no criterion verdicts"
+        return RubricResult(passed=False, skipped=True, skip_reason=reason)
+
+    passed = all(v.verdict in {"pass", "not_applicable"} for v in verdicts)
+    return RubricResult(passed=passed, verdicts=verdicts, raw_path=path)
 
 
 def _run_anthropic_check(
