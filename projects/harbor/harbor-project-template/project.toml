@@ -1,0 +1,21 @@
+# Template rendered by core.registry.create_project.
+# Placeholders ({{name}}, {{description}}, {{validation_mode}}) are substituted
+# at creation time; edit this file to change the defaults for every new
+# harbor project.
+[project]
+name = "{{name}}"
+type = "harbor"
+description = "{{description}}"
+
+[paths]
+tasks = "tasks"
+checks = "checks"
+rubrics = "rubrics/rubrics.toml"
+extra_references = "extra_references"
+
+[checks]
+# Harbor: run the repo-root checks/ common set in addition to this project's checks/.
+include_common = true
+
+[validation]
+mode = "{{validation_mode}}"  # oracle_nop | skip

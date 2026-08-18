@@ -1,0 +1,21 @@
+# Template rendered by core.registry.create_project.
+# Placeholders ({{name}}, {{description}}, {{validation_mode}}) are substituted
+# at creation time; edit this file to change the defaults for every new
+# non-harbor project.
+[project]
+name = "{{name}}"
+type = "non-harbor"
+description = "{{description}}"
+
+[paths]
+tasks = "tasks"
+checks = "checks"
+rubrics = "rubrics/rubrics.toml"
+extra_references = "extra_references"
+
+[checks]
+# Non-Harbor: only the checks written for this project run.
+include_common = false
+
+[validation]
+mode = "{{validation_mode}}"  # oracle_nop | skip
