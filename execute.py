@@ -14,12 +14,12 @@ import argparse
 import os
 import subprocess
 import sys
-import threading
 import time
 import uuid
 from pathlib import Path
 
 from core.deterministic import run_deterministic
+from core.progress import RunControl
 from core.registry import REPO_ROOT, list_projects, load_project, resolve_task
 from core.report import compile_report
 from core.rubric import run_rubric
@@ -118,50 +118,6 @@ def _print_status() -> None:
             pass
 
 
-def _heartbeat_loop(stop_event: threading.Event, interval: int = 15) -> None:
-    """Print container status every `interval` seconds until stopped."""
-    start = time.time()
-    while not stop_event.is_set():
-        elapsed = int(time.time() - start)
-        if not _docker_available():
-            print(f"\r  [heartbeat {elapsed:4d}s] Docker not available", end="", flush=True)
-        else:
-            proc = subprocess.run(
-                ["docker", "ps", "--format", "{{.Names}}"],
-                capture_output=True,
-                text=True,
-            )
-            names = [n for n in proc.stdout.splitlines() if "check-" in n or "rubric" in n]
-            if not names:
-                print(f"\r  [heartbeat {elapsed:4d}s] no review containers", end="", flush=True)
-            else:
-                name = names[0]
-                try:
-                    log = subprocess.run(
-                        ["docker", "exec", name, "tail", "-c", "2000", "/logs/agent/claude-code.txt"],
-                        capture_output=True,
-                        text=True,
-                        timeout=5,
-                    )
-                    tokens = "?"
-                    tools = "?"
-                    if log.returncode == 0:
-                        import re
-                        m = re.findall(r'"estimated_tokens":(\d+)', log.stdout)
-                        if m:
-                            tokens = m[-1]
-                        tools = str(log.stdout.count('"type":"tool_use"'))
-                    print(
-                        f"\r  [heartbeat {elapsed:4d}s] {name} tokens={tokens} tool_calls={tools}",
-                        end="",
-                        flush=True,
-                    )
-                except Exception:
-                    print(f"\r  [heartbeat {elapsed:4d}s] {name} (log unavailable)", end="", flush=True)
-        stop_event.wait(interval)
-    print()  # newline after last heartbeat
-
-
 def main(argv: list[str] | None = None) -> int:
     _load_dotenv(Path(__file__).resolve().parent / ".env")
     args = parse_args(argv)
@@ -205,8 +161,11 @@ def main(argv: list[str] | None = None) -> int:
     print(f"project: {project.name} ({project.type})")
     print(f"task:    {args.taskid} -> {task_path}")
 
+    # Live progress: every leg reports what it is doing as it happens.
+    control = RunControl(on_progress=lambda msg: print(msg, flush=True))
+
     print("\n[1/3] deterministic checks")
-    det = run_deterministic(project, task_path)
+    det = run_deterministic(project, task_path, control)
     for c in det.checks:
         status = "PASS" if c.passed else "FAIL"
         print(f"  {status}  [{c.source}] {c.name}")
@@ -214,14 +173,12 @@ def main(argv: list[str] | None = None) -> int:
         print("  (no checks)")
 
     print("\n[2/3] LLM rubric review")
-    stop_heartbeat = threading.Event()
-    heartbeat = threading.Thread(target=_heartbeat_loop, args=(stop_heartbeat,), daemon=True)
-    heartbeat.start()
     try:
-        rub = run_rubric(project, task_path)
-    finally:
-        stop_heartbeat.set()
-        heartbeat.join(timeout=5)
+        rub = run_rubric(project, task_path, control)
+    except KeyboardInterrupt:
+        print("\ninterrupted — stopping the review and its containers...")
+        control.cancel()
+        return 130
     if rub.skipped:
         print(f"  skipped: {rub.skip_reason}")
     else:
@@ -229,7 +186,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"  {v.verdict.upper()}  {v.name}: {v.reason}")
 
     print("\n[3/3] validation")
-    val = run_validation(project, task_path)
+    val = run_validation(project, task_path, control)
     if val.skipped:
         print(f"  skipped: {val.skip_reason}")
     else:
