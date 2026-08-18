@@ -7,6 +7,7 @@ import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
+from .progress import RunControl
 from .registry import Project, REPO_ROOT
 
 
@@ -20,7 +21,9 @@ class ValidationResult:
     details: str = ""
 
 
-def run_validation(project: Project, task_path: Path) -> ValidationResult:
+def run_validation(
+    project: Project, task_path: Path, control: RunControl | None = None
+) -> ValidationResult:
     if project.validation_mode == "skip" or project.type != "harbor":
         return ValidationResult(
             passed=True,
@@ -28,8 +31,17 @@ def run_validation(project: Project, task_path: Path) -> ValidationResult:
             skip_reason=f"validation skipped (mode={project.validation_mode}, type={project.type})",
         )
 
+    if control:
+        control.raise_if_cancelled()
+        control.emit("  running oracle agent (expects reward 1.0)")
     oracle = _harbor_run(task_path, agent="oracle")
+    if control:
+        control.raise_if_cancelled()
+        control.emit(f"  oracle reward: {oracle}")
+        control.emit("  running nop agent (expects reward 0.0)")
     nop = _harbor_run(task_path, agent="nop")
+    if control:
+        control.emit(f"  nop reward: {nop}")
 
     if oracle is None or nop is None:
         return ValidationResult(

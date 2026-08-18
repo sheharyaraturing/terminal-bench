@@ -70,6 +70,38 @@ def get_run_report(run_id: str) -> dict:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
+@router.post("/runs/{run_id}/cancel")
+def post_cancel_run(run_id: str) -> dict:
+    """Stop a queued or running review, tearing down its containers."""
+    try:
+        status = store.read_status(run_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    if status["state"] in store.TERMINAL_STATES:
+        raise HTTPException(
+            status_code=409,
+            detail=f"run already finished with state '{status['state']}'",
+        )
+    if not jobs.cancel_run(run_id):
+        # Active per status.json but no live control: the server restarted
+        # while it was running, so nothing is left to stop.
+        store.update_status(
+            run_id,
+            state="cancelled",
+            passed=False,
+            error="cancelled (no live process; server likely restarted)",
+            finished_at=store.now_iso(),
+        )
+
+    # A run can finish while the request is in flight; report what actually
+    # happened rather than assuming the cancel won the race.
+    final = store.read_status(run_id)
+    return {"run_id": run_id, "state": final["state"], "requested": "cancel"}
+
+
 @router.get("/runs/{run_id}/log", response_model=LogChunk)
 def get_run_log(run_id: str, offset: int = Query(0, ge=0)) -> LogChunk:
     try:

@@ -72,10 +72,13 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 .badge.pass, .badge.passed { color: var(--pass); }
 .badge.fail, .badge.failed, .badge.error { color: var(--fail); }
 .badge.skip, .badge.skipped, .badge.not_applicable, .badge.pending, .badge.queued { color: var(--skip); }
+.badge.cancelled { color: var(--nonharbor); }
 .badge.running { color: var(--accent); }
 .result { margin-top: 10px; font-size: 13px; }
 .result.ok { color: var(--pass); }
 .result.err { color: var(--fail); white-space: pre-wrap; }
+.run-head { display: flex; align-items: center; gap: 12px; justify-content: space-between; }
+.run-head #run-status { flex: 1; min-width: 0; }
 .legs { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
 .leg { flex: 1; min-width: 130px; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
 .leg .leg-name { font-weight: 600; font-size: 12px; }

@@ -8,10 +8,12 @@ from __future__ import annotations
 import os
 import traceback
 import uuid
+import threading
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from core.deterministic import run_deterministic
+from core.progress import RunCancelled, RunControl
 from core.registry import REPO_ROOT, load_project, resolve_task
 from core.report import compile_report
 from core.rubric import run_rubric
@@ -25,6 +27,25 @@ MAX_WORKERS = int(os.environ.get("AUTOREVIEWER_MAX_WORKERS", "2"))
 REPORTS_DIR = REPO_ROOT / "reports"
 
 _executor = ThreadPoolExecutor(max_workers=MAX_WORKERS, thread_name_prefix="review")
+
+# Live controls for runs that are queued or in flight, so they can be stopped.
+_controls: dict[str, RunControl] = {}
+_controls_lock = threading.Lock()
+
+
+def cancel_run(run_id: str) -> bool:
+    """Stop a queued or running review. False if it is not active."""
+    with _controls_lock:
+        control = _controls.get(run_id)
+    if control is None:
+        return False
+    control.cancel()
+    return True
+
+
+def is_active(run_id: str) -> bool:
+    with _controls_lock:
+        return run_id in _controls
 
 
 def submit_run(
@@ -44,12 +65,22 @@ def submit_run(
         project_id=project_id,
         reviewer_email=reviewer_email,
     )
-    _executor.submit(_execute, status["run_id"], project.name, task_id)
+    run_id = status["run_id"]
+    with _controls_lock:
+        _controls[run_id] = RunControl(
+            on_progress=lambda msg, rid=run_id: store.append_log(rid, msg)
+        )
+    _executor.submit(_execute, run_id, project.name, task_id)
     return status
 
 
 def _execute(run_id: str, project_name: str, task_id: str) -> None:
     log = lambda msg: store.append_log(run_id, msg)
+    with _controls_lock:
+        control = _controls.get(run_id)
+    if control is None or control.cancelled.is_set():
+        _finish_cancelled(run_id, log)
+        return
     try:
         store.update_status(run_id, state="running", started_at=store.now_iso())
         project = load_project(project_name)
@@ -60,7 +91,7 @@ def _execute(run_id: str, project_name: str, task_id: str) -> None:
         # --- 1/3 deterministic ---
         store.set_leg(run_id, "deterministic", "running")
         log("[1/3] deterministic checks")
-        det = run_deterministic(project, task_path)
+        det = run_deterministic(project, task_path, control)
         for c in det.checks:
             log(f"  {'PASS' if c.passed else 'FAIL'}  [{c.source}] {c.name}")
         if not det.checks:
@@ -76,7 +107,7 @@ def _execute(run_id: str, project_name: str, task_id: str) -> None:
         # --- 2/3 rubric ---
         store.set_leg(run_id, "rubric", "running")
         log("[2/3] LLM rubric review")
-        rub = run_rubric(project, task_path)
+        rub = run_rubric(project, task_path, control)
         if rub.skipped:
             log(f"  skipped: {rub.skip_reason}")
             store.set_leg(run_id, "rubric", "skipped", rub.skip_reason)
@@ -94,7 +125,7 @@ def _execute(run_id: str, project_name: str, task_id: str) -> None:
         # --- 3/3 validation ---
         store.set_leg(run_id, "validation", "running")
         log("[3/3] validation")
-        val = run_validation(project, task_path)
+        val = run_validation(project, task_path, control)
         if val.skipped:
             log(f"  skipped: {val.skip_reason}")
             store.set_leg(run_id, "validation", "skipped", val.skip_reason)
@@ -120,6 +151,8 @@ def _execute(run_id: str, project_name: str, task_id: str) -> None:
             passed=report.passed,
             finished_at=store.now_iso(),
         )
+    except RunCancelled:
+        _finish_cancelled(run_id, log)
     except Exception as exc:
         store.append_log(run_id, f"ERROR: {exc}")
         store.append_log(run_id, traceback.format_exc())
@@ -130,3 +163,21 @@ def _execute(run_id: str, project_name: str, task_id: str) -> None:
             error=str(exc),
             finished_at=store.now_iso(),
         )
+    finally:
+        with _controls_lock:
+            _controls.pop(run_id, None)
+
+
+def _finish_cancelled(run_id: str, log) -> None:
+    log("run cancelled")
+    status = store.read_status(run_id)
+    for leg, detail in status.get("legs", {}).items():
+        if detail.get("state") in ("running", "pending"):
+            store.set_leg(run_id, leg, "cancelled", detail.get("summary", ""))
+    store.update_status(
+        run_id,
+        state="cancelled",
+        passed=False,
+        error="cancelled by user",
+        finished_at=store.now_iso(),
+    )

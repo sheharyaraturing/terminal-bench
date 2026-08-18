@@ -24,7 +24,7 @@ from core.registry import REPO_ROOT
 RUNS_ROOT = REPO_ROOT / "runs"
 
 # Terminal states; anything else means the run is still in flight.
-TERMINAL_STATES = ("passed", "failed", "error")
+TERMINAL_STATES = ("passed", "failed", "error", "cancelled")
 
 _RUN_ID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 

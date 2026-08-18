@@ -7,9 +7,15 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import threading
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from .progress import (
+    RunControl,
+    tail_trial_logs,
+    watch_containers,
+)
 from .registry import Project, REPO_ROOT
 
 
@@ -173,7 +179,9 @@ def _stage_task_with_references(project: Project, task_path: Path, staging_root:
     return staged
 
 
-def run_rubric(project: Project, task_path: Path) -> RubricResult:
+def run_rubric(
+    project: Project, task_path: Path, control: RunControl | None = None
+) -> RubricResult:
     """Run the LLM rubric review for a task.
 
     Prefers `harbor check` when available; falls back to a local Anthropic
@@ -192,12 +200,18 @@ def run_rubric(project: Project, task_path: Path) -> RubricResult:
 
     # harbor check only supports Harbor-format task directories and needs Docker
     if project.type == "harbor" and _harbor_available() and _docker_available():
-        result = _run_harbor_check(project, task_path, rubric_path, extra_refs)
+        result = _run_harbor_check(project, task_path, rubric_path, extra_refs, control)
+        # A cancelled run must stop here: killing harbor looks exactly like a
+        # harbor failure, and falling back would run the whole review again.
+        if control:
+            control.raise_if_cancelled()
         if not (result.skipped and "bad revision" in result.skip_reason):
             return result
         # fall through to direct API on harbor HEAD failure
 
     # Fallback: direct Anthropic call
+    if control:
+        control.emit("running rubric review via the Anthropic API (no container)")
     return _run_anthropic_check(project, task_path, rubric_path, extra_refs)
 
 
@@ -228,7 +242,11 @@ def _docker_available() -> bool:
 
 
 def _run_harbor_check(
-    project: Project, task_path: Path, rubric_path: Path, extra_refs: str
+    project: Project,
+    task_path: Path,
+    rubric_path: Path,
+    extra_refs: str,
+    control: RunControl | None = None,
 ) -> RubricResult:
     """Run `harbor check`, always shipping extra_references/ into the container.
 
@@ -268,22 +286,73 @@ def _run_harbor_check(
         if api_key:
             cmd += ["--ae", f"ANTHROPIC_API_KEY={api_key}"]
 
-        proc = subprocess.run(
-            cmd,
-            cwd=REPO_ROOT,
-            capture_output=True,
-            text=True,
-            timeout=1800,
-        )
+        jobs_dir.mkdir(parents=True, exist_ok=True)
+        output = _run_streamed(cmd, jobs_dir, review_path.name, control)
 
         report_path = _latest_check_report(jobs_dir)
         if report_path is None:
             return RubricResult(
                 passed=False,
                 skipped=True,
-                skip_reason=f"harbor check failed: {proc.stderr.strip() or proc.stdout.strip()}",
+                skip_reason=f"harbor check failed: {output.strip()}",
             )
         return _parse_check_report(report_path)
+
+
+def _run_streamed(
+    cmd: list[str], jobs_dir: Path, task_name: str, control: RunControl | None
+) -> str:
+    """Run harbor check, forwarding its output and the agent's actions live.
+
+    Returns everything harbor printed, so a failure can still be reported.
+    """
+    if control is None:
+        proc = subprocess.run(
+            cmd, cwd=REPO_ROOT, capture_output=True, text=True, timeout=1800
+        )
+        return (proc.stdout or "") + (proc.stderr or "")
+
+    control.emit(f"launching harbor check for {task_name} (this builds a container)")
+    stop = threading.Event()
+    watchers = [
+        threading.Thread(
+            target=tail_trial_logs, args=(jobs_dir, control, stop), daemon=True
+        ),
+        threading.Thread(
+            target=watch_containers, args=(f"check-{task_name}", control, stop), daemon=True
+        ),
+    ]
+    for w in watchers:
+        w.start()
+
+    collected: list[str] = []
+    proc = subprocess.Popen(
+        cmd,
+        cwd=REPO_ROOT,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
+    )
+    control.register_process(proc)
+    try:
+        assert proc.stdout is not None
+        for line in proc.stdout:
+            collected.append(line)
+            text = line.strip()
+            # harbor redraws a progress bar with carriage returns; keep the
+            # last segment so the log gets one readable line, not a smear.
+            if "\r" in text:
+                text = text.split("\r")[-1].strip()
+            if text:
+                control.emit(f"  harbor: {text[:200]}")
+        proc.wait(timeout=1800)
+        control.raise_if_cancelled()
+    finally:
+        stop.set()
+        for w in watchers:
+            w.join(timeout=5)
+    return "".join(collected)
 
 
 def _latest_check_report(jobs_dir: Path) -> Path | None:

@@ -252,12 +252,14 @@ $("#task-form").addEventListener("submit", async (ev) => {
 
 /* ── runs ───────────────────────────────────────────────────────────────── */
 let pollTimer = null;
+let activeRunId = null;
 
 async function runTask(project, taskId) {
   clearInterval(pollTimer);
   $("#run-report").replaceChildren();
   $("#run-log").textContent = "";
   $("#run-status").textContent = "Queuing…";
+  setStopEnabled(false);
   const email = $("#reviewer-email").value.trim();
   try {
     const r = await api("/api/execute", {
@@ -278,8 +280,23 @@ async function runTask(project, taskId) {
   }
 }
 
+function setStopEnabled(on) {
+  $("#stop-run").disabled = !on;
+}
+
+$("#stop-run").addEventListener("click", async () => {
+  if (!activeRunId) return;
+  setStopEnabled(false);
+  try {
+    await api(`/api/runs/${activeRunId}/cancel`, { method: "POST" });
+  } catch (e) {
+    $("#run-status").append(el("span", { className: "result err" }, ` — ${e.message}`));
+  }
+});
+
 function watchRun(runId) {
   clearInterval(pollTimer);
+  activeRunId = runId;
   let offset = 0;
   const tick = async () => {
     let status;
@@ -296,10 +313,13 @@ function watchRun(runId) {
       pre.scrollTop = pre.scrollHeight;
     }
 
-    if (["passed", "failed", "error"].includes(status.state)) {
+    setStopEnabled(!["passed", "failed", "error", "cancelled"].includes(status.state));
+
+    if (["passed", "failed", "error", "cancelled"].includes(status.state)) {
       clearInterval(pollTimer);
+      setStopEnabled(false);
       loadRuns();
-      if (status.state !== "error") {
+      if (!["error", "cancelled"].includes(status.state)) {
         api(`/api/runs/${runId}/report`).then(renderReport).catch(() => {});
       }
     }

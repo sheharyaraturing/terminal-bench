@@ -13,6 +13,7 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from .progress import RunControl
 from .registry import COMMON_CHECKS_DIR, Project
 
 CHECK_SUFFIXES = (".sh", ".py")
@@ -73,11 +74,17 @@ def gather_checks(project: Project) -> list[tuple[Path, str]]:
     return common + [(p, "project") for p in project_checks]
 
 
-def run_deterministic(project: Project, task_path: Path) -> DeterministicResult:
+def run_deterministic(
+    project: Project, task_path: Path, control: RunControl | None = None
+) -> DeterministicResult:
     """Run every applicable check as `<check> <task_path>`; exit 0 means pass."""
     results: list[CheckResult] = []
+    checks = gather_checks(project)
 
-    for check_path, source in gather_checks(project):
+    for index, (check_path, source) in enumerate(checks, start=1):
+        if control:
+            control.raise_if_cancelled()
+            control.emit(f"  ({index}/{len(checks)}) {check_path.name}")
         if check_path.suffix == ".py":
             cmd = [sys.executable, str(check_path), str(task_path)]
         else:
