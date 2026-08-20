@@ -1,7 +1,7 @@
-/* Rudimentary test UI for the autoreviewer API.
-   No build step: plain DOM, fetch, and polling. */
+/* Autoreviewer UI. No build step: plain DOM, fetch, polling. */
 
 const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 const el = (tag, props = {}, ...kids) => {
   const n = Object.assign(document.createElement(tag), props);
   kids.flat().forEach((k) => n.append(k?.nodeType ? k : document.createTextNode(k ?? "")));
@@ -20,12 +20,10 @@ async function api(path, opts = {}) {
 }
 
 /* ── tabs ───────────────────────────────────────────────────────────────── */
-document.querySelectorAll(".tab").forEach((tab) =>
+$$(".tab").forEach((tab) =>
   tab.addEventListener("click", () => {
-    document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t === tab));
-    document.querySelectorAll(".tab-panel").forEach((p) =>
-      p.classList.toggle("active", p.id === `tab-${tab.dataset.tab}`)
-    );
+    $$(".tab").forEach((t) => t.classList.toggle("active", t === tab));
+    $$(".tab-panel").forEach((p) => p.classList.toggle("active", p.id === `tab-${tab.dataset.tab}`));
     if (tab.dataset.tab === "trainer") { loadTrainerProjects(); loadRuns(); syncRunListTimer(); loadDockerState(); }
   })
 );
@@ -45,9 +43,6 @@ $("#create-form").addEventListener("submit", async (ev) => {
   const out = $("#create-result");
   out.className = "result";
   out.textContent = "Creating…";
-
-  // Build the multipart body by hand: skip empty file inputs and the empty
-  // validation_mode option, which FastAPI would otherwise reject as invalid.
   const fd = new FormData();
   fd.append("name", form.name.value.trim());
   fd.append("type", form.type.value);
@@ -57,7 +52,6 @@ $("#create-form").addEventListener("submit", async (ev) => {
   if (form.rubric_file.files[0]) fd.append("rubric_file", form.rubric_file.files[0]);
   for (const f of form.checks.files) fd.append("checks", f);
   for (const f of form.extra_references.files) fd.append("extra_references", f);
-
   try {
     const p = await api("/api/projects", { method: "POST", body: fd });
     out.className = "result ok";
@@ -81,12 +75,11 @@ async function loadProjects() {
   const projects = await api("/api/projects");
   if (!projects.length) list.append(el("li", {}, el("span", { className: "muted" }, "No projects yet.")));
   for (const p of projects) {
-    const li = el("li", { className: p.name === selectedProject ? "selected" : "" },
+    list.append(el("li", { className: p.name === selectedProject ? "selected" : "" },
       el("span", { className: "name", onclick: () => showProject(p.name) }, p.name),
       badge(p.type, p.type),
       el("span", { className: "muted" }, `${p.tasks} tasks · ${p.project_checks + p.common_checks} checks`)
-    );
-    list.append(li);
+    ));
   }
 }
 
@@ -96,46 +89,26 @@ async function showProject(name) {
   const box = $("#project-detail");
   box.replaceChildren(el("p", { className: "muted" }, "Loading…"));
   const p = await api(`/api/projects/${encodeURIComponent(name)}`);
-
-  const rubricLine = p.has_rubric
-    ? `${p.rubric_path} — ${p.rubric_criteria.length} criteria`
-    : "no rubric yet";
-
+  const rubricLine = p.has_rubric ? `${p.rubric_path} — ${p.rubric_criteria.length} criteria` : "no rubric yet";
   box.replaceChildren(
     el("h3", {}, "Detail"),
     el("p", { className: "kv" }, `${p.type} · validation: ${p.validation_mode} · ${p.description || "no description"}`),
     el("p", { className: "kv" }, `Rubric: ${rubricLine}`),
-    p.rubric_criteria.length
-      ? el("ul", { className: "list" }, p.rubric_criteria.map((c) => el("li", {}, el("span", {}, c))))
-      : el("span"),
-
-    el("h3", {}, "Project checks"),
-    checksList(p),
+    p.rubric_criteria.length ? el("ul", { className: "list" }, p.rubric_criteria.map((c) => el("li", {}, el("span", {}, c)))) : el("span"),
+    el("h3", {}, "Project checks"), checksList(p),
     el("form", { id: "add-check-form" },
-      el("label", {}, "Add checks (.sh / .py)",
-        el("input", { type: "file", name: "files", multiple: true, accept: ".sh,.py" })),
-      el("button", { type: "submit", className: "ghost" }, "Upload checks")
-    ),
+      el("label", {}, "Add checks (.sh / .py)", el("input", { type: "file", name: "files", multiple: true, accept: ".sh,.py" })),
+      el("button", { type: "submit", className: "ghost" }, "Upload checks")),
     el("div", { id: "check-result", className: "result" }),
-
     p.common_check_names.length
       ? el("details", {},
           el("summary", {}, `Inherited common checks (${p.common_check_names.length})`),
           el("p", { className: "readonly" }, "From the repo-root checks/ set — read-only here. A project check with the same filename overrides one."),
-          el("ul", { className: "list" }, p.common_check_names.map((c) => el("li", {}, el("span", {}, c), badge("common", "skip"))))
-        )
+          el("ul", { className: "list" }, p.common_check_names.map((c) => el("li", {}, el("span", {}, c), badge("common", "skip")))))
       : el("p", { className: "muted" }, "This project runs only its own checks."),
-
-    el("h3", {}, "Rubric source"),
-    el("pre", { id: "rubric-src" }, p.has_rubric ? "" : "(none)")
+    el("h3", {}, "Rubric source"), el("pre", { id: "rubric-src" }, p.has_rubric ? "" : "(none)")
   );
-
-  if (p.has_rubric) {
-    api(`/api/projects/${encodeURIComponent(name)}/rubric`)
-      .then((r) => { $("#rubric-src").textContent = r.content; })
-      .catch(() => {});
-  }
-
+  if (p.has_rubric) api(`/api/projects/${encodeURIComponent(name)}/rubric`).then((r) => { $("#rubric-src").textContent = r.content; }).catch(() => {});
   $("#add-check-form").addEventListener("submit", async (ev) => {
     ev.preventDefault();
     const input = ev.target.querySelector("input[type=file]");
@@ -145,35 +118,25 @@ async function showProject(name) {
     const out = $("#check-result");
     try {
       const r = await api(`/api/projects/${encodeURIComponent(name)}/checks`, { method: "POST", body: fd });
-      out.className = "result ok";
-      out.textContent = `Uploaded: ${r.written.join(", ")}`;
+      out.className = "result ok"; out.textContent = `Uploaded: ${r.written.join(", ")}`;
       await showProject(name);
-    } catch (e) {
-      out.className = "result err";
-      out.textContent = `Error: ${e.message}`;
-    }
+    } catch (e) { out.className = "result err"; out.textContent = `Error: ${e.message}`; }
   });
 }
 
 function checksList(p) {
-  if (!p.project_check_names.length) {
-    return el("p", { className: "muted" }, "No project-specific checks uploaded.");
-  }
+  if (!p.project_check_names.length) return el("p", { className: "muted" }, "No project-specific checks uploaded.");
   return el("ul", { className: "list" }, p.project_check_names.map((c) =>
     el("li", {}, el("span", {}, c),
-      el("button", {
-        className: "ghost tiny",
-        onclick: async () => {
-          await api(`/api/projects/${encodeURIComponent(p.name)}/checks/${encodeURIComponent(c)}`, { method: "DELETE" });
-          showProject(p.name);
-        },
-      }, "Delete"))
+      el("button", { className: "ghost tiny", onclick: async () => {
+        await api(`/api/projects/${encodeURIComponent(p.name)}/checks/${encodeURIComponent(c)}`, { method: "DELETE" });
+        showProject(p.name);
+      }}, "Delete"))
   ));
 }
-
 $("#refresh-projects").addEventListener("click", loadProjects);
 
-/* ── trainer ────────────────────────────────────────────────────────────── */
+/* ── trainer: projects + tasks ──────────────────────────────────────────── */
 let trainerProjects = [];
 
 async function loadTrainerProjects() {
@@ -182,22 +145,22 @@ async function loadTrainerProjects() {
   const previous = sel.value;
   sel.replaceChildren(...trainerProjects.map((p) => el("option", { value: p.name }, `${p.name} (${p.type})`)));
   if (trainerProjects.some((p) => p.name === previous)) sel.value = previous;
+  const fsel = $("#run-filter-project");
+  const fprev = fsel.value;
+  fsel.replaceChildren(el("option", { value: "" }, "all projects"), ...trainerProjects.map((p) => el("option", { value: p.name }, p.name)));
+  if (trainerProjects.some((p) => p.name === fprev)) fsel.value = fprev;
   syncTrainerHint();
   await loadTasks();
 }
 
-function currentProject() {
-  return trainerProjects.find((p) => p.name === $("#trainer-project").value);
-}
-
+function currentProject() { return trainerProjects.find((p) => p.name === $("#trainer-project").value); }
 function syncTrainerHint() {
   const p = currentProject();
   $("#trainer-hint").textContent = p
     ? `${p.type} · ${p.project_checks} project check(s) + ${p.common_checks} common · rubric ${p.has_rubric ? "present" : "MISSING"}`
     : "No projects yet — create one in the Delivery Manager tab.";
 }
-
-$("#trainer-project").addEventListener("change", () => { syncTrainerHint(); loadTasks(); loadRuns(); });
+$("#trainer-project").addEventListener("change", () => { syncTrainerHint(); loadTasks(); });
 
 async function loadTasks() {
   const list = $("#task-list");
@@ -205,22 +168,16 @@ async function loadTasks() {
   const p = currentProject();
   if (!p) return;
   const { tasks } = await api(`/api/projects/${encodeURIComponent(p.name)}/tasks`);
-  if (!tasks.length) {
-    list.append(el("li", {}, el("span", { className: "muted" }, "No tasks uploaded yet.")));
-    return;
-  }
+  if (!tasks.length) { list.append(el("li", {}, el("span", { className: "muted" }, "No tasks uploaded yet."))); return; }
   for (const t of tasks) {
     list.append(el("li", {},
       el("span", { className: "name", title: t }, t),
       el("button", { className: "primary tiny", onclick: () => runTask(p.name, t) }, "Run review"),
-      el("button", {
-        className: "ghost tiny",
-        onclick: async () => {
-          if (!confirm(`Delete task ${t}? This removes it from disk.`)) return;
-          await api(`/api/projects/${encodeURIComponent(p.name)}/tasks/${encodeURIComponent(t)}`, { method: "DELETE" });
-          loadTasks();
-        },
-      }, "Delete")
+      el("button", { className: "ghost tiny", onclick: async () => {
+        if (!confirm(`Delete task ${t}? This removes it from disk.`)) return;
+        await api(`/api/projects/${encodeURIComponent(p.name)}/tasks/${encodeURIComponent(t)}`, { method: "DELETE" });
+        loadTasks();
+      }}, "Delete")
     ));
   }
 }
@@ -236,100 +193,92 @@ $("#task-form").addEventListener("submit", async (ev) => {
   fd.append("file", file);
   const tid = ev.target.task_id.value.trim();
   if (tid) fd.append("task_id", tid);
-  out.className = "result";
-  out.textContent = "Uploading…";
+  out.className = "result"; out.textContent = "Uploading…";
   try {
     const r = await api(`/api/projects/${encodeURIComponent(p.name)}/tasks`, { method: "POST", body: fd });
     out.className = "result ok";
     out.textContent = `Uploaded ${r.task_id} (${r.kind})${r.contents ? ` — ${r.contents.join(", ")}` : ""}`;
     ev.target.reset();
     await loadTasks();
-  } catch (e) {
-    out.className = "result err";
-    out.textContent = `Error: ${e.message}`;
-  }
+  } catch (e) { out.className = "result err"; out.textContent = `Error: ${e.message}`; }
 });
 
-/* ── runs ───────────────────────────────────────────────────────────────── */
+/* ── runs table + run detail ─────────────────────────────────────────────── */
 let pollTimer = null;
 let activeRunId = null;
 let runListTimer = null;
+let lastReport = null;
+let lastStatus = null;
+let logOffset = 0;
 
 const TERMINAL = ["passed", "failed", "error", "cancelled"];
 const isActive = (state) => !TERMINAL.includes(state);
 
 async function runTask(project, taskId) {
-  clearInterval(pollTimer);
-  $("#run-report").replaceChildren();
-  $("#run-log").textContent = "";
-  $("#run-status").textContent = "Queuing…";
-  setStopEnabled(false);
   const email = $("#reviewer-email").value.trim();
   try {
     const r = await api("/api/execute", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         project_name: project,
-        project_type: currentProject()?.type,
-        reviewer_email: email || null,
-        is_gcs: false,
-        data: { task_id: taskId },
+        project_type: trainerProjects.find((p) => p.name === project)?.type,
+        reviewer_email: email || null, is_gcs: false, data: { task_id: taskId },
       }),
     });
     watchRun(r.run_id);
     loadRuns();
   } catch (e) {
+    $("#run-detail").hidden = false;
     $("#run-status").replaceChildren(el("span", { className: "result err" }, `Error: ${e.message}`));
   }
 }
 
-function setStopEnabled(on) {
-  $("#stop-run").disabled = !on;
-}
+function setStopEnabled(on) { $("#stop-run").disabled = !on; }
 
 $("#stop-run").addEventListener("click", async () => {
   if (!activeRunId) return;
   setStopEnabled(false);
-  try {
-    await api(`/api/runs/${activeRunId}/cancel`, { method: "POST" });
-  } catch (e) {
-    $("#run-status").append(el("span", { className: "result err" }, ` — ${e.message}`));
-  }
+  try { await api(`/api/runs/${activeRunId}/cancel`, { method: "POST" }); }
+  catch (e) { $("#run-status").append(el("span", { className: "result err" }, ` — ${e.message}`)); }
+});
+
+$("#close-run").addEventListener("click", () => {
+  clearInterval(pollTimer);
+  activeRunId = null;
+  $("#run-detail").hidden = true;
+  $$("#runs-tbody tr").forEach((r) => r.classList.remove("selected"));
 });
 
 function watchRun(runId) {
   clearInterval(pollTimer);
   activeRunId = runId;
-  let offset = 0;
+  $("#run-detail").hidden = false;
+  $("#run-log").textContent = "";
+  lastReport = null;
+  logOffset = 0;
   const tick = async () => {
     let status;
-    try {
-      status = await api(`/api/runs/${runId}`);
-    } catch { clearInterval(pollTimer); return; }
+    try { status = await api(`/api/runs/${runId}`); }
+    catch { clearInterval(pollTimer); return; }
     renderStatus(status);
-
-    const chunk = await api(`/api/runs/${runId}/log?offset=${offset}`).catch(() => null);
+    const chunk = await api(`/api/runs/${runId}/log?offset=${logOffset}`).catch(() => null);
     if (chunk && chunk.text) {
-      offset = chunk.offset;
+      logOffset = chunk.offset;
       const pre = $("#run-log");
       pre.textContent += chunk.text;
       pre.scrollTop = pre.scrollHeight;
     }
-
     setStopEnabled(isActive(status.state));
-
     if (!isActive(status.state)) {
       clearInterval(pollTimer);
       setStopEnabled(false);
       loadRuns();
-      if (!["error", "cancelled"].includes(status.state)) {
-        api(`/api/runs/${runId}/report`).then(renderReport).catch(() => {});
-      }
+      api(`/api/runs/${runId}/report`).then((rep) => { lastReport = rep; renderReport(rep); }).catch(() => {});
     }
   };
   tick();
   pollTimer = setInterval(tick, 2000);
+  loadRuns();
 }
 
 function elapsedOf(s) {
@@ -341,97 +290,81 @@ function elapsedOf(s) {
   return m ? `${m}m ${secs % 60}s` : `${secs}s`;
 }
 
-function renderStatus(s) {
-  const running = isActive(s.state);
-  $("#run-status").replaceChildren(
-    running ? el("span", { className: "spin" }, "◐") : el("span", {}, ""),
-    el("strong", {}, ` ${s.project} / ${s.task_id} `),
-    badge(s.state, s.state),
-    el("span", { className: "muted elapsed" }, ` ${elapsedOf(s)}`),
-    el("span", { className: "muted" }, ` · run ${s.run_id.slice(0, 8)}${s.reviewer_email ? ` · ${s.reviewer_email}` : ""}`)
-  );
-  $("#run-legs").replaceChildren(
-    ...["deterministic", "rubric", "validation"].map((k) =>
-      el("div", { className: "leg" },
-        el("div", { className: "leg-name" }, k, " ", badge(s.legs[k].state, s.legs[k].state)),
-        el("div", { className: "leg-summary" }, s.legs[k].summary || "")
-      )
-    )
-  );
+function timeShort(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return d.toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
-function renderReport(rep) {
-  const box = $("#run-report");
-  const det = rep.deterministic;
-  const common = det.checks.filter((c) => c.source === "common");
-  const specific = det.checks.filter((c) => c.source !== "common");
-
-  const checkTable = (rows, title) =>
-    rows.length
-      ? el("div", {},
-          el("h3", {}, title),
-          el("table", {},
-            el("tr", {}, el("th", {}, "Check"), el("th", {}, "Result"), el("th", {}, "Output")),
-            ...rows.map((c) =>
-              el("tr", {},
-                el("td", {}, c.name),
-                el("td", {}, badge(c.passed ? "pass" : "fail")),
-                el("td", { className: "out" }, (c.output || "").slice(0, 400))
-              )
-            )
-          ))
-      : el("span");
-
-  box.replaceChildren(
-    el("div", { className: `banner ${rep.passed ? "pass" : "fail"}` }, rep.passed ? "PASS" : "FAIL"),
-    checkTable(specific, `Project checks (${specific.length})`),
-    checkTable(common, `Common checks (${common.length})`),
-    el("h3", {}, "Rubric"),
-    rep.rubric.skipped
-      ? el("p", { className: "muted" }, `skipped — ${rep.rubric.skip_reason}`)
-      : el("table", {},
-          el("tr", {}, el("th", {}, "Criterion"), el("th", {}, "Verdict"), el("th", {}, "Reason")),
-          ...rep.rubric.verdicts.map((v) =>
-            el("tr", {},
-              el("td", {}, v.name),
-              el("td", {}, badge(v.verdict)),
-              el("td", { className: "out" }, v.reason || "")
-            )
-          )
-        ),
-    el("h3", {}, "Validation"),
-    el("p", { className: "kv" },
-      rep.validation.skipped
-        ? `skipped — ${rep.validation.skip_reason}`
-        : `oracle=${rep.validation.oracle_reward} nop=${rep.validation.nop_reward} — ${rep.validation.details}`)
-  );
+function legDot(state) {
+  const map = { passed: "✓", failed: "✗", skipped: "–", running: "◐", pending: "·", interrupted: "!", cancelled: "⊘", error: "✗" };
+  return el("span", { className: `legdot ${state}`, title: state }, map[state] ?? "·");
 }
+
+/* filter state */
+const filters = { state: "", project: "", q: "" };
+$("#run-filter-state").addEventListener("change", (e) => { filters.state = e.target.value; loadRuns(); });
+$("#run-filter-project").addEventListener("change", (e) => { filters.project = e.target.value; loadRuns(); });
+let searchTimer = null;
+$("#run-search").addEventListener("input", (e) => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => { filters.q = e.target.value.trim().toLowerCase(); loadRuns(); }, 150);
+});
+$("#runs-refresh").addEventListener("click", loadRuns);
 
 async function loadRuns() {
-  const p = currentProject();
-  const runs = await api(`/api/runs?limit=15${p ? `&project=${encodeURIComponent(p.name)}` : ""}`).catch(() => []);
-  const list = $("#run-list");
-  list.replaceChildren();
-  if (!runs.length) { list.append(el("li", {}, el("span", { className: "muted" }, "No runs yet."))); return; }
-  for (const r of runs) {
-    const row = el("li", { className: r.run_id === activeRunId ? "selected" : "" },
-      el("span", { className: "name", onclick: () => watchRun(r.run_id) }, r.task_id),
-      badge(r.state, r.state),
-      el("span", { className: "muted elapsed" }, elapsedOf(r))
-    );
-    // Any in-flight run can be stopped from here, not just the one on screen.
-    if (isActive(r.state)) {
-      row.append(el("button", {
-        className: "danger tiny",
-        onclick: async (ev) => {
-          ev.stopPropagation();
-          ev.target.disabled = true;
-          try { await api(`/api/runs/${r.run_id}/cancel`, { method: "POST" }); } catch {}
-          loadRuns();
-        },
-      }, "Stop"));
+  const limit = 200;
+  const runs = await api(`/api/runs?limit=${limit}`).catch(() => []);
+  const tbody = $("#runs-tbody");
+  tbody.replaceChildren();
+  if (!runs.length) {
+    tbody.append(el("tr", {}, el("td", { colSpan: 9, className: "muted empty" }, "No runs yet.")));
+    return;
+  }
+  const filtered = runs.filter((r) => {
+    if (filters.state && r.state !== filters.state) return false;
+    if (filters.project && r.project !== filters.project) return false;
+    if (filters.q) {
+      const hay = `${r.task_id || ""} ${r.run_id || ""} ${r.project || ""}`.toLowerCase();
+      if (!hay.includes(filters.q)) return false;
     }
-    list.append(row);
+    return true;
+  });
+  if (!filtered.length) {
+    const hidden = runs.length;
+    const hasFilter = filters.state || filters.project || filters.q;
+    const cell = el("td", { colSpan: 9, className: "muted empty" });
+    if (hasFilter) {
+      cell.append(
+        `${hidden} run(s) hidden by filter. `,
+        el("a", { href: "#", onclick: (ev) => { ev.preventDefault(); filters.state = ""; filters.project = ""; filters.q = ""; $("#run-filter-state").value = ""; $("#run-filter-project").value = ""; $("#run-search").value = ""; loadRuns(); } }, "Clear filters")
+      );
+    } else {
+      cell.textContent = "No runs yet.";
+    }
+    tbody.append(el("tr", {}, cell));
+    return;
+  }
+  for (const r of filtered) {
+    const legs = r.legs || {};
+    const row = el("tr", { className: r.run_id === activeRunId ? "selected" : "", onclick: () => watchRun(r.run_id) },
+      el("td", { className: "col-task" }, el("span", { className: "name", title: r.task_id }, r.task_id)),
+      el("td", { className: "col-project muted" }, r.project || ""),
+      el("td", {}, badge(r.state, r.state)),
+      el("td", { className: "leg-cell" }, legDot(legs.deterministic?.state)),
+      el("td", { className: "leg-cell" }, legDot(legs.rubric?.state)),
+      el("td", { className: "leg-cell" }, legDot(legs.validation?.state)),
+      el("td", { className: "col-elapsed elapsed" }, elapsedOf(r)),
+      el("td", { className: "col-created muted" }, timeShort(r.created_at)),
+      el("td", { className: "col-actions" }, isActive(r.state)
+        ? el("button", { className: "danger tiny", onclick: async (ev) => {
+            ev.stopPropagation();
+            try { await api(`/api/runs/${r.run_id}/cancel`, { method: "POST" }); } catch {}
+            loadRuns();
+          }}, "Stop")
+        : el("span", { className: "muted tiny" }, r.run_id.slice(0, 8)))
+      );
+    tbody.append(row);
   }
 }
 
@@ -440,6 +373,125 @@ function syncRunListTimer() {
   if ($("#auto-refresh").checked) runListTimer = setInterval(loadRuns, 5000);
 }
 $("#auto-refresh").addEventListener("change", syncRunListTimer);
+
+/* subtabs */
+$$("#detail-tabs .subtab").forEach((b) =>
+  b.addEventListener("click", () => {
+    $$("#detail-tabs .subtab").forEach((x) => x.classList.toggle("active", x === b));
+    $$(".subpanel").forEach((p) => { p.hidden = p.id !== `dtab-${b.dataset.dtab}`; });
+  })
+);
+
+function renderStatus(s) {
+  lastStatus = s;
+  const running = isActive(s.state);
+  $("#run-status").replaceChildren(
+    running ? el("span", { className: "spin" }, "◐") : el("span", {}, ""),
+    el("strong", {}, ` ${s.project} / ${s.task_id} `),
+    badge(s.state, s.state),
+    el("span", { className: "muted elapsed" }, ` ${elapsedOf(s)}`),
+    el("span", { className: "muted" }, ` · run ${s.run_id.slice(0, 8)}${s.reviewer_email ? ` · ${s.reviewer_email}` : ""}`)
+  );
+  renderOverview();
+  renderHarborPanel(s);
+}
+
+function renderOverview() {
+  const s = lastStatus;
+  if (!s) return;
+  const box = $("#dtab-overview");
+  const kids = [];
+  if (lastReport) kids.push(el("div", { className: `banner ${lastReport.passed ? "pass" : "fail"}` }, lastReport.passed ? "PASS" : "FAIL"));
+  kids.push(el("div", { className: "legs" },
+    ...["deterministic", "rubric", "validation"].map((k) =>
+      el("div", { className: "leg" },
+        el("div", { className: "leg-name" }, k, " ", badge(s.legs[k].state, s.legs[k].state)),
+        el("div", { className: "leg-summary" }, s.legs[k].summary || "")
+      ))
+  ));
+  box.replaceChildren(...kids);
+}
+
+function renderReport(rep) {
+  lastReport = rep;
+  renderOverview();
+
+  const det = rep.deterministic;
+  const common = (det?.checks || []).filter((c) => c.source === "common");
+  const specific = (det?.checks || []).filter((c) => c.source !== "common");
+
+  const checkTable = (rows, title) => {
+    const wrap = el("div", {});
+    wrap.append(el("h3", {}, `${title} (${rows.length})`));
+    if (!rows.length) { wrap.append(el("p", { className: "muted" }, "none")); return wrap; }
+    const failOnly = el("input", { type: "checkbox" });
+    const tbody = el("tbody", {});
+    const fill = () => {
+      tbody.replaceChildren();
+      for (const c of rows) {
+        if (failOnly.checked && c.passed) continue;
+        tbody.append(el("tr", { className: c.passed ? "row-pass" : "row-fail" },
+          el("td", {}, c.name),
+          el("td", {}, badge(c.passed ? "pass" : "fail")),
+          el("td", { className: "out" }, (c.output || "").slice(0, 500))
+        ));
+      }
+    };
+    failOnly.addEventListener("change", fill);
+    wrap.append(el("label", { className: "inline-toggle" }, failOnly, " failures only"));
+    wrap.append(el("table", {},
+      el("thead", {}, el("tr", {}, el("th", {}, "Check"), el("th", {}, "Result"), el("th", {}, "Output"))),
+      tbody));
+    fill();
+    return wrap;
+  };
+
+  const checksBox = $("#dtab-checks");
+  checksBox.replaceChildren(checkTable(specific, "Project checks"), checkTable(common, "Common checks"));
+
+  const rubBox = $("#dtab-rubric");
+  if (rep.rubric?.skipped) {
+    rubBox.replaceChildren(el("p", { className: "muted" }, `skipped — ${rep.rubric.skip_reason}`));
+  } else {
+    rubBox.replaceChildren(el("table", {},
+      el("thead", {}, el("tr", {}, el("th", {}, "Criterion"), el("th", {}, "Verdict"), el("th", {}, "Reason"))),
+      el("tbody", {}, ...(rep.rubric?.verdicts || []).map((v) =>
+        el("tr", { className: v.verdict === "pass" ? "row-pass" : "row-fail" },
+          el("td", {}, v.name), el("td", {}, badge(v.verdict)), el("td", { className: "out" }, v.reason || ""))))
+    ));
+  }
+
+  const valBox = $("#dtab-validation");
+  if (rep.validation?.skipped) {
+    valBox.replaceChildren(el("p", { className: "muted" }, `skipped — ${rep.validation.skip_reason}`));
+  } else {
+    const v = rep.validation || {};
+    valBox.replaceChildren(
+      el("table", {},
+        el("tr", {}, el("th", {}, "oracle reward"), el("td", {}, String(v.oracle_reward ?? ""))),
+        el("tr", {}, el("th", {}, "nop reward"), el("td", {}, String(v.nop_reward ?? ""))),
+        el("tr", {}, el("th", {}, "details"), el("td", { className: "out" }, v.details || ""))
+      )
+    );
+  }
+}
+
+function renderHarborPanel(s) {
+  const box = $("#dtab-harbor");
+  const jobsPath = s.harbor_jobs;
+  if (!jobsPath) {
+    box.replaceChildren(el("p", { className: "muted" }, "No Harbor job artifacts persisted for this run."));
+    return;
+  }
+  const cmd = `harbor view --jobs ${jobsPath}`;
+  box.replaceChildren(
+    el("p", {}, el("strong", {}, "Harbor jobs"), el("span", { className: "muted" }, " — persisted oracle/nop/check job trees")),
+    el("p", { className: "kv" }, "Path: ", el("code", {}, jobsPath)),
+    el("p", {}, "View in Harbor:"),
+    el("pre", { className: "copyable", onclick: (e) => { navigator.clipboard?.writeText(cmd); e.target.classList.add("copied"); } }, cmd),
+    el("p", { className: "muted" }, "Click the command to copy. Or merge all runs: ./view-runs.sh")
+  );
+}
 
 /* ── docker housekeeping ────────────────────────────────────────────────── */
 async function loadDockerState() {
@@ -450,32 +502,23 @@ async function loadDockerState() {
     const running = d.containers.filter((c) => c.running);
     const stopped = d.containers.filter((c) => !c.running);
     box.replaceChildren(
-      el("div", {}, `${running.length} review container(s) running, ${stopped.length} stopped, ${d.networks.length} network(s).`),
-      running.length
-        ? el("div", { className: "muted" }, `running: ${running.map((c) => c.name).join(", ")}`)
-        : el("span"),
-      el("div", { className: "muted" }, d.reclaimable ? `${d.reclaimable} item(s) can be cleaned up.` : "Nothing to clean up.")
+      el("div", {}, `${running.length} running, ${stopped.length} stopped, ${d.networks.length} network(s).`),
+      running.length ? el("div", { className: "muted" }, `running: ${running.map((c) => c.name).join(", ")}`) : el("span"),
+      el("div", { className: "muted" }, d.reclaimable ? `${d.reclaimable} item(s) reclaimable.` : "Nothing to clean up.")
     );
-  } catch (e) {
-    box.className = "result err";
-    box.textContent = `Error: ${e.message}`;
-  }
+  } catch (e) { box.className = "result err"; box.textContent = `Error: ${e.message}`; }
 }
 $("#docker-refresh").addEventListener("click", loadDockerState);
 $("#docker-cleanup").addEventListener("click", async () => {
   const out = $("#docker-result");
-  out.className = "result";
-  out.textContent = "Cleaning…";
+  out.className = "result"; out.textContent = "Cleaning…";
   try {
     const r = await api("/api/maintenance/docker/cleanup", { method: "POST" });
     out.className = "result ok";
     out.textContent = r.removed.length ? `Removed: ${r.removed.join(", ")}` : "Nothing to remove.";
-    if (r.skipped.length) out.textContent += ` — left alone: ${r.skipped.join(", ")}`;
+    if (r.skipped.length) out.textContent += ` — left: ${r.skipped.join(", ")}`;
     loadDockerState();
-  } catch (e) {
-    out.className = "result err";
-    out.textContent = `Error: ${e.message}`;
-  }
+  } catch (e) { out.className = "result err"; out.textContent = `Error: ${e.message}`; }
 });
 
 /* ── boot ───────────────────────────────────────────────────────────────── */

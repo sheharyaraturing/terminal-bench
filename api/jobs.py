@@ -88,6 +88,12 @@ def _execute(run_id: str, project_name: str, task_id: str) -> None:
         log(f"project: {project.name} ({project.type})")
         log(f"task:    {task_id} -> {task_path}")
 
+        # Harbor job trees (check / oracle / nop) land here so
+        # `harbor view --jobs runs/<run_id>/harbor` works after the run.
+        harbor_dir = store.run_dir(run_id) / "harbor"
+        harbor_dir.mkdir(parents=True, exist_ok=True)
+        store.update_status(run_id, harbor_jobs=str(harbor_dir))
+
         # --- 1/3 deterministic ---
         store.set_leg(run_id, "deterministic", "running")
         log("[1/3] deterministic checks")
@@ -107,7 +113,7 @@ def _execute(run_id: str, project_name: str, task_id: str) -> None:
         # --- 2/3 rubric ---
         store.set_leg(run_id, "rubric", "running")
         log("[2/3] LLM rubric review")
-        rub = run_rubric(project, task_path, control)
+        rub = run_rubric(project, task_path, control, jobs_dir=harbor_dir)
         if rub.skipped:
             log(f"  skipped: {rub.skip_reason}")
             store.set_leg(run_id, "rubric", "skipped", rub.skip_reason)
@@ -125,7 +131,7 @@ def _execute(run_id: str, project_name: str, task_id: str) -> None:
         # --- 3/3 validation ---
         store.set_leg(run_id, "validation", "running")
         log("[3/3] validation")
-        val = run_validation(project, task_path, control)
+        val = run_validation(project, task_path, control, jobs_dir=harbor_dir)
         if val.skipped:
             log(f"  skipped: {val.skip_reason}")
             store.set_leg(run_id, "validation", "skipped", val.skip_reason)
@@ -134,6 +140,9 @@ def _execute(run_id: str, project_name: str, task_id: str) -> None:
             store.set_leg(
                 run_id, "validation", "passed" if val.passed else "failed", val.details
             )
+
+        log(f"harbor jobs: {harbor_dir}")
+        log(f"view with: harbor view --jobs {harbor_dir}")
 
         report = compile_report(project.name, task_id, det, rub, val)
         store.write_report(run_id, report.to_json() + "\n")

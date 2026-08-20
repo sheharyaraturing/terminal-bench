@@ -164,6 +164,13 @@ def main(argv: list[str] | None = None) -> int:
     # Live progress: every leg reports what it is doing as it happens.
     control = RunControl(on_progress=lambda msg: print(msg, flush=True))
 
+    # Persist Harbor job trees under runs/<uuid>/harbor so
+    # `harbor view --jobs …` works after the CLI run finishes.
+    run_id = str(uuid.uuid4())
+    harbor_dir = REPO_ROOT / "runs" / run_id / "harbor"
+    harbor_dir.mkdir(parents=True, exist_ok=True)
+    print(f"harbor:  {harbor_dir}")
+
     print("\n[1/3] deterministic checks")
     det = run_deterministic(project, task_path, control)
     for c in det.checks:
@@ -174,7 +181,7 @@ def main(argv: list[str] | None = None) -> int:
 
     print("\n[2/3] LLM rubric review")
     try:
-        rub = run_rubric(project, task_path, control)
+        rub = run_rubric(project, task_path, control, jobs_dir=harbor_dir)
     except KeyboardInterrupt:
         print("\ninterrupted — stopping the review and its containers...")
         control.cancel()
@@ -186,7 +193,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"  {v.verdict.upper()}  {v.name}: {v.reason}")
 
     print("\n[3/3] validation")
-    val = run_validation(project, task_path, control)
+    val = run_validation(project, task_path, control, jobs_dir=harbor_dir)
     if val.skipped:
         print(f"  skipped: {val.skip_reason}")
     else:
@@ -197,7 +204,7 @@ def main(argv: list[str] | None = None) -> int:
     # Always write to reports/<task_id>_<uuid>.json
     reports_dir = REPO_ROOT / "reports"
     reports_dir.mkdir(exist_ok=True)
-    auto_path = reports_dir / f"{args.taskid}_{uuid.uuid4().hex[:8]}.json"
+    auto_path = reports_dir / f"{args.taskid}_{run_id[:8]}.json"
     report.write(auto_path)
     print(f"\nreport written to {auto_path}")
 
@@ -206,6 +213,8 @@ def main(argv: list[str] | None = None) -> int:
         report.write(args.output)
         print(f"report also written to {args.output}")
 
+    print(f"\nharbor jobs: {harbor_dir}")
+    print(f"view with:  harbor view --jobs {harbor_dir}")
     print(f"\noverall: {'PASS' if report.passed else 'FAIL'}")
     return 0 if report.passed else 1
 

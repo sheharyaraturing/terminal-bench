@@ -107,3 +107,64 @@ td.out { color: var(--muted); font-family: ui-monospace, Menlo, monospace; font-
 .kv { font-size: 12.5px; color: var(--muted); }
 details summary { cursor: pointer; font-weight: 600; font-size: 13px; margin: 12px 0 6px; }
 .readonly { color: var(--muted); font-size: 12px; }
+
+/* ── trainer: collapse cards ─────────────────────────────────────────────── */
+.collapse > summary { font-size: 14px; font-weight: 600; }
+.cols-narrow { grid-template-columns: 1fr 1fr; gap: 24px; }
+
+/* ── filter bar ──────────────────────────────────────────────────────────── */
+.filter-bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 12px 16px; }
+.filter-bar input[type=search] { width: 240px; margin: 0; }
+.filter-bar select { width: auto; margin: 0; }
+.filter-bar .inline-toggle { margin: 0; }
+
+/* ── runs table ──────────────────────────────────────────────────────────── */
+#runs-table { table-layout: fixed; font-size: 12.5px; }
+#runs-table th, #runs-table td { padding: 6px 8px; }
+#runs-table thead .col-task { width: 26%; }
+#runs-table .col-project { width: 14%; }
+#runs-table .col-state { width: 9%; }
+#runs-table .leg-h { font-size: 10px; text-align: center; width: 3.5%; padding: 0 2px; }
+#runs-table .col-elapsed { width: 8%; }
+#runs-table .col-created { width: 12%; }
+#runs-table .col-actions { width: 10%; text-align: right; }
+#runs-table .subhead th { border-bottom: 1px solid var(--line); padding-top: 0; }
+#runs-tbody tr { cursor: pointer; }
+#runs-tbody tr:hover { background: #f3f6ff; }
+#runs-tbody tr.selected { box-shadow: inset 3px 0 0 var(--accent); background: #eef3ff; }
+#runs-tbody td.col-task .name { font-weight: 600; }
+#runs-tbody td.empty { text-align: center; padding: 18px; }
+.leg-cell { text-align: center; }
+.legdot {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px; border-radius: 50%; font-size: 11px; font-weight: 700;
+  border: 1px solid currentColor;
+}
+.legdot.passed { color: var(--pass); }
+.legdot.failed, .legdot.error { color: var(--fail); }
+.legdot.skipped, .legdot.pending { color: var(--skip); }
+.legdot.running { color: var(--accent); }
+.legdot.interrupted, .legdot.cancelled { color: var(--nonharbor); }
+
+/* ── run detail ─────────────────────────────────────────────────────────── */
+.run-detail { margin-top: 16px; }
+.run-detail-head { display: flex; align-items: center; gap: 12px; justify-content: space-between; margin-bottom: 10px; }
+.run-detail-head #run-status { flex: 1; min-width: 0; }
+.run-detail-actions { display: flex; gap: 8px; }
+.subtabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 14px; }
+.subtab {
+  background: none; border: 1px solid transparent; border-bottom: none; border-radius: 6px 6px 0 0;
+  padding: 7px 14px; cursor: pointer; font: inherit; color: var(--muted);
+}
+.subtab.active { background: var(--bg); border-color: var(--line); color: var(--ink); font-weight: 600; }
+.subpanel { min-height: 60px; }
+
+/* checks tab */
+.filter-row { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
+tr.row-pass td:first-child { border-left: 3px solid var(--pass); }
+tr.row-fail td:first-child { border-left: 3px solid var(--fail); }
+
+/* harbor tab */
+.copyable { cursor: pointer; user-select: all; }
+.copyable.copied::after { content: "  ✓ copied"; color: var(--pass); }
+code { background: var(--bg); padding: 1px 5px; border-radius: 4px; font-size: 12px; }
