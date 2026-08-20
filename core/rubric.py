@@ -33,6 +33,8 @@ class RubricResult:
     raw_path: Path | None = None
     skipped: bool = False
     skip_reason: str = ""
+    # Durable Harbor jobs directory (check/), when persistence was requested.
+    jobs_dir: Path | None = None
 
 
 # Budget for the reference blob. Delivery managers drop whole spec documents in
@@ -180,13 +182,19 @@ def _stage_task_with_references(project: Project, task_path: Path, staging_root:
 
 
 def run_rubric(
-    project: Project, task_path: Path, control: RunControl | None = None
+    project: Project,
+    task_path: Path,
+    control: RunControl | None = None,
+    jobs_dir: Path | None = None,
 ) -> RubricResult:
     """Run the LLM rubric review for a task.
 
     Prefers `harbor check` when available; falls back to a local Anthropic
     review that mirrors checks/rubric_review.py but accepts a project rubric
     and extra_references context.
+
+    When ``jobs_dir`` is set, Harbor check jobs are kept under
+    ``jobs_dir/check/`` so ``harbor view --jobs <jobs_dir>`` works.
     """
     rubric_path = project.rubric_path
     if not rubric_path.is_file():
@@ -200,7 +208,9 @@ def run_rubric(
 
     # harbor check only supports Harbor-format task directories and needs Docker
     if project.type == "harbor" and _harbor_available() and _docker_available():
-        result = _run_harbor_check(project, task_path, rubric_path, extra_refs, control)
+        result = _run_harbor_check(
+            project, task_path, rubric_path, extra_refs, control, jobs_dir=jobs_dir
+        )
         # A cancelled run must stop here: killing harbor looks exactly like a
         # harbor failure, and falling back would run the whole review again.
         if control:
@@ -247,6 +257,7 @@ def _run_harbor_check(
     rubric_path: Path,
     extra_refs: str,
     control: RunControl | None = None,
+    jobs_dir: Path | None = None,
 ) -> RubricResult:
     """Run `harbor check`, always shipping extra_references/ into the container.
 
@@ -254,6 +265,9 @@ def _run_harbor_check(
     handed to harbor separately: harbor copies whatever directory it is given
     into the sandbox, so that copy is the only place a file can be added and be
     guaranteed to arrive.
+
+    Harbor's ``-o`` jobs dir is durable when ``jobs_dir`` is passed
+    (written under ``jobs_dir/check/``); otherwise it is a temp dir.
     """
     with tempfile.TemporaryDirectory() as tmp:
         review_path = task_path
@@ -268,8 +282,15 @@ def _run_harbor_check(
                 cmd_extra = ["-p", str(CHECK_PROMPT_PATH)]
 
         # -o is harbor's --jobs-dir: a directory it fills with
-        # <timestamp>/check_report.json, not a file it writes verdicts to.
-        jobs_dir = Path(tmp) / "jobs"
+        # <timestamp>/check_report.json. Jobs must land *directly* in jobs_dir
+        # (not jobs_dir/check/) so `harbor view --jobs <jobs_dir>` lists them.
+        if jobs_dir is not None:
+            harbor_jobs = jobs_dir
+            harbor_jobs.mkdir(parents=True, exist_ok=True)
+        else:
+            harbor_jobs = Path(tmp) / "jobs"
+            harbor_jobs.mkdir(parents=True, exist_ok=True)
+
         cmd = [
             "harbor",
             "check",
@@ -277,7 +298,7 @@ def _run_harbor_check(
             "-r",
             str(rubric_path),
             "-o",
-            str(jobs_dir),
+            str(harbor_jobs),
             *cmd_extra,
         ]
         # The evaluator agent runs inside the container and has no credentials
@@ -286,17 +307,21 @@ def _run_harbor_check(
         if api_key:
             cmd += ["--ae", f"ANTHROPIC_API_KEY={api_key}"]
 
-        jobs_dir.mkdir(parents=True, exist_ok=True)
-        output = _run_streamed(cmd, jobs_dir, review_path.name, control)
+        output = _run_streamed(cmd, harbor_jobs, review_path.name, control)
 
-        report_path = _latest_check_report(jobs_dir)
+        report_path = _latest_check_report(harbor_jobs)
         if report_path is None:
             return RubricResult(
                 passed=False,
                 skipped=True,
                 skip_reason=f"harbor check failed: {output.strip()}",
+                jobs_dir=jobs_dir,
             )
-        return _parse_check_report(report_path)
+        result = _parse_check_report(report_path)
+        result.jobs_dir = jobs_dir
+        if control and jobs_dir is not None:
+            control.emit(f"  harbor check jobs kept at {harbor_jobs}")
+        return result
 
 
 def _run_streamed(

@@ -1,4 +1,5 @@
-*tasks/*
+projects
+*/tasks/*
 *data/
 *report*.json
 reports/
