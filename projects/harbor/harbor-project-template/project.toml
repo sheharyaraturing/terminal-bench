@@ -12,6 +12,14 @@ tasks = "tasks"
 checks = "checks"
 rubrics = "rubrics/rubrics.toml"
 extra_references = "extra_references"
+# Per-project trajectory-analysis rubric. Omit to fall back to
+# rubrics/trajectory-analysis.toml (sibling of the implementation rubric) or,
+# failing that, the repo-root rubrics/trial-analysis.toml.
+# trajectory_analysis = "rubrics/trajectory-analysis.toml"
+# Optional prompt for the job-level (cross-trial) verdict pass. Omit to fall
+# back to a trajectory-analysis-prompt.txt sibling of the trajectory rubric;
+# if neither exists the analysis stays single-pass (per-trial only).
+# trajectory_analysis_prompt = "rubrics/trajectory-analysis-prompt.txt"
 
 [checks]
 # Harbor: run the repo-root checks/ common set in addition to this project's checks/.
@@ -19,3 +27,9 @@ include_common = true
 
 [validation]
 mode = "{{validation_mode}}"  # oracle_nop | skip
+
+[trajectory_analysis]
+# Copy the task-under-review into the analysis container alongside the
+# trajectories. Criteria like task_specification / difficulty_crux need the
+# task files; set false for trajectories-only analysis.
+include_task = true

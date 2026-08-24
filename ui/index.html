@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Autoreviewer</title>
-  <link rel="stylesheet" href="/style.css?v=2">
+  <link rel="stylesheet" href="/style.css?v=5">
 </head>
 <body>
   <header>
@@ -106,6 +106,58 @@ guidance = "PASS if ... FAIL if ..."'></textarea>
         </div>
       </details>
 
+      <!-- Analyze trajectories: browse/upload the project's jobs dir, choose runs, run analysis -->
+      <details class="card collapse">
+        <summary>Analyze trajectories</summary>
+        <div class="cols cols-narrow">
+          <div>
+            <h3>Trajectories</h3>
+            <label>Project
+              <select id="traj-project"></select>
+            </label>
+            <p class="hint" id="traj-hint"></p>
+            <form id="traj-form">
+              <label>Task <span class="muted">(optional — pins the task for criteria that need it)</span>
+                <select id="traj-task"></select>
+              </label>
+
+              <div class="traj-upload-row">
+                <label class="traj-upload-btn">
+                  <input type="file" id="traj-file" accept=".zip" hidden>
+                  <span class="ghost tiny btn-like">Upload .zip into jobs/</span>
+                </label>
+                <span id="traj-upload-status" class="muted tiny"></span>
+              </div>
+
+              <div id="traj-tree-wrap" hidden>
+                <div class="traj-tree-head">
+                  <button type="button" id="traj-select-all" class="ghost tiny">Select all</button>
+                  <button type="button" id="traj-select-none" class="ghost tiny">None</button>
+                  <span id="traj-selected-count" class="muted tiny"></span>
+                </div>
+                <div id="traj-tree" class="traj-tree"></div>
+              </div>
+              <p id="traj-empty" class="muted" hidden>No trajectories yet — upload a .zip of Harbor jobs.</p>
+
+              <button type="submit" class="primary" id="traj-submit" disabled>Run trajectory analysis</button>
+            </form>
+            <div id="traj-result" class="result"></div>
+          </div>
+          <div>
+            <h3>How it works</h3>
+            <p class="readonly">Trajectories live in the project's <code>jobs/</code> dir.
+              Upload a <code>.zip</code> of Harbor trial jobs to add folders, then pick which
+              folders / runs to analyze. Each selected run is evaluated against the project's
+              <code>trajectory-analysis.toml</code>, then a second pass writes a combined
+              job-level verdict using <code>trajectory-analysis-prompt.txt</code>. Project
+              reference files (e.g. <code>tool-list.json</code>) are baked into the analysis
+              image at <code>/app/extra_references/</code>. Optionally pin a task so criteria
+              like <em>task_specification</em> and <em>difficulty_crux</em> can read the task
+              definition.</p>
+          </div>
+        </div>
+      </details>
+
       <!-- Filter bar -->
       <div class="card filter-bar">
         <input id="run-search" type="search" placeholder="Filter by task or run id…" autocomplete="off">
@@ -129,16 +181,12 @@ guidance = "PASS if ... FAIL if ..."'></textarea>
             <tr>
               <th class="col-task">Task</th>
               <th class="col-project">Project</th>
+              <th class="col-kind">Kind</th>
               <th class="col-state">State</th>
-              <th class="col-legs" colspan="3">Legs</th>
+              <th class="col-legs">Legs</th>
               <th class="col-elapsed">Elapsed</th>
               <th class="col-created">Created</th>
               <th class="col-actions"></th>
-            </tr>
-            <tr class="subhead">
-              <th></th><th></th><th></th>
-              <th class="leg-h">det</th><th class="leg-h">rub</th><th class="leg-h">val</th>
-              <th></th><th></th><th></th>
             </tr>
           </thead>
           <tbody id="runs-tbody"></tbody>
@@ -159,6 +207,7 @@ guidance = "PASS if ... FAIL if ..."'></textarea>
           <button class="subtab" data-dtab="checks">Checks</button>
           <button class="subtab" data-dtab="rubric">Rubric</button>
           <button class="subtab" data-dtab="validation">Validation</button>
+          <button class="subtab" data-dtab="trajectory">Trajectories</button>
           <button class="subtab" data-dtab="log">Log</button>
           <button class="subtab" data-dtab="harbor">Harbor</button>
         </nav>
@@ -166,6 +215,7 @@ guidance = "PASS if ... FAIL if ..."'></textarea>
         <div class="subpanel" id="dtab-checks" hidden></div>
         <div class="subpanel" id="dtab-rubric" hidden></div>
         <div class="subpanel" id="dtab-validation" hidden></div>
+        <div class="subpanel" id="dtab-trajectory" hidden></div>
         <div class="subpanel" id="dtab-log" hidden><pre id="run-log"></pre></div>
         <div class="subpanel" id="dtab-harbor" hidden></div>
       </div>
@@ -183,6 +233,6 @@ guidance = "PASS if ... FAIL if ..."'></textarea>
     </section>
   </main>
 
-  <script src="/app.js?v=2"></script>
+  <script src="/app.js?v=5"></script>
 </body>
 </html>

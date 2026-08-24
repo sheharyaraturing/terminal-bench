@@ -149,8 +149,16 @@ async function loadTrainerProjects() {
   const fprev = fsel.value;
   fsel.replaceChildren(el("option", { value: "" }, "all projects"), ...trainerProjects.map((p) => el("option", { value: p.name }, p.name)));
   if (trainerProjects.some((p) => p.name === fprev)) fsel.value = fprev;
+  // Trajectory analysis project picker
+  const tsel = $("#traj-project");
+  const tprev = tsel.value;
+  tsel.replaceChildren(...trainerProjects.map((p) => el("option", { value: p.name }, `${p.name} (${p.type})`)));
+  if (trainerProjects.some((p) => p.name === tprev)) tsel.value = tprev;
   syncTrainerHint();
+  syncTrajHint();
   await loadTasks();
+  await loadTrajTasks();
+  await loadTrajJobs();
 }
 
 function currentProject() { return trainerProjects.find((p) => p.name === $("#trainer-project").value); }
@@ -161,6 +169,28 @@ function syncTrainerHint() {
     : "No projects yet — create one in the Delivery Manager tab.";
 }
 $("#trainer-project").addEventListener("change", () => { syncTrainerHint(); loadTasks(); });
+
+function currentTrajProject() { return trainerProjects.find((p) => p.name === $("#traj-project").value); }
+function syncTrajHint() {
+  const p = currentTrajProject();
+  $("#traj-hint").textContent = p
+    ? `${p.type} · ${p.tasks} task(s) available · rubric ${p.has_rubric ? "present" : "MISSING"}`
+    : "No projects yet — create one in the Delivery Manager tab.";
+}
+$("#traj-project").addEventListener("change", () => { syncTrajHint(); loadTrajTasks(); loadTrajJobs(); });
+
+async function loadTrajTasks() {
+  const sel = $("#traj-task");
+  const prev = sel.value;
+  sel.replaceChildren(el("option", { value: "" }, "(none — trajectories only)"));
+  const p = currentTrajProject();
+  if (!p) return;
+  try {
+    const { tasks } = await api(`/api/projects/${encodeURIComponent(p.name)}/tasks`);
+    for (const t of tasks) sel.append(el("option", { value: t }, t));
+    if (tasks.some((t) => t === prev)) sel.value = prev;
+  } catch { /* leave the none option */ }
+}
 
 async function loadTasks() {
   const list = $("#task-list");
@@ -200,6 +230,123 @@ $("#task-form").addEventListener("submit", async (ev) => {
     out.textContent = `Uploaded ${r.task_id} (${r.kind})${r.contents ? ` — ${r.contents.join(", ")}` : ""}`;
     ev.target.reset();
     await loadTasks();
+  } catch (e) { out.className = "result err"; out.textContent = `Error: ${e.message}`; }
+});
+
+/* ── trainer: analyze trajectories ──────────────────────────────────────── */
+let trajTree = null;             // {folders:[{name, runs:[{name,path}]}]}
+const trajSelected = new Set();  // selected trial-dir paths
+
+function currentTrajProjectName() { return $("#traj-project").value; }
+
+async function loadTrajJobs() {
+  resetTrajTree();
+  const name = currentTrajProjectName();
+  if (!name) return;
+  try {
+    const r = await api(`/api/projects/${encodeURIComponent(name)}/jobs`);
+    setTrajTree(r.tree);
+  } catch { resetTrajTree(); }
+}
+
+function resetTrajTree() {
+  trajTree = null; trajSelected.clear();
+  $("#traj-tree-wrap").hidden = true;
+  $("#traj-empty").hidden = true;
+  $("#traj-tree").replaceChildren();
+  syncTrajSubmit();
+}
+
+function syncTrajSubmit() {
+  const count = trajSelected.size;
+  $("#traj-selected-count").textContent = trajTree ? `${count} run(s) selected` : "";
+  $("#traj-submit").disabled = !trajTree || count === 0;
+}
+
+function setTrajTree(tree) {
+  trajTree = tree; trajSelected.clear();
+  const folders = tree.folders || [];
+  if (!folders.length) { $("#traj-tree-wrap").hidden = true; $("#traj-empty").hidden = false; syncTrajSubmit(); return; }
+  for (const f of folders) for (const run of f.runs || []) trajSelected.add(run.path);
+  $("#traj-empty").hidden = true;
+  renderTrajTree();
+}
+
+function renderTrajTree() {
+  const box = $("#traj-tree");
+  box.replaceChildren();
+  if (!trajTree) { syncTrajSubmit(); return; }
+  for (const folder of trajTree.folders || []) {
+    const runs = folder.runs || [];
+    const folderCb = el("input", { type: "checkbox" });
+    folderCb.checked = runs.every((r) => trajSelected.has(r.path));
+    folderCb.indeterminate = !folderCb.checked && runs.some((r) => trajSelected.has(r.path));
+    folderCb.addEventListener("change", () => {
+      for (const r of runs) { folderCb.checked ? trajSelected.add(r.path) : trajSelected.delete(r.path); }
+      renderTrajTree();
+    });
+    const kids = runs.map((r) => {
+      const cb = el("input", { type: "checkbox" });
+      cb.checked = trajSelected.has(r.path);
+      cb.addEventListener("change", () => {
+        cb.checked ? trajSelected.add(r.path) : trajSelected.delete(r.path);
+        renderTrajTree();
+      });
+      return el("label", { className: "traj-run" }, cb, el("span", { className: "name" }, r.name));
+    });
+    box.append(el("div", { className: "traj-folder" },
+      el("label", { className: "traj-folder-head" }, folderCb, el("strong", {}, folder.name),
+        el("span", { className: "muted tiny" }, ` ${runs.length} run(s)`)),
+      el("div", { className: "traj-runs" }, ...kids)
+    ));
+  }
+  $("#traj-tree-wrap").hidden = false;
+  syncTrajSubmit();
+}
+
+$("#traj-select-all").addEventListener("click", () => {
+  for (const f of trajTree?.folders || []) for (const r of f.runs || []) trajSelected.add(r.path);
+  renderTrajTree();
+});
+$("#traj-select-none").addEventListener("click", () => { trajSelected.clear(); renderTrajTree(); });
+
+$("#traj-file").addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  e.target.value = "";
+  if (!file) return;
+  const name = currentTrajProjectName();
+  const status = $("#traj-upload-status");
+  if (!name) { status.textContent = "pick a project first"; return; }
+  status.textContent = "uploading…";
+  try {
+    const fd = new FormData();
+    fd.append("file", file);
+    const r = await api(`/api/projects/${encodeURIComponent(name)}/jobs`, { method: "POST", body: fd });
+    status.textContent = `added ${r.added.length} folder(s)`;
+    setTrajTree(r.tree);
+  } catch (err) { status.textContent = `error: ${err.message}`; }
+});
+
+$("#traj-form").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const p = currentTrajProject();
+  const out = $("#traj-result");
+  if (!p) { out.className = "result err"; out.textContent = "Pick a project first."; return; }
+  if (trajSelected.size === 0) { out.className = "result err"; out.textContent = "Select at least one run."; return; }
+  const fd = new FormData();
+  fd.append("project_name", p.name);
+  const tid = $("#traj-task").value;
+  if (tid) fd.append("task_id", tid);
+  const email = $("#reviewer-email").value.trim();
+  if (email) fd.append("reviewer_email", email);
+  fd.append("selected", JSON.stringify([...trajSelected]));
+  out.className = "result"; out.textContent = "Submitting…";
+  try {
+    const r = await api("/api/execute-trajectory", { method: "POST", body: fd });
+    out.className = "result ok";
+    out.textContent = `Queued trajectory analysis — run ${r.run_id.slice(0, 8)}`;
+    watchRun(r.run_id);
+    loadRuns();
   } catch (e) { out.className = "result err"; out.textContent = `Error: ${e.message}`; }
 });
 
@@ -318,7 +465,7 @@ async function loadRuns() {
   const tbody = $("#runs-tbody");
   tbody.replaceChildren();
   if (!runs.length) {
-    tbody.append(el("tr", {}, el("td", { colSpan: 9, className: "muted empty" }, "No runs yet.")));
+    tbody.append(el("tr", {}, el("td", { colSpan: 8, className: "muted empty" }, "No runs yet.")));
     return;
   }
   const filtered = runs.filter((r) => {
@@ -333,7 +480,7 @@ async function loadRuns() {
   if (!filtered.length) {
     const hidden = runs.length;
     const hasFilter = filters.state || filters.project || filters.q;
-    const cell = el("td", { colSpan: 9, className: "muted empty" });
+    const cell = el("td", { colSpan: 8, className: "muted empty" });
     if (hasFilter) {
       cell.append(
         `${hidden} run(s) hidden by filter. `,
@@ -347,13 +494,13 @@ async function loadRuns() {
   }
   for (const r of filtered) {
     const legs = r.legs || {};
+    const kind = r.kind || "review";
     const row = el("tr", { className: r.run_id === activeRunId ? "selected" : "", onclick: () => watchRun(r.run_id) },
-      el("td", { className: "col-task" }, el("span", { className: "name", title: r.task_id }, r.task_id)),
+      el("td", { className: "col-task" }, el("span", { className: "name", title: r.task_id || "(trajectories only)" }, r.task_id || "(trajectories only)")),
       el("td", { className: "col-project muted" }, r.project || ""),
+      el("td", { className: "col-kind" }, badge(kind, kind)),
       el("td", {}, badge(r.state, r.state)),
-      el("td", { className: "leg-cell" }, legDot(legs.deterministic?.state)),
-      el("td", { className: "leg-cell" }, legDot(legs.rubric?.state)),
-      el("td", { className: "leg-cell" }, legDot(legs.validation?.state)),
+      el("td", { className: "col-legs leg-cell" }, renderLegs(legs)),
       el("td", { className: "col-elapsed elapsed" }, elapsedOf(r)),
       el("td", { className: "col-created muted" }, timeShort(r.created_at)),
       el("td", { className: "col-actions" }, isActive(r.state)
@@ -366,6 +513,20 @@ async function loadRuns() {
       );
     tbody.append(row);
   }
+}
+
+function renderLegs(legs) {
+  const names = Object.keys(legs);
+  if (!names.length) return el("span", { className: "muted" }, "—");
+  const frag = el("span", {});
+  for (const k of names) {
+    const st = legs[k]?.state;
+    frag.append(
+      legDot(st),
+      el("span", { className: "leg-lbl" }, k.slice(0, 3))
+    );
+  }
+  return frag;
 }
 
 function syncRunListTimer() {
@@ -402,8 +563,9 @@ function renderOverview() {
   const box = $("#dtab-overview");
   const kids = [];
   if (lastReport) kids.push(el("div", { className: `banner ${lastReport.passed ? "pass" : "fail"}` }, lastReport.passed ? "PASS" : "FAIL"));
+  const legNames = Object.keys(s.legs || {});
   kids.push(el("div", { className: "legs" },
-    ...["deterministic", "rubric", "validation"].map((k) =>
+    ...legNames.map((k) =>
       el("div", { className: "leg" },
         el("div", { className: "leg-name" }, k, " ", badge(s.legs[k].state, s.legs[k].state)),
         el("div", { className: "leg-summary" }, s.legs[k].summary || "")
@@ -474,6 +636,47 @@ function renderReport(rep) {
       )
     );
   }
+
+  renderTrajectoryTab(rep);
+}
+
+function renderTrajectoryTab(rep) {
+  const box = $("#dtab-trajectory");
+  const traj = rep.trajectory;
+  if (!traj) { box.replaceChildren(el("p", { className: "muted" }, "Not a trajectory analysis run.")); return; }
+  if (traj.skipped) {
+    box.replaceChildren(el("p", { className: "muted" }, `skipped — ${traj.skip_reason}`));
+    return;
+  }
+  const kids = [];
+  if (traj.job_summary) {
+    kids.push(el("h3", {}, "Job summary"));
+    kids.push(el("p", { className: "readonly" }, traj.job_summary));
+  }
+  const trials = traj.trials || [];
+  kids.push(el("h3", {}, `Trials (${trials.length})`));
+  if (!trials.length) {
+    kids.push(el("p", { className: "muted" }, "no trials"));
+  }
+  for (const t of trials) {
+    const fails = (t.checks || []).filter((c) => c.verdict === "fail");
+    kids.push(el("div", { className: "trial-block" },
+      el("div", { className: "trial-head" },
+        el("strong", {}, t.name),
+        el("span", { className: "muted" }, ` · ${t.checks?.length || 0} checks · ${fails.length} fail`)
+      ),
+      t.summary ? el("p", { className: "readonly" }, t.summary) : el("span"),
+      el("table", {},
+        el("thead", {}, el("tr", {}, el("th", {}, "Criterion"), el("th", {}, "Verdict"), el("th", {}, "Explanation"))),
+        el("tbody", {}, ...(t.checks || []).map((c) =>
+          el("tr", { className: c.verdict === "pass" ? "row-pass" : (c.verdict === "not_applicable" ? "row-skip" : "row-fail") },
+            el("td", {}, c.name), el("td", {}, badge(c.verdict)), el("td", { className: "out" }, c.reason || "")
+          )
+        ))
+      )
+    ));
+  }
+  box.replaceChildren(...kids);
 }
 
 function renderHarborPanel(s) {

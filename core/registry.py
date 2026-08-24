@@ -36,6 +36,18 @@ class Project:
     extra_references_dir: Path
     validation_mode: str  # "oracle_nop" | "skip"
     include_common_checks: bool
+    # Per-project trajectory-analysis rubric (Harbor jobs trees). Defaults to a
+    # sibling of the implementation rubric so a project only has to opt in by
+    # dropping the file in rubrics/.
+    trajectory_analysis_path: Path
+    # Optional per-project prompt for the job-level (cross-trial) verdict pass.
+    # Defaults to a trajectory-analysis-prompt.txt sibling of the trajectory
+    # rubric; None means the analysis stays single-pass (per-trial only).
+    trajectory_analysis_prompt_path: Path | None = None
+    # Whether the task-under-review is copied into the analysis container.
+    # Some criteria (task_specification, difficulty_crux) need the task files;
+    # trajectories-only runs can set this false.
+    include_task_in_trajectory_analysis: bool = True
 
 
 def _load_toml(path: Path) -> dict:
@@ -102,7 +114,27 @@ def _project_from_dir(proj_dir: Path, type_default: str) -> Project:
     paths = data.get("paths", {})
     checks = data.get("checks", {})
     validation = data.get("validation", {})
+    trajectory = data.get("trajectory_analysis", {})
     ptype = proj.get("type", type_default)
+    rubrics_path = proj_dir / paths.get("rubrics", "rubrics/rubrics.toml")
+    trajectory_rubric_path = (
+        proj_dir / paths["trajectory_analysis"]
+        if paths.get("trajectory_analysis")
+        else (
+            rubrics_path.parent / "trajectory-analysis.toml"
+            if rubrics_path.name != "rubrics.toml"
+            else REPO_ROOT / "rubrics" / "trial-analysis.toml"
+        )
+    )
+    # Job-level verdict prompt: explicit path, else a
+    # trajectory-analysis-prompt.txt sibling of the trajectory rubric, else None
+    # (analysis stays single-pass).
+    prompt_path = (
+        proj_dir / paths["trajectory_analysis_prompt"]
+        if paths.get("trajectory_analysis_prompt")
+        else trajectory_rubric_path.parent / "trajectory-analysis-prompt.txt"
+    )
+    trajectory_prompt = prompt_path if prompt_path.is_file() else None
     return Project(
         name=proj.get("name", proj_dir.name),
         type=ptype,
@@ -110,12 +142,17 @@ def _project_from_dir(proj_dir: Path, type_default: str) -> Project:
         root=proj_dir,
         tasks_dir=proj_dir / paths.get("tasks", "tasks"),
         checks_dir=proj_dir / paths.get("checks", "checks"),
-        rubric_path=proj_dir / paths.get("rubrics", "rubrics/rubrics.toml"),
+        rubric_path=rubrics_path,
         extra_references_dir=proj_dir / paths.get("extra_references", "extra_references"),
         validation_mode=validation.get("mode", "skip"),
         # Harbor tasks share one common check set; non-Harbor projects only ever
         # run the checks written for them.
         include_common_checks=bool(checks.get("include_common", ptype == "harbor")),
+        trajectory_analysis_path=trajectory_rubric_path,
+        trajectory_analysis_prompt_path=trajectory_prompt,
+        include_task_in_trajectory_analysis=bool(
+            trajectory.get("include_task", True)
+        ),
     )
 
 
