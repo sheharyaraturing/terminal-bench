@@ -26,7 +26,7 @@ INSTRUCTION_PATH = REPO_ROOT / "tools" / "trajectory-analysis" / "templates" / "
 DOCKERFILE_PATH = REPO_ROOT / "tools" / "trajectory-analysis" / "templates" / "Dockerfile"
 JOB_NAME = "trajectory-analysis"
 JOB_VERDICT_JOB_NAME = "trajectory-job-verdict"
-DEFAULT_IMAGE = "ubuntu:24.04"
+DEFAULT_IMAGE = os.environ.get("TRAJECTORY_ANALYSIS_IMAGE", "ubuntu:24.04")
 
 # Placeholder in the job-level prompt where the per-trial results JSON goes.
 TRIAL_RESULTS_PLACEHOLDER = "{trial_results}"

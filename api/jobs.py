@@ -24,7 +24,7 @@ from . import store
 
 # Reviews are long and mostly wait on Docker or the Anthropic API, so a small
 # pool is plenty; it also keeps concurrent Docker builds from thrashing.
-MAX_WORKERS = int(os.environ.get("AUTOREVIEWER_MAX_WORKERS", "2"))
+MAX_WORKERS = int(os.environ.get("AUTOREVIEWER_MAX_WORKERS", "4"))
 REPORTS_DIR = REPO_ROOT / "reports"
 
 _executor = ThreadPoolExecutor(max_workers=MAX_WORKERS, thread_name_prefix="review")
