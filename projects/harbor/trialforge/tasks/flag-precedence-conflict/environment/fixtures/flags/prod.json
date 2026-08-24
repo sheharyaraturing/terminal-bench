@@ -1,0 +1,15 @@
+{
+  "billing.legacy_invoice_pdf": false,
+  "checkout.retry_budget": 3,
+  "identity.mfa_grace_hours": 0,
+  "identity.session_pinning": true,
+  "ingest.dead_letter_replay": true,
+  "ingest.max_batch_rows": 2000,
+  "notifications.digest_window_minutes": 30,
+  "notifications.push_quiet_hours": true,
+  "payments.settlement_batch_size": 500,
+  "platform.circuit_breaker_ms": 600,
+  "platform.request_shadowing": false,
+  "reporting.warehouse_direct_read": true,
+  "web.new_nav": false
+}

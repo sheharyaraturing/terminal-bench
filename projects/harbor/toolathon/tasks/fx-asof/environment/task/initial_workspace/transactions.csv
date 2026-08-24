@@ -1,0 +1,97 @@
+txn_id,txn_date,entity,customer,contract_ref,description,currency,amount,status
+TX-1001,2022-11-08,GRP-APAC,Helios Logistics,CTR-2021-2037,"Professional services, phase one delivery",BRL,131709.60,posted
+TX-1002,2022-12-20,GRP-AMER,Lumen Retail Group,CTR-2022-2074,"Implementation services, statement of work",EUR,27050.86,posted
+TX-1003,2023-01-05,GRP-NORD,Fenwick Paper,CTR-2023-2111,"Maintenance contract instalment, schedule B",AUD,218860.64,posted
+TX-1004,2023-01-17,GRP-EMEA,Aurora Systems,CTR-2020-2148,Subscription true-up for the prior term,CAD,252100.80,posted
+TX-1005,2023-01-31,GRP-APAC,Harborline Freight,CTR-2021-2185,"Support renewal, tier two, twelve months",SEK,34207.28,posted
+TX-1006,2023-02-14,GRP-AMER,Marchetti SpA,CTR-2022-2222,Hardware supply against milestone two,CHF,350979.34,posted
+TX-1007,2023-02-28,GRP-NORD,Orsted Machinery,CTR-2023-2259,"Managed service quarterly fee, tier one",JPY,49072224.06,posted
+TX-1008,2023-03-15,GRP-EMEA,Northwind Traders,CTR-2020-2296,"Annual licence renewal, term seat block",NGN,43802167.21,posted
+TX-1009,2023-03-24,GRP-APAC,Blackpine Rail,CTR-2021-2333,"Professional services, phase one delivery",TVR,38590204.30,posted
+TX-1010,2023-03-30,GRP-AMER,Cobalt Analytics,CTR-2022-2370,"Implementation services, statement of work",GBP,190509.28,posted
+TX-1011,2023-03-31,GRP-NORD,Kestrel Foods,CTR-2023-2407,"Maintenance contract instalment, schedule B",EUR,174526.64,posted
+TX-1012,2023-04-01,GRP-EMEA,Vela Chemicals,CTR-2020-2444,Subscription true-up for the prior term,EUR,512400.00,posted
+TX-1013,2023-04-02,GRP-APAC,Helios Logistics,CTR-2021-2481,"Support renewal, tier two, twelve months",MXN,75424011.05,posted
+TX-1014,2023-04-03,GRP-AMER,Lumen Retail Group,CTR-2022-2518,Hardware supply against milestone two,EUR,84210.50,posted
+TX-1015,2023-04-07,GRP-NORD,Fenwick Paper,CTR-2023-2555,"Managed service quarterly fee, tier one",CHF,96500.00,posted
+TX-1016,2023-04-09,GRP-EMEA,Aurora Systems,CTR-2020-2592,"Annual licence renewal, term seat block",NOK,445567.77,posted
+TX-1017,2023-04-10,GRP-APAC,Harborline Freight,CTR-2021-2629,"Professional services, phase one delivery",GBP,143750.25,posted
+TX-1018,2023-04-12,GRP-AMER,Marchetti SpA,CTR-2022-2666,"Implementation services, statement of work",CHF,147725.07,posted
+TX-1019,2023-04-12,GRP-NORD,Orsted Machinery,CTR-2023-2703,"Maintenance contract instalment, schedule B",TVR,18500000.00,posted
+TX-1020,2023-04-13,GRP-EMEA,Northwind Traders,CTR-2020-2740,Subscription true-up for the prior term,USD,149250.99,void
+TX-1021,2023-04-15,GRP-APAC,Blackpine Rail,CTR-2021-2777,"Support renewal, tier two, twelve months",GBP,174829.51,posted
+TX-1022,2023-04-16,GRP-AMER,Cobalt Analytics,CTR-2022-2814,Hardware supply against milestone two,GBP,159416.24,posted
+TX-1023,2023-04-16,GRP-NORD,Kestrel Foods,CTR-2023-2851,"Managed service quarterly fee, tier one",USD,62400.00,posted
+TX-1024,2023-04-20,GRP-EMEA,Vela Chemicals,CTR-2020-2888,"Annual licence renewal, term seat block",CHF,401436.64,draft
+TX-1025,2023-04-20,GRP-APAC,Helios Logistics,CTR-2021-2925,"Professional services, phase one delivery",PLN,74300.00,posted
+TX-1026,2023-04-21,GRP-AMER,Lumen Retail Group,CTR-2022-2962,"Implementation services, statement of work",EUR,108001.50,posted
+TX-1027,2023-04-22,GRP-NORD,Fenwick Paper,CTR-2023-2999,"Maintenance contract instalment, schedule B",EUR,124248.79,void
+TX-1028,2023-04-24,GRP-EMEA,Aurora Systems,CTR-2020-3036,Subscription true-up for the prior term,AUD,379760.36,posted
+TX-1029,2023-04-24,GRP-APAC,Harborline Freight,CTR-2021-3073,"Support renewal, tier two, twelve months",SEK,479974.16,void
+TX-1030,2023-04-25,GRP-AMER,Marchetti SpA,CTR-2022-3110,Hardware supply against milestone two,NGN,9850000.00,posted
+TX-1031,2023-04-28,GRP-NORD,Orsted Machinery,CTR-2023-3147,"Managed service quarterly fee, tier one",BRL,17789.65,posted
+TX-1032,2023-05-01,GRP-EMEA,Northwind Traders,CTR-2020-3184,"Annual licence renewal, term seat block",CHF,446110.99,posted
+TX-1033,2023-05-01,GRP-APAC,Blackpine Rail,CTR-2021-3221,"Professional services, phase one delivery",USD,333901.58,posted
+TX-1034,2023-05-02,GRP-AMER,Cobalt Analytics,CTR-2022-3258,"Implementation services, statement of work",CAD,321456.21,posted
+TX-1035,2023-05-02,GRP-NORD,Kestrel Foods,CTR-2023-3295,"Maintenance contract instalment, schedule B",EUR,137991.78,posted
+TX-1036,2023-05-03,GRP-EMEA,Vela Chemicals,CTR-2020-3332,Subscription true-up for the prior term,BRL,133682.79,posted
+TX-1037,2023-05-03,GRP-APAC,Helios Logistics,CTR-2021-3369,"Support renewal, tier two, twelve months",CAD,305303.59,posted
+TX-1038,2023-05-03,GRP-AMER,Lumen Retail Group,CTR-2022-3406,Hardware supply against milestone two,NOK,223793.89,draft
+TX-1039,2023-05-05,GRP-NORD,Fenwick Paper,CTR-2023-3443,"Managed service quarterly fee, tier one",CAD,54989.86,posted
+TX-1040,2023-05-05,GRP-EMEA,Aurora Systems,CTR-2020-3480,"Annual licence renewal, term seat block",INR,61506541.60,posted
+TX-1041,2023-05-05,GRP-APAC,Harborline Freight,CTR-2021-3517,"Professional services, phase one delivery",NOK,105427.94,draft
+TX-1042,2023-05-06,GRP-AMER,Marchetti SpA,CTR-2022-3554,"Implementation services, statement of work",INR,78262888.19,posted
+TX-1043,2023-05-08,GRP-NORD,Orsted Machinery,CTR-2023-3591,"Maintenance contract instalment, schedule B",EUR,154703.62,posted
+TX-1044,2023-05-09,GRP-EMEA,Northwind Traders,CTR-2020-3628,Subscription true-up for the prior term,EUR,285066.74,posted
+TX-1045,2023-05-09,GRP-APAC,Blackpine Rail,CTR-2021-3665,"Support renewal, tier two, twelve months",TVR,22750000.00,posted
+TX-1046,2023-05-15,GRP-AMER,Cobalt Analytics,CTR-2022-3702,Hardware supply against milestone two,EUR,358842.30,posted
+TX-1047,2023-05-15,GRP-NORD,Kestrel Foods,CTR-2023-3739,"Managed service quarterly fee, tier one",TVR,31200.00,posted
+TX-1048,2023-05-16,GRP-EMEA,Vela Chemicals,CTR-2020-3776,"Annual licence renewal, term seat block",TVR,45900.00,posted
+TX-1049,2023-05-19,GRP-APAC,Helios Logistics,CTR-2021-3813,"Professional services, phase one delivery",INR,18537566.24,posted
+TX-1050,2023-05-19,GRP-AMER,Lumen Retail Group,CTR-2022-3850,"Implementation services, statement of work",INR,57253566.12,void
+TX-1051,2023-05-20,GRP-NORD,Fenwick Paper,CTR-2023-3887,"Maintenance contract instalment, schedule B",JPY,88000000.00,posted
+TX-1052,2023-05-22,GRP-EMEA,Aurora Systems,CTR-2020-3924,Subscription true-up for the prior term,USD,260683.23,void
+TX-1053,2023-05-24,GRP-APAC,Harborline Freight,CTR-2021-3961,"Support renewal, tier two, twelve months",CAD,448408.92,posted
+TX-1054,2023-05-24,GRP-AMER,Marchetti SpA,CTR-2022-3998,Hardware supply against milestone two,EUR,2010.00,posted
+TX-1055,2023-05-24,GRP-NORD,Orsted Machinery,CTR-2023-4035,"Managed service quarterly fee, tier one",SEK,327884.56,posted
+TX-1056,2023-05-24,GRP-EMEA,Northwind Traders,CTR-2020-4072,"Annual licence renewal, term seat block",ZAR,58281822.88,posted
+TX-1057,2023-05-27,GRP-APAC,Blackpine Rail,CTR-2021-4109,"Professional services, phase one delivery",CAD,41833.42,posted
+TX-1058,2023-05-28,GRP-AMER,Cobalt Analytics,CTR-2022-4146,"Implementation services, statement of work",USD,281830.79,posted
+TX-1059,2023-05-29,GRP-NORD,Kestrel Foods,CTR-2023-4183,"Maintenance contract instalment, schedule B",CAD,61585.00,posted
+TX-1060,2023-05-29,GRP-EMEA,Vela Chemicals,CTR-2020-4220,Subscription true-up for the prior term,GBP,255800.07,posted
+TX-1061,2023-05-29,GRP-APAC,Helios Logistics,CTR-2021-4257,"Support renewal, tier two, twelve months",SEK,1250000.00,posted
+TX-1062,2023-05-30,GRP-AMER,Lumen Retail Group,CTR-2022-4294,Hardware supply against milestone two,GBP,391450.98,posted
+TX-1063,2023-06-03,GRP-NORD,Fenwick Paper,CTR-2023-4331,"Managed service quarterly fee, tier one",EUR,429760.82,draft
+TX-1064,2023-06-03,GRP-EMEA,Aurora Systems,CTR-2020-4368,"Annual licence renewal, term seat block",USD,420107.69,posted
+TX-1065,2023-06-04,GRP-APAC,Harborline Freight,CTR-2021-4405,"Professional services, phase one delivery",USD,31800.00,posted
+TX-1066,2023-06-05,GRP-AMER,Marchetti SpA,CTR-2022-4442,"Implementation services, statement of work",INR,76521559.28,draft
+TX-1067,2023-06-05,GRP-NORD,Orsted Machinery,CTR-2023-4479,"Maintenance contract instalment, schedule B",PLN,58900.00,posted
+TX-1068,2023-06-06,GRP-EMEA,Northwind Traders,CTR-2020-4516,Subscription true-up for the prior term,BRL,337723.57,draft
+TX-1069,2023-06-09,GRP-APAC,Blackpine Rail,CTR-2021-4553,"Support renewal, tier two, twelve months",SEK,299910.67,posted
+TX-1070,2023-06-10,GRP-AMER,Cobalt Analytics,CTR-2022-4590,Hardware supply against milestone two,CHF,127070.90,posted
+TX-1071,2023-06-10,GRP-NORD,Kestrel Foods,CTR-2023-4627,"Managed service quarterly fee, tier one",CHF,313230.41,posted
+TX-1072,2023-06-12,GRP-EMEA,Vela Chemicals,CTR-2020-4664,"Annual licence renewal, term seat block",CAD,295608.10,void
+TX-1073,2023-06-13,GRP-APAC,Helios Logistics,CTR-2021-4701,"Professional services, phase one delivery",BRL,109373.63,posted
+TX-1074,2023-06-14,GRP-AMER,Lumen Retail Group,CTR-2022-4738,"Implementation services, statement of work",TVR,67400.00,posted
+TX-1075,2023-06-17,GRP-NORD,Fenwick Paper,CTR-2023-4775,"Maintenance contract instalment, schedule B",MXN,2392969.81,posted
+TX-1076,2023-06-17,GRP-EMEA,Aurora Systems,CTR-2020-4812,Subscription true-up for the prior term,MXN,21172944.44,posted
+TX-1077,2023-06-17,GRP-APAC,Harborline Freight,CTR-2021-4849,"Support renewal, tier two, twelve months",NGN,4400000.00,posted
+TX-1078,2023-06-17,GRP-AMER,Marchetti SpA,CTR-2022-4886,Hardware supply against milestone two,SGD,426063.17,draft
+TX-1079,2023-06-20,GRP-NORD,Orsted Machinery,CTR-2023-4923,"Managed service quarterly fee, tier one",GBP,13416.18,posted
+TX-1080,2023-06-21,GRP-EMEA,Northwind Traders,CTR-2020-4960,"Annual licence renewal, term seat block",SGD,124461.77,posted
+TX-1081,2023-06-22,GRP-APAC,Blackpine Rail,CTR-2021-4997,"Professional services, phase one delivery",CHF,263457.85,posted
+TX-1082,2023-06-24,GRP-AMER,Cobalt Analytics,CTR-2022-5034,"Implementation services, statement of work",SEK,432284.15,posted
+TX-1083,2023-06-26,GRP-NORD,Kestrel Foods,CTR-2023-5071,"Maintenance contract instalment, schedule B",USD,145000.00,posted
+TX-1084,2023-06-28,GRP-EMEA,Vela Chemicals,CTR-2020-5108,Subscription true-up for the prior term,CAD,73359.86,void
+TX-1085,2023-06-30,GRP-APAC,Helios Logistics,CTR-2021-5145,"Support renewal, tier two, twelve months",GBP,205300.00,posted
+TX-1086,2023-07-03,GRP-AMER,Lumen Retail Group,CTR-2022-5182,Hardware supply against milestone two,GBP,163151.27,posted
+TX-1087,2023-07-05,GRP-NORD,Fenwick Paper,CTR-2023-5219,"Managed service quarterly fee, tier one",EUR,77756.25,posted
+TX-1088,2023-07-10,GRP-EMEA,Aurora Systems,CTR-2020-5256,"Annual licence renewal, term seat block",TVR,28578539.14,posted
+TX-1089,2023-07-12,GRP-APAC,Harborline Freight,CTR-2021-5293,"Professional services, phase one delivery",PLN,192845.34,posted
+TX-1090,2023-07-17,GRP-AMER,Marchetti SpA,CTR-2022-5330,"Implementation services, statement of work",USD,74559.51,posted
+TX-1091,2023-07-20,GRP-NORD,Orsted Machinery,CTR-2023-5367,"Maintenance contract instalment, schedule B",INR,24416306.09,posted
+TX-1092,2023-07-24,GRP-EMEA,Northwind Traders,CTR-2020-5404,Subscription true-up for the prior term,MXN,71716054.83,posted
+TX-1093,2023-07-26,GRP-APAC,Blackpine Rail,CTR-2021-5441,"Support renewal, tier two, twelve months",NOK,297999.53,posted
+TX-1094,2023-07-28,GRP-AMER,Cobalt Analytics,CTR-2022-5478,Hardware supply against milestone two,SGD,475755.83,posted
+TX-1095,2023-07-31,GRP-NORD,Kestrel Foods,CTR-2023-5515,"Managed service quarterly fee, tier one",NGN,26763304.48,posted
+TX-1096,2023-07-31,GRP-EMEA,Vela Chemicals,CTR-2020-5552,"Annual licence renewal, term seat block",ZAR,36820682.94,posted

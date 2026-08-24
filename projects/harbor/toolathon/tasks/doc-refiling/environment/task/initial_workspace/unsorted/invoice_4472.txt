@@ -1,0 +1,6 @@
+Document-Type: Invoice
+Reference: ACME-4472
+
+Amount due: 940.50
+Payment terms: net 30
+Raised by accounts payable.

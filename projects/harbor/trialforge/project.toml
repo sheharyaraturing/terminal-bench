@@ -1,0 +1,26 @@
+[project]
+name = "trialforge"
+type = "harbor"
+description = "TrialForge MCP-Atlas long-horizon tool-use tasks"
+
+[paths]
+tasks = "tasks"
+checks = "checks"
+rubrics = "rubrics/task-implementation.toml"
+trajectory_analysis = "rubrics/trajectory-analysis.toml"
+extra_references = "extra_references"
+
+[checks]
+# The repo-root checks/ common set is written for terminal-bench/Toolathlon
+# task conventions (canary strings, instruction suffix, author_name field,
+# separate-verifier mode). TrialForge tasks use Harbor schema 1.4 + rewardkit
+# and ship their own purpose-built checks covering the same ground.
+include_common = false
+
+[validation]
+mode = "oracle_nop"
+
+[trajectory_analysis]
+# Copy the task-under-review into the analysis container. TrialForge's
+# task_specification / difficulty_crux criteria read instruction.md + task.toml.
+include_task = true

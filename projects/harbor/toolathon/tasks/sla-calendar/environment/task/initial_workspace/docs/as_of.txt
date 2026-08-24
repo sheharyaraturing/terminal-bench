@@ -1,0 +1,3 @@
+# As-of instant for the SLA report, in UTC. The desk pins it here so a
+# rerun of the report reproduces. Do not read the system clock.
+2026-11-20T11:20:00Z

@@ -1,0 +1,125 @@
+# Harbor task config. Schema is validated by harbor 0.21.0.
+schema_version = "1.4"
+
+[task]
+name = "turing/fee-sign-convention-audit"
+version = "1.2.3"
+description = "Audit the fee column of a crypto trade ledger and reconcile the total fees reported downstream."
+
+[metadata]
+persona   = "Treasury Operations Analyst"
+domain    = "software-engineering"
+annotator = "Raveed Ahmad"
+target_tool_calls = 40             # medium tier: adds cross-source wire reconciliation
+target_claims = 15
+
+# Provider payload fields; inline table so it stays one key.
+extra_llm_params = { reasoning = { effort = "medium" } }
+
+# One tool result, capped.
+tool_output_cap = 60000
+
+# Tool allowlist handed to the harness as `enabledTools`.
+# 16 tools across 5 servers. All five servers are genuinely usable: sqlite and
+# filesystem are the primary route; desktop-commander, cli-mcp-server and calculator
+# are redundant-but-valid routes (they can read the fixtures or do arithmetic), not
+# dead ends. Distraction is same-server near-misses plus these redundant paths - no
+# far-field dead-end servers (ddg-search, whois) are declared. Names are verbatim
+# from the image's tool inventory; the double prefixes are real.
+enabled_tools = [
+  # needed
+  "sqlite_list_tables",
+  "sqlite_get_table_schema",
+  "sqlite_query",
+  "filesystem_read_text_file",
+  "filesystem_list_directory",
+  # same-server distractors
+  "sqlite_read_records",              # equality-only: cannot express SUM(ABS), a sign filter or GROUP BY
+  "sqlite_update_records",            # mutating trap: tempts "fixing" the negative signs
+  "sqlite_db_info",                   # metadata only; TEXT columns say nothing about sign
+  "filesystem_read_multiple_files",   # near-miss of read_text_file
+  "filesystem_write_file",            # the task writes nothing
+  "filesystem_search_files",          # the ledger sits at a known path
+  # redundant-but-usable routes (can read the fixtures / do arithmetic)
+  "calculator_calculate",
+  "desktop-commander_read_file",
+  "desktop-commander_get_file_info",
+  "cli-mcp-server_run_command",       # ls/cat/find inside /data, no pipes
+  "cli-mcp-server_show_security_rules",
+]
+
+[agent]
+timeout_sec = 3600.0               # long-horizon tasks need room
+
+[verifier]
+timeout_sec = 600.0
+
+# "separate" runs the verifier in its own container against the trial's RECORDED
+# artifacts under /logs/artifacts, not the live agent sandbox. It is the only mode
+# `harbor job regrade` accepts, so a reward.toml edit can be re-scored without a full
+# model re-run. The contract: every input the judge reads must live under
+# /logs/artifacts (/logs/agent is agent-private and is not collected). solve.sh tees
+# the answer there, and reward.toml [judge].files points there.
+environment_mode = "separate"
+
+# A separate verifier needs its own image. With this block present but carrying no
+# docker_image, harbor builds tests/Dockerfile with tests/ as the build context -
+# the only way /tests/test.sh reaches the container, because separate mode does not
+# upload tests/ at run time.
+[verifier.environment]
+network_mode = "public"            # the judge needs to reach OpenRouter
+
+[verifier.env]
+# rewardkit routes the judge through OpenRouter (reward.toml [judge].judge), so
+# litellm needs OPENROUTER_API_KEY inside the verifier container. Without this
+# block the variable is simply absent there and tests/test.sh exports an empty
+# string, which fails the judge call and leaves no reward.json behind.
+OPENROUTER_API_KEY = "${OPENROUTER_API_KEY}"
+
+[environment]
+# This task ships fixtures, so docker_image is deliberately NOT set: harbor's
+# should_use_prebuilt_docker_image() skips environment/Dockerfile whenever that key
+# is present, and the fixtures would silently not exist at run time.
+cpus = 4                           # CPU is the binding constraint, not memory
+memory_mb = 4096                   # measured: 19 servers idle at ~2.1 GB
+storage_mb = 10240
+
+# ── MCP servers ───────────────────────────────────────────────────────────────
+# 5 servers, every one genuinely usable. sqlite + filesystem are the primary route;
+# calculator, desktop-commander and cli-mcp-server are redundant-but-valid routes
+# (they can read the fixtures or do arithmetic), so a model that uses them still makes
+# progress. The two far-field dead-end servers (ddg-search, whois) are NOT declared,
+# per the MCP-Atlas design, where distraction turns on tool discovery, not dismissing
+# whole servers by name.
+# Every uvx server carries --with mcp<2; without it the SDK floats to 2.0.0 and the
+# server fails to register.
+
+[[environment.mcp_servers]]
+name = "sqlite"
+transport = "stdio"
+command = "npx"
+args = ["mcp-sqlite@1.0.9", "/data/db/turing.db"]
+
+[[environment.mcp_servers]]
+name = "filesystem"
+transport = "stdio"
+command = "npx"
+args = ["@modelcontextprotocol/server-filesystem@2026.7.10", "/data"]
+
+[[environment.mcp_servers]]
+name = "calculator"
+transport = "stdio"
+command = "uvx"
+args = ["--with", "mcp<2", "mcp-server-calculator==0.2.1"]
+
+[[environment.mcp_servers]]
+name = "desktop-commander"
+transport = "stdio"
+command = "npx"
+args = ["@wonderwhy-er/desktop-commander@0.2.47"]
+
+[[environment.mcp_servers]]
+name = "cli-mcp-server"
+transport = "stdio"
+command = "uvx"
+args = ["--with", "mcp<2", "cli-mcp-server==0.2.5"]

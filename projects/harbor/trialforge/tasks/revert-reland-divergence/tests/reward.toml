@@ -1,0 +1,151 @@
+# rewardkit reward definition.
+#
+# rewardkit discovers this file, builds one Criterion per [[criterion]] block, and
+# writes the aggregated reward to /logs/verifier/reward.json.
+#
+# WHY THIS SHAPE: the benchmark we target scores each ground-truth claim
+# INDEPENDENTLY against the agent's FINAL ANSWER, with partial credit, then takes
+# the mean. mode = "individual" plus aggregation = "weighted_mean" reproduces that.
+# Do NOT switch to all_pass — an all-or-nothing reward is near-zero for every early
+# rollout on a long-horizon task, which gives RL no gradient to learn from.
+#
+# Every SHA, blob hash, diff stat, tag target and VERSION string asserted below
+# was read back out of a fresh clone of the built bundle and is recorded in
+# environment/fixtures/GROUND_TRUTH.md. SHAs are quoted at 7 hex unless a claim
+# says otherwise; any longer prefix of the same commit is the same answer.
+
+[judge]
+# Bare model id: no provider prefix, so there is nothing for litellm to resolve
+# and the key is read from the standard environment configuration for this model.
+# NOTE THE KEY: rewardkit reads [judge].judge, not [judge].model.
+# _build_judge_from_toml does judge_config.get("judge", "anthropic/claude-sonnet-4-6")
+# and passes it as LLMJudge(model=...). A "model =" key here is SILENTLY IGNORED and the
+# judge falls back to a default we have no key for. Verified against rewardkit source.
+judge = "openrouter/openai/gpt-5.6-luna"
+mode = "individual"        # judge each claim on its own, not all at once
+reasoning_effort = "medium"
+timeout = 300
+
+# The judge grades the agent's FINAL ANSWER, so it must be given it. Without files the
+# judge sees no evidence and scores everything 0 - which looks like a failing task.
+files = ["/logs/artifacts/final_answer.txt"]   # NOT /logs/agent: a separate
+# verifier cannot see the agent-private directory, only collected artifacts.
+
+[scoring]
+aggregation = "weighted_mean"   # graded partial credit; no weight keys, so every claim weighs 1.0
+
+
+# ── Claims ────────────────────────────────────────────────────────────────────
+# 15 claims aligned to instruction.md. No criterion carries a weight key, so every
+# claim weighs 1.0. Dropping three claims → 12/15 = 0.800; dropping four →
+# 11/15 = 0.733. The 0.75 threshold sits between three and four missed claims.
+#
+# Post kimi-k3-runs-third (0.933 on the only scored trial; 2 infra truncates):
+# raise difficulty with fixture-backed obligations that trial omitted — dual
+# complementary history views, plain-vs-follow commit counts, VERSION at every
+# tag, per-behaviour release rows beyond pre-warm, multi-writer negative search —
+# each mirrored in instruction.md. Content-identity remains blob OR equivalent.
+#
+# Mapping:
+#   pre-warm sequence; merge entry with dual-view proof; removal reasons     → 1, 2, 3, 7
+#   divergence / cherry-pick / quantified reason / third design              → 4, 5, 6, 8
+#   release matrices + tag VERSION inventory + lineage                       → 9, 10, 11
+#   rename plain-vs-follow counts; jitter never shipped                      → 12, 13
+#   notes + silent regression; 1.11 + negative search + mismatch catalog     → 14, 15
+#
+# type = "likert" with points = 3 reproduces MCP-Atlas's three outcomes exactly:
+#     1 -> 0.0   not_fulfilled       (claim not addressed)
+#     2 -> 0.5   partially_fulfilled (some but not all key details)
+#     3 -> 1.0   fulfilled           (completely and accurately addressed)
+# rewardkit normalises as (raw - 1) / (points - 1). Do NOT use type = "binary" —
+# it collapses the middle outcome and throws away the partial-credit signal.
+
+
+# ── Phase 1: the churn is three landings and two removals, not one cycle ──────
+
+[[criterion]]
+description = "Identifies the churned change as the connection-pool pre-warming in src/pool.py (a _prewarm(count) helper called from start()) and reports the COMPLETE sequence as three landings and two removals, not a single land/revert/reland: landed 9d8b9f6 (2024-03-11), removed f0a6be7 (2024-03-26), landed again 5b99564 (2024-04-07), removed again de96d28 (2024-05-22), landed a third time 77b8763 (2024-05-31). Full 40-character SHAs are expected; a sequence that stops after the first return is at most partially fulfilled."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "States that the first landing did not go onto main directly: 9d8b9f6 was committed on the side branch feature/prewarm and reached main through the merge commit 5b35d23 (2024-03-17). Proves the entry path with BOTH complementary incomplete history views: the default path-scoped log of src/pool.py lists 9d8b9f6 but omits the merge, while first-parent history lists the merge but omits 9d8b9f6. Naming the merge/branch without both views is at most partially fulfilled."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Reports the recorded reason for the first removal, quoted from f0a6be7: on the deploy that carried it every worker opened its full ceiling of connections simultaneously and the upstream connection limit was tripped inside forty seconds. Proves the removal is a genuine back-out with a content identity that is not the commit subject — equivalently: shared blob a2d81b3 at f0a6be7 and at 9d8b9f6's parent, OR stating that f0a6be7 restores src/pool.py to blob a2d81b3 / the pre-feature object. Quoting the reason with no content-identity proof is at most partially fulfilled."
+type = "likert"
+points = 3
+
+
+# ── Phase 2: what came back is not what left, and the metadata says it is ─────
+
+[[criterion]]
+description = "Catches that the second landing's own commit message is false: 5b99564 carries a \"(cherry picked from commit 9d8b9f69017f49053c253972c644ac0ee325ac71)\" trailer naming the first landing, but it is not that change. The path-scoped diff of src/pool.py between 9d8b9f6 and 5b99564 shows self._prewarm(self.max_size) becoming self._prewarm(self.min_size) inside start()."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Establishes that the two landings are not the same change by (1) saying what matched — identically-subjected commits \"Pre-warm the connection pool on worker start\" and/or matching per-commit path stats of 10 insertions / 0 deletions on src/pool.py alone; either matched-signal counts — (2) quoting the differing lines self._prewarm(self.max_size) versus self._prewarm(self.min_size) from a path-scoped revision-to-revision comparison, and (3) naming the distinct blob identities of src/pool.py at each landing (73f71e9 at 9d8b9f6, c6431cd at 5b99564). The line change without blob identities, or blob identities without the line change, is at most partially fulfilled."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Relates the divergence to the recorded reason for the removal, quantified from values in the code: ConnectionPool.__init__ defaults are min_size=2 and max_size=32, so the first landing warmed a worker's full ceiling of 32 connections at start-up while the second warms 2. Also reports the supporting change around the return: commit 245abbe added POOL_WARM_TARGET = \"min\" to src/config.py before the second landing. Exact commit date or subject wording is not required when the SHA (or an unambiguous reference) and the config addition are present."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Identifies the second removal from what the diff does, not from revert wording: de96d28 (2024-05-22, \"pool: simplify worker start-up\", author Aiko Tanabe). Quotes the recorded reason (take the start-up path back to the plain constructor / let the pool fill on demand). Proves restoration with a content identity — blob a2d81b3 shared with the first removal's result, OR an equivalent path-at-revision / 0-insertion 10-deletion proof — and states that both _prewarm() and start() were deleted. Subject-only identification without the quoted reason or without content identity is at most partially fulfilled."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "States that the third landing is a third design rather than a restoration of either earlier version: 77b8763 adds a warm_target() method that reads POOL_WARM_TARGET (from src/config.py) and resolves it to min_size, max_size or 0, and start() calls self._prewarm(self.warm_target()). Contrasting line-counts with the earlier landings is not required when the config-driven design difference is clear."
+type = "likert"
+points = 3
+
+
+# ── Phase 3: release matrices, tag VERSION inventory, lineage ─────────────────
+
+[[criterion]]
+description = "From the tagged trees, gives per-release presence for BOTH (A) pre-warm and (B) jittered backoff. Pre-warm: absent v1.4.0–v1.8.0, present at v1.9.0 as min_size, absent at v1.9.1 and v1.10.0, present at v1.11.0 as configured target; distinguishes first-shipped of any form (v1.9.0) from first-shipped of the surviving form (v1.11.0). Jitter: absent at every release tag (v1.4.0 through v1.11.0) — it churned in history but shipped in no release. Naming only the pre-warm matrix, or collapsing any-form and surviving first-shipped, is at most partially fulfilled."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Inventories every tag with release-vs-not, lightweight-vs-annotated (or equivalent creation evidence), pointed-at object, AND the VERSION string in the tagged tree — including that pipeline-1.11-rc1 has VERSION = \"1.10.0\" and annotated v1.10.0 has VERSION = \"1.9.0\". Establishes the tag surface cannot be trusted in ALL three ways: (a) containment is not presence (v1.8.0 and/or v1.9.1 can contain 9d8b9f6 yet lack pre-warm); (b) pipeline-1.11-rc1 is not a release; (c) v1.10.0 was cut before version bump 03a1d46. Inventory without VERSION-at-tag for the mismatched tags, or fewer than three trust failures, is at most partially fulfilled."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "States that v1.9.1 is not on the descendant line of v1.9.0 despite the higher version number — equivalently: git merge-base --is-ancestor v1.9.0 v1.9.1 is false, OR the hotfix was branched from the first removal f0a6be7 so v1.9.1 never had the pre-warm that v1.9.0 shipped. Also notes the hotfix exists as two distinct commits with the same subject: 5f72d7d on the unmerged hotfix branch and 3a3a3d0 forward-ported to main. Lineage without the dual commits, or dual commits without a lineage/pre-warm contradiction, is at most partially fulfilled. The exact merge-base command text is not required."
+type = "likert"
+points = 3
+
+
+# ── Phase 4: rename plain-vs-follow; jitter fake restore ──────────────────────
+
+[[criterion]]
+description = "Reports that the backoff policy was renamed — 7cb3e9e (2024-05-01) moved src/retry.py to src/backoff.py as a pure rename — and proves the hidden history with plain-vs-follow counts: a direct log of src/backoff.py shows 4 commits while following renames shows 6 (or equivalent complete-vs-incomplete lists). Gives the jitter churn: landed 751bf03 (2024-05-07), removed 121e367 (2024-05-10), with the recorded reason that the replay harness is seeded and asserts exact delays so a non-deterministic delay_for() makes the suite flap, and needs an injectable random source first. Rename without the plain-vs-follow count contrast is at most partially fulfilled."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Catches that the jitter never actually came back despite a commit subject saying it did: c5e2305, subject Revert \"Revert \\\"Add jittered exponential backoff to the retry loop\\\"\", restores nothing — its diff adds only two comment lines to src/backoff.py and no randomness. Evidence from the trees: no occurrence of random in src/backoff.py at v1.10.0, at v1.11.0 or at HEAD, the removal 121e367 had restored the pre-jitter blob bf6f257 exactly, AND the jittered implementation shipped in no release tag at all. Missing the never-shipped-in-any-release conclusion is at most partially fulfilled."
+type = "likert"
+points = 3
+
+
+# ── Phase 5: notes + negative search + mismatch catalog ───────────────────────
+
+[[criterion]]
+description = "Judges the 1.10.0 note section item by item. MISMATCH: \"Jittered exponential backoff in the retry loop\" never shipped; the section was written by c62e5a5 on 2024-05-25 after the 2024-05-10 removal, so it was false when written, and the misleading c5e2305 subject is what would have misled the author. MISMATCH: \"The connection pool warms to the configured target on worker start\" — at v1.10.0 the pool does not warm at all; the configured-target form first ships at v1.11.0. MATCH: the per-environment override file and the upstream-recovery runbook checklist are both present at v1.10.0. Also explicitly states that the draft notes omit the silent pre-warm regression (present at v1.9.0, absent at v1.9.1 and v1.10.0). Omitting the silent-regression callout or leaving a present item unjudged is at most partially fulfilled."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Judges the 1.11.0 note section item by item, with negative-search evidence where required. MISATTRIBUTED: resolved_shard() was added by 0b24074 (2024-03-23) and is already present at v1.8.0 (absent at v1.4.0–v1.7.0), so it first shipped three releases before the note credits it. MISMATCH, subject-only: \"Pool metrics exported on the health endpoint\" has no implementation at any tag — a4c24c9's entire diff is a three-line TODO comment. MATCH but mislabelled / not churn: 1a581a9 (\"Revert to a single writer per shard\") is 12 insertions adding SingleWriterShard; a search across history for an earlier multi-writer / single-writer archival change returns only 1a581a9 itself (negative result), so it must not be reported as churn. Also identifies 5b99564's false cherry-pick trailer as a provenance misrepresentation. Missing the negative-search result for the decoy revert, or the subject-only metrics failure, is at most partially fulfilled."
+type = "likert"
+points = 3

@@ -1,0 +1,24 @@
+SegmentID,Year,Revenue,PublishedAt,Status,Note
+S002,2023,1575,2025-01-12,Approved,Initial correction
+S002,2023,1600,2025-03-19,Approved,Superseding correction
+S002,2023,1650,2026-03-01,Approved,Future-dated; ignore
+S005,2024,820,2026-01-20,Draft,Not approved
+S005,2024,850,2026-04-01,Approved,Future-dated; ignore
+S009,2022,0,2025-11-01,Approved,Zero is authoritative
+S011,2025,,2026-01-15,Approved,Approved deletion / missing value
+S014,2022,1432,2025-06-10,Approved,Corrected revenue
+S017,2021,1190,2025-02-08,Approved,Changes 2022 denominator
+S021,2026,2810,2026-02-01,Approved,Current planning year correction
+S024,2023,2430,2024-09-09,Approved,Older approved correction
+S024,2023,2445,2025-12-12,Approved,Latest applicable correction
+S024,2023,2500,2026-02-20,Approved,After cutoff; ignore
+S028,2024,3125,2025-07-01,Withdrawn,Withdrawn; ignore
+S028,2024,3150,2025-08-01,Draft,Draft; ignore
+S032,2025,3600,2026-01-30,Approved,Approved correction
+S037,2022,4020,2025-04-04,Approved,Fills a value despite missing 2021 remaining
+S037,2022,4100,2026-05-05,Approved,Future-dated; ignore
+S038,2024,4210,2026-02-14,Approved,Last-day correction
+S019,2024,2275,2026-02-10,Approved,Fills a raw gap
+S027,2023,3010,2026-02-13,Approved,Fills em-dash gap
+S035,2024,,2025-10-21,Approved,Restates value to missing
+S006,2023,950,2025-09-01,Draft,Would follow zero but is not approved

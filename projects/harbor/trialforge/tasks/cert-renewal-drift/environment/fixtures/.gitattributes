@@ -1,0 +1,5 @@
+# The root .gitattributes does not cover these, and core.autocrlf=true on
+# Windows would break the byte counts the Dockerfile asserts.
+*.csv	text eol=lf
+*.csv.*	text eol=lf
+*.md	text eol=lf

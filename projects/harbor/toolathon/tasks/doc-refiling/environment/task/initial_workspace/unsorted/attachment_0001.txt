@@ -1,0 +1,6 @@
+Document-Type: Receipt
+Reference: MISC-0001
+
+Amount paid: 61.20
+Settled by corporate card.
+Retain for expense reconciliation.

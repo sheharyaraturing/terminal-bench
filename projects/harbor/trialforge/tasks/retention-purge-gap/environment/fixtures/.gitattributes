@@ -1,0 +1,13 @@
+# Fixture line endings.
+#
+# The repository-root .gitattributes pins .sh/.toml/.py/.md/.sql and Dockerfile to
+# LF and marks .bundle/.db/.zip/.parquet/.xlsx binary. It does not cover the
+# extensions below, and core.autocrlf=true on a Windows checkout hands out CRLF
+# for anything git detects as text. A CRLF fixture no longer matches the byte
+# hashes recorded in environment/fixtures/GROUND_TRUTH.md, and every parsed line
+# gains a stray carriage return on its last field.
+*.csv	text eol=lf
+*.log	text eol=lf
+# LICENSE has no extension, so the rules above miss it. The bundle ships it with LF;
+# a CRLF working copy makes any rebuild produce a different bundle hash.
+LICENSE         text eol=lf

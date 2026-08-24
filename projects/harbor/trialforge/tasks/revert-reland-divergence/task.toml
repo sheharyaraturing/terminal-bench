@@ -1,0 +1,144 @@
+# Harbor task config. Schema is validated by harbor 0.21.0.
+schema_version = "1.4"
+
+[task]
+name = "turing/revert-reland-divergence"
+version = "1.0.0"
+description = "Release forensics on a service repository where every cheap signal lies: a change that churns three times, a cherry-pick trailer that names a commit it is not, a removal whose subject says cleanup, a revert-of-a-revert that restores nothing, a hotfix tag branched from before the feature landed, an annotated tag cut before its version bump, a renamed module, and a changelog wrong in four different ways"
+
+[metadata]
+persona   = "Release Engineer"
+domain    = "software-engineering"
+target_tool_calls = 70             # aim for 40-70
+target_claims = 15                 # aim for 8-15
+
+# Provider payload fields; inline table so it stays one key.
+extra_llm_params = { reasoning = { effort = "medium" } }
+
+# One tool result, capped.
+tool_output_cap = 400000
+
+
+# Tool allowlist handed to the vendored harness as `enabledTools`.
+enabled_tools = [
+  # needed
+  "git_git_log",
+  "git_git_show",
+  "git_git_diff",
+  "git_git_branch",
+  "filesystem_list_directory",
+  "filesystem_search_files",
+  "filesystem_read_text_file",
+  "mcp-code-executor_execute_code",   # the only route to the tag set
+  # same-server distractors
+  "git_git_status",                   # the tree is clean; says nothing
+  "git_git_checkout",                 # mutating trap: detaches HEAD and loses the pinned main branch the task is about
+  "git_git_diff_staged",              # nothing is ever staged - always empty
+  "git_git_diff_unstaged",            # nothing is ever dirty - always empty
+  "filesystem_read_multiple_files",
+  "filesystem_directory_tree",
+  # off-server distractors
+  "desktop-commander_read_file",      # redundant read path
+  "desktop-commander_list_directory",
+  "desktop-commander_get_file_info",
+  "desktop-commander_start_search",   # searches text, cannot search history
+  "cli-mcp-server_run_command",       # crippled: no pipes, /data only, so the obvious `git log | grep` is unavailable
+  "cli-mcp-server_show_security_rules",
+  "mcp-server-code-runner_run-code",  # one-shot, no state between calls
+  "calculator_calculate",             # near-miss: arithmetic will not order version numbers, which is the actual trap
+  "memory_create_entities",
+  "ddg-search_search",                # tempting: look the project up online
+  "context7_resolve-library-id",      # far-field: third-party library docs
+  "whois_whois_domain",               # far-field
+]
+
+[agent]
+timeout_sec = 3600.0               # long-horizon tasks need room
+
+[verifier]
+timeout_sec = 600.0
+
+# "separate" scores the trial's RECORDED artifacts in a fresh container, which is what `harbor job regrade` needs.
+environment_mode = "separate"
+
+# A separate verifier needs its OWN image.
+[verifier.environment]
+network_mode = "public"            # the judge needs to reach OpenRouter
+
+# The judge calls litellm, which reads OPENROUTER_API_KEY; ${VAR} pulls it from the host.
+[verifier.env]
+OPENROUTER_API_KEY = "${OPENROUTER_API_KEY}"
+
+[environment]
+# NO docker_image KEY ON PURPOSE.
+cpus = 4                           # CPU is the binding constraint, not memory
+memory_mb = 4096                   # measured: 19 servers idle at ~2.1 GB
+storage_mb = 10240
+
+# ── MCP servers ───────────────────────────────────────────────────────────────
+
+[[environment.mcp_servers]]
+name = "git"
+transport = "stdio"
+command = "uvx"
+args = ["--with", "mcp<2", "mcp-server-git==2026.7.10"]
+
+[[environment.mcp_servers]]
+name = "filesystem"
+transport = "stdio"
+command = "npx"
+args = ["@modelcontextprotocol/server-filesystem@2026.7.10", "/data"]
+
+[[environment.mcp_servers]]
+name = "mcp-code-executor"
+transport = "stdio"
+command = "npx"
+args = ["@geobio/code_execution_server@0.2.1"]
+
+[[environment.mcp_servers]]
+name = "desktop-commander"
+transport = "stdio"
+command = "npx"
+args = ["@wonderwhy-er/desktop-commander@0.2.47"]
+
+[[environment.mcp_servers]]
+name = "cli-mcp-server"
+transport = "stdio"
+command = "uvx"
+args = ["--with", "mcp<2", "cli-mcp-server==0.2.5"]
+
+[[environment.mcp_servers]]
+name = "mcp-server-code-runner"
+transport = "stdio"
+command = "npx"
+args = ["mcp-server-code-runner@0.1.8"]
+
+[[environment.mcp_servers]]
+name = "calculator"
+transport = "stdio"
+command = "uvx"
+args = ["--with", "mcp<2", "mcp-server-calculator==0.2.1"]
+
+[[environment.mcp_servers]]
+name = "memory"
+transport = "stdio"
+command = "npx"
+args = ["@modelcontextprotocol/server-memory@2026.7.4"]
+
+[[environment.mcp_servers]]
+name = "ddg-search"
+transport = "stdio"
+command = "uvx"
+args = ["--with", "mcp<2", "duckduckgo-mcp-server==0.6.1"]
+
+[[environment.mcp_servers]]
+name = "context7"
+transport = "stdio"
+command = "npx"
+args = ["@upstash/context7-mcp@4.0.2"]
+
+[[environment.mcp_servers]]
+name = "whois"
+transport = "stdio"
+command = "npx"
+args = ["@bharathvaj/whois-mcp@1.0.1"]

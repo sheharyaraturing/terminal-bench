@@ -1,0 +1,25 @@
+{
+  "metric": "progressive_fee_run",
+  "schedule_version": "FS-2026-A",
+  "snapshot_date": "2026-03-31",
+  "accounts_in_file": 58,
+  "accounts_reported": 42,
+  "total_fee_cents": 419936,
+  "excluded": {
+    "closed": 7,
+    "house": 5,
+    "duplicate_rows_collapsed": 4
+  },
+  "undefined": {
+    "AC-1008": "MISSING_BALANCE",
+    "AC-1010": "UNREADABLE_BALANCE",
+    "AC-1030": "CONFLICTING_BALANCE"
+  },
+  "band_balance_cents": {
+    "A": 32402320,
+    "B": 94002775,
+    "C": 84464965,
+    "D": 46846865,
+    "unbanded": 44980380
+  }
+}

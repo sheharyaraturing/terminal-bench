@@ -1,0 +1,20 @@
+{
+  "application_build_id": "app-2026.08.21.4",
+  "as_of": "2026-08-21T18:00:00Z",
+  "cohorts": [
+    {
+      "active_override_ids": [],
+      "name": "stable",
+      "traffic_percent": 80
+    },
+    {
+      "active_override_ids": [
+        "ovr-canary-ledger-20260821"
+      ],
+      "name": "canary",
+      "traffic_percent": 20
+    }
+  ],
+  "config_bundle_id": "flags-2026.08.21.3",
+  "release_id": "prod-2026.08.21.4"
+}

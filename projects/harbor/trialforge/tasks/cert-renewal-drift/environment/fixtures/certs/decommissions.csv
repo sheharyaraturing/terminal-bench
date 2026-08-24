@@ -1,0 +1,7 @@
+hostname,decommissioned_on,change_ticket,requested_by,notes,status
+mail-relay-02.corp.hbl.example.com,2026-03-11,CHG-20260311-B,c.marchetti,"relay folded into the managed mail gateway; host destroyed",completed
+build-cache-01.corp.hbl.example.com,2026-04-27,CHG-20260427-A,g.pettersen,"replaced by the shared artefact cache; host destroyed",completed
+billing-api-02.dr.hbl.example.com,2026-05-18,CHG-20260518-C,a.solberg,"withdrawn from service; traffic drained and DNS records removed, listener still answering until the rack is pulled",completed
+media-cdn-02.prod.hbl.example.com,2026-06-30,CHG-20260630-C,c.marchetti,"withdrawn from service; traffic drained and DNS records removed, listener still answering until the rack is pulled",completed
+session-store-03.corp.hbl.example.com,2026-07-09,CHG-20260709-C,f.nakamura,"withdrawn from service; traffic drained and DNS records removed, listener still answering until the rack is pulled",completed
+notify-worker-02.dr.hbl.example.com,2026-09-30,CHG-20260930-S,f.nakamura,"withdrawal scheduled; host still in service and answering at the assessment instant",scheduled

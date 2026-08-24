@@ -1,0 +1,6 @@
+{
+  "aliases": {
+    "reporting.background_export": "reporting.async_export"
+  },
+  "schema_version": 1
+}

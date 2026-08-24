@@ -1,0 +1,5599 @@
+[
+  {
+    "name": "create_directory",
+    "description": "Create a new directory or ensure a directory exists. Can create multiple nested directories in one operation. If the directory already exists, this operation will succeed silently. Perfect for setting up directory structures for projects or ensuring required paths exist. Only works within allowed directories.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "server": "filesystem"
+  },
+  {
+    "name": "directory_tree",
+    "description": "Get a recursive tree view of files and directories as a JSON structure. Each entry includes 'name', 'type' (file/directory), and 'children' for directories. Files have no children array, while directories always have a children array (which may be empty). The output is formatted with 2-space indentation for readability. Only works within allowed directories.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "server": "filesystem"
+  },
+  {
+    "name": "edit_file",
+    "description": "Make line-based edits to a text file. Each edit replaces exact line sequences with new content. Returns a git-style diff showing the changes made. Only works within allowed directories.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "edits": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "oldText": {
+                "type": "string",
+                "description": "Text to search for - must match exactly"
+              },
+              "newText": {
+                "type": "string",
+                "description": "Text to replace with"
+              }
+            },
+            "required": [
+              "oldText",
+              "newText"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "dryRun": {
+          "type": "boolean",
+          "default": false,
+          "description": "Preview changes using git-style diff format"
+        }
+      },
+      "required": [
+        "path",
+        "edits"
+      ],
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "server": "filesystem"
+  },
+  {
+    "name": "get_file_info",
+    "description": "Retrieve detailed metadata about a file or directory. Returns comprehensive information including size, creation time, last modified time, permissions, and type. This tool is perfect for understanding file characteristics without reading the actual content. Only works within allowed directories.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "server": "filesystem"
+  },
+  {
+    "name": "list_allowed_directories",
+    "description": "Returns the list of directories that this server is allowed to access. Use this to understand which directories are available before trying to access files.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    },
+    "server": "filesystem"
+  },
+  {
+    "name": "list_directory",
+    "description": "Get a detailed listing of all files and directories in a specified path. Results clearly distinguish between files and directories with [FILE] and [DIR] prefixes. This tool is essential for understanding directory structure and finding specific files within a directory. Only works within allowed directories.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "server": "filesystem"
+  },
+  {
+    "name": "list_directory_with_sizes",
+    "description": "Get a detailed listing of all files and directories in a specified path, including sizes. Results clearly distinguish between files and directories with [FILE] and [DIR] prefixes. This tool is useful for understanding directory structure and finding specific files within a directory. Only works within allowed directories.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "sortBy": {
+          "type": "string",
+          "enum": [
+            "name",
+            "size"
+          ],
+          "default": "name",
+          "description": "Sort entries by name or size"
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "server": "filesystem"
+  },
+  {
+    "name": "move_file",
+    "description": "Move or rename files and directories. Can move files between directories and rename them in a single operation. If the destination exists, the operation will fail. Works across different directories and can be used for simple renaming within the same directory. Both source and destination must be within allowed directories.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "type": "string"
+        },
+        "destination": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "source",
+        "destination"
+      ],
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "server": "filesystem"
+  },
+  {
+    "name": "read_file",
+    "description": "Read the complete contents of a file from the file system. Handles various text encodings and provides detailed error messages if the file cannot be read. Use this tool when you need to examine the contents of a single file. Use the 'head' parameter to read only the first N lines of a file, or the 'tail' parameter to read only the last N lines of a file. Only works within allowed directories.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "tail": {
+          "type": "number",
+          "description": "If provided, returns only the last N lines of the file"
+        },
+        "head": {
+          "type": "number",
+          "description": "If provided, returns only the first N lines of the file"
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "server": "filesystem"
+  },
+  {
+    "name": "read_multiple_files",
+    "description": "Read the contents of multiple files simultaneously. This is more efficient than reading files one by one when you need to analyze or compare multiple files. Each file's content is returned with its path as a reference. Failed reads for individual files won't stop the entire operation. Only works within allowed directories.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "paths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "paths"
+      ],
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "server": "filesystem"
+  },
+  {
+    "name": "search_files",
+    "description": "Recursively search for files and directories matching a pattern. Searches through all subdirectories from the starting path. The search is case-insensitive and matches partial names. Returns full paths to all matching items. Great for finding files when you don't know their exact location. Only searches within allowed directories.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "pattern": {
+          "type": "string"
+        },
+        "excludePatterns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        }
+      },
+      "required": [
+        "path",
+        "pattern"
+      ],
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "server": "filesystem"
+  },
+  {
+    "name": "write_file",
+    "description": "Create a new file or completely overwrite an existing file with new content. Use with caution as it will overwrite existing files without warning. Handles text content with proper encoding. Only works within allowed directories.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "content": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "content"
+      ],
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "server": "filesystem"
+  },
+  {
+    "name": "add_observations",
+    "description": "Add new observations to existing entities in the knowledge graph",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "observations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "entityName": {
+                "type": "string",
+                "description": "The name of the entity to add the observations to"
+              },
+              "contents": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "An array of observation contents to add"
+              }
+            },
+            "required": [
+              "entityName",
+              "contents"
+            ]
+          }
+        }
+      },
+      "required": [
+        "observations"
+      ]
+    },
+    "server": "memory"
+  },
+  {
+    "name": "create_entities",
+    "description": "Create multiple new entities in the knowledge graph",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "entities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "The name of the entity"
+              },
+              "entityType": {
+                "type": "string",
+                "description": "The type of the entity"
+              },
+              "observations": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "An array of observation contents associated with the entity"
+              }
+            },
+            "required": [
+              "name",
+              "entityType",
+              "observations"
+            ]
+          }
+        }
+      },
+      "required": [
+        "entities"
+      ]
+    },
+    "server": "memory"
+  },
+  {
+    "name": "create_relations",
+    "description": "Create multiple new relations between entities in the knowledge graph. Relations should be in active voice",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "relations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "from": {
+                "type": "string",
+                "description": "The name of the entity where the relation starts"
+              },
+              "to": {
+                "type": "string",
+                "description": "The name of the entity where the relation ends"
+              },
+              "relationType": {
+                "type": "string",
+                "description": "The type of the relation"
+              }
+            },
+            "required": [
+              "from",
+              "to",
+              "relationType"
+            ]
+          }
+        }
+      },
+      "required": [
+        "relations"
+      ]
+    },
+    "server": "memory"
+  },
+  {
+    "name": "delete_entities",
+    "description": "Delete multiple entities and their associated relations from the knowledge graph",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "entityNames": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "An array of entity names to delete"
+        }
+      },
+      "required": [
+        "entityNames"
+      ]
+    },
+    "server": "memory"
+  },
+  {
+    "name": "delete_observations",
+    "description": "Delete specific observations from entities in the knowledge graph",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "deletions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "entityName": {
+                "type": "string",
+                "description": "The name of the entity containing the observations"
+              },
+              "observations": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "An array of observations to delete"
+              }
+            },
+            "required": [
+              "entityName",
+              "observations"
+            ]
+          }
+        }
+      },
+      "required": [
+        "deletions"
+      ]
+    },
+    "server": "memory"
+  },
+  {
+    "name": "delete_relations",
+    "description": "Delete multiple relations from the knowledge graph",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "relations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "from": {
+                "type": "string",
+                "description": "The name of the entity where the relation starts"
+              },
+              "to": {
+                "type": "string",
+                "description": "The name of the entity where the relation ends"
+              },
+              "relationType": {
+                "type": "string",
+                "description": "The type of the relation"
+              }
+            },
+            "required": [
+              "from",
+              "to",
+              "relationType"
+            ]
+          },
+          "description": "An array of relations to delete"
+        }
+      },
+      "required": [
+        "relations"
+      ]
+    },
+    "server": "memory"
+  },
+  {
+    "name": "open_nodes",
+    "description": "Open specific nodes in the knowledge graph by their names",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "names": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "An array of entity names to retrieve"
+        }
+      },
+      "required": [
+        "names"
+      ]
+    },
+    "server": "memory"
+  },
+  {
+    "name": "read_graph",
+    "description": "Read the entire knowledge graph",
+    "inputSchema": {
+      "type": "object",
+      "properties": {}
+    },
+    "server": "memory"
+  },
+  {
+    "name": "search_nodes",
+    "description": "Search for nodes in the knowledge graph based on a query",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "description": "The search query to match against entity names, types, and observation content"
+        }
+      },
+      "required": [
+        "query"
+      ]
+    },
+    "server": "memory"
+  },
+  {
+    "name": "run_command",
+    "description": "Allows command (CLI) execution in the directory: /workspace/dumps/workspace\n\nAvailable commands: all commands\nAvailable flags: all flags\n\nShell operators (&&, ||, |, >, >>, <, <<, ;) are not supported. Set ALLOW_SHELL_OPERATORS=true to enable.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "command": {
+          "type": "string",
+          "description": "Single command to execute (example: 'ls -l' or 'cat file.txt')"
+        }
+      },
+      "required": [
+        "command"
+      ]
+    },
+    "server": "terminal"
+  },
+  {
+    "name": "show_security_rules",
+    "description": "Show what commands and operations are allowed in this environment.\n",
+    "inputSchema": {
+      "type": "object",
+      "properties": {}
+    },
+    "server": "terminal"
+  },
+  {
+    "name": "add_endnote_to_document",
+    "description": "Add an endnote to a specific paragraph in a Word document.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "type": "string"
+        },
+        "paragraph_index": {
+          "type": "integer"
+        },
+        "endnote_text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "filename",
+        "paragraph_index",
+        "endnote_text"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "add_footnote_to_document",
+    "description": "Add a footnote to a specific paragraph in a Word document.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "type": "string"
+        },
+        "paragraph_index": {
+          "type": "integer"
+        },
+        "footnote_text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "filename",
+        "paragraph_index",
+        "footnote_text"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "add_heading",
+    "description": "Add a heading to a Word document.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "level": {
+          "default": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "filename",
+        "text"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "add_page_break",
+    "description": "Add a page break to the document.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "filename"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "add_paragraph",
+    "description": "Add a paragraph to a Word document.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "style": {
+          "default": null,
+          "type": "string"
+        }
+      },
+      "required": [
+        "filename",
+        "text"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "add_picture",
+    "description": "Add an image to a Word document.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "type": "string"
+        },
+        "image_path": {
+          "type": "string"
+        },
+        "width": {
+          "default": null,
+          "type": "number"
+        }
+      },
+      "required": [
+        "filename",
+        "image_path"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "add_table",
+    "description": "Add a table to a Word document.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "type": "string"
+        },
+        "rows": {
+          "type": "integer"
+        },
+        "cols": {
+          "type": "integer"
+        },
+        "data": {
+          "default": null,
+          "items": {},
+          "type": "array"
+        }
+      },
+      "required": [
+        "filename",
+        "rows",
+        "cols"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "apply_table_alternating_rows",
+    "description": "Apply alternating row colors to a table for better readability.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "type": "string"
+        },
+        "table_index": {
+          "type": "integer"
+        },
+        "color1": {
+          "default": "FFFFFF",
+          "type": "string"
+        },
+        "color2": {
+          "default": "F2F2F2",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filename",
+        "table_index"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "auto_fit_table_columns",
+    "description": "Set table columns to auto-fit based on content.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "type": "string"
+        },
+        "table_index": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "filename",
+        "table_index"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "convert_to_pdf",
+    "description": "Convert a Word document to PDF format.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "type": "string"
+        },
+        "output_filename": {
+          "default": null,
+          "type": "string"
+        }
+      },
+      "required": [
+        "filename"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "copy_document",
+    "description": "Create a copy of a Word document.",
+    "inputSchema": {
+      "properties": {
+        "source_filename": {
+          "type": "string"
+        },
+        "destination_filename": {
+          "default": null,
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_filename"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "create_custom_style",
+    "description": "Create a custom style in the document.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "type": "string"
+        },
+        "style_name": {
+          "type": "string"
+        },
+        "bold": {
+          "default": null,
+          "type": "boolean"
+        },
+        "italic": {
+          "default": null,
+          "type": "boolean"
+        },
+        "font_size": {
+          "default": null,
+          "type": "integer"
+        },
+        "font_name": {
+          "default": null,
+          "type": "string"
+        },
+        "color": {
+          "default": null,
+          "type": "string"
+        },
+        "base_style": {
+          "default": null,
+          "type": "string"
+        }
+      },
+      "required": [
+        "filename",
+        "style_name"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "create_document",
+    "description": "Create a new Word document with optional metadata.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "type": "string"
+        },
+        "title": {
+          "default": null,
+          "type": "string"
+        },
+        "author": {
+          "default": null,
+          "type": "string"
+        }
+      },
+      "required": [
+        "filename"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "customize_footnote_style",
+    "description": "Customize footnote numbering and formatting in a Word document.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "type": "string"
+        },
+        "numbering_format": {
+          "default": "1, 2, 3",
+          "type": "string"
+        },
+        "start_number": {
+          "default": 1,
+          "type": "integer"
+        },
+        "font_name": {
+          "default": null,
+          "type": "string"
+        },
+        "font_size": {
+          "default": null,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "filename"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "delete_paragraph",
+    "description": "Delete a paragraph from a document.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "type": "string"
+        },
+        "paragraph_index": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "filename",
+        "paragraph_index"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "find_text_in_document",
+    "description": "Find occurrences of specific text in a Word document.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "type": "string"
+        },
+        "text_to_find": {
+          "type": "string"
+        },
+        "match_case": {
+          "default": true,
+          "type": "boolean"
+        },
+        "whole_word": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "filename",
+        "text_to_find"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "format_table",
+    "description": "Format a table with borders, shading, and structure.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "type": "string"
+        },
+        "table_index": {
+          "type": "integer"
+        },
+        "has_header_row": {
+          "default": null,
+          "type": "boolean"
+        },
+        "border_style": {
+          "default": null,
+          "type": "string"
+        },
+        "shading": {
+          "default": null,
+          "items": {},
+          "type": "array"
+        }
+      },
+      "required": [
+        "filename",
+        "table_index"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "format_table_cell_text",
+    "description": "Format text within a specific table cell.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "type": "string"
+        },
+        "table_index": {
+          "type": "integer"
+        },
+        "row_index": {
+          "type": "integer"
+        },
+        "col_index": {
+          "type": "integer"
+        },
+        "text_content": {
+          "default": null,
+          "type": "string"
+        },
+        "bold": {
+          "default": null,
+          "type": "boolean"
+        },
+        "italic": {
+          "default": null,
+          "type": "boolean"
+        },
+        "underline": {
+          "default": null,
+          "type": "boolean"
+        },
+        "color": {
+          "default": null,
+          "type": "string"
+        },
+        "font_size": {
+          "default": null,
+          "type": "integer"
+        },
+        "font_name": {
+          "default": null,
+          "type": "string"
+        }
+      },
+      "required": [
+        "filename",
+        "table_index",
+        "row_index",
+        "col_index"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "format_text",
+    "description": "Format a specific range of text within a paragraph.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "type": "string"
+        },
+        "paragraph_index": {
+          "type": "integer"
+        },
+        "start_pos": {
+          "type": "integer"
+        },
+        "end_pos": {
+          "type": "integer"
+        },
+        "bold": {
+          "default": null,
+          "type": "boolean"
+        },
+        "italic": {
+          "default": null,
+          "type": "boolean"
+        },
+        "underline": {
+          "default": null,
+          "type": "boolean"
+        },
+        "color": {
+          "default": null,
+          "type": "string"
+        },
+        "font_size": {
+          "default": null,
+          "type": "integer"
+        },
+        "font_name": {
+          "default": null,
+          "type": "string"
+        }
+      },
+      "required": [
+        "filename",
+        "paragraph_index",
+        "start_pos",
+        "end_pos"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "get_all_comments",
+    "description": "Extract all comments from a Word document.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "filename"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "get_comments_by_author",
+    "description": "Extract comments from a specific author in a Word document.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "type": "string"
+        },
+        "author": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "filename",
+        "author"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "get_comments_for_paragraph",
+    "description": "Extract comments for a specific paragraph in a Word document.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "type": "string"
+        },
+        "paragraph_index": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "filename",
+        "paragraph_index"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "get_document_info",
+    "description": "Get information about a Word document.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "filename"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "get_document_outline",
+    "description": "Get the structure of a Word document.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "filename"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "get_document_text",
+    "description": "Extract all text from a Word document.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "filename"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "get_document_xml",
+    "description": "Get the raw XML structure of a Word document.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "filename"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "get_paragraph_text_from_document",
+    "description": "Get text from a specific paragraph in a Word document.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "type": "string"
+        },
+        "paragraph_index": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "filename",
+        "paragraph_index"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "highlight_table_header",
+    "description": "Apply special highlighting to table header row.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "type": "string"
+        },
+        "table_index": {
+          "type": "integer"
+        },
+        "header_color": {
+          "default": "4472C4",
+          "type": "string"
+        },
+        "text_color": {
+          "default": "FFFFFF",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filename",
+        "table_index"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "insert_header_near_text",
+    "description": "Insert a header (with specified style) before or after the target paragraph. Specify by text or paragraph index. Args: filename (str), target_text (str, optional), header_title (str), position ('before' or 'after'), header_style (str, default 'Heading 1'), target_paragraph_index (int, optional).",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "type": "string"
+        },
+        "target_text": {
+          "default": null,
+          "type": "string"
+        },
+        "header_title": {
+          "default": null,
+          "type": "string"
+        },
+        "position": {
+          "default": "after",
+          "type": "string"
+        },
+        "header_style": {
+          "default": "Heading 1",
+          "type": "string"
+        },
+        "target_paragraph_index": {
+          "default": null,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "filename"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "insert_line_or_paragraph_near_text",
+    "description": "Insert a new line or paragraph (with specified or matched style) before or after the target paragraph. Specify by text or paragraph index. Args: filename (str), target_text (str, optional), line_text (str), position ('before' or 'after'), line_style (str, optional), target_paragraph_index (int, optional).",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "type": "string"
+        },
+        "target_text": {
+          "default": null,
+          "type": "string"
+        },
+        "line_text": {
+          "default": null,
+          "type": "string"
+        },
+        "position": {
+          "default": "after",
+          "type": "string"
+        },
+        "line_style": {
+          "default": null,
+          "type": "string"
+        },
+        "target_paragraph_index": {
+          "default": null,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "filename"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "insert_numbered_list_near_text",
+    "description": "Insert a numbered list before or after the target paragraph. Specify by text or paragraph index. Args: filename (str), target_text (str, optional), list_items (list of str), position ('before' or 'after'), target_paragraph_index (int, optional).",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "type": "string"
+        },
+        "target_text": {
+          "default": null,
+          "type": "string"
+        },
+        "list_items": {
+          "default": null,
+          "items": {},
+          "type": "array"
+        },
+        "position": {
+          "default": "after",
+          "type": "string"
+        },
+        "target_paragraph_index": {
+          "default": null,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "filename"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "list_available_documents",
+    "description": "List all .docx files in the specified directory.",
+    "inputSchema": {
+      "properties": {
+        "directory": {
+          "default": ".",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "merge_table_cells",
+    "description": "Merge cells in a rectangular area of a table.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "type": "string"
+        },
+        "table_index": {
+          "type": "integer"
+        },
+        "start_row": {
+          "type": "integer"
+        },
+        "start_col": {
+          "type": "integer"
+        },
+        "end_row": {
+          "type": "integer"
+        },
+        "end_col": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "filename",
+        "table_index",
+        "start_row",
+        "start_col",
+        "end_row",
+        "end_col"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "merge_table_cells_horizontal",
+    "description": "Merge cells horizontally in a single row.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "type": "string"
+        },
+        "table_index": {
+          "type": "integer"
+        },
+        "row_index": {
+          "type": "integer"
+        },
+        "start_col": {
+          "type": "integer"
+        },
+        "end_col": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "filename",
+        "table_index",
+        "row_index",
+        "start_col",
+        "end_col"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "merge_table_cells_vertical",
+    "description": "Merge cells vertically in a single column.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "type": "string"
+        },
+        "table_index": {
+          "type": "integer"
+        },
+        "col_index": {
+          "type": "integer"
+        },
+        "start_row": {
+          "type": "integer"
+        },
+        "end_row": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "filename",
+        "table_index",
+        "col_index",
+        "start_row",
+        "end_row"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "protect_document",
+    "description": "Add password protection to a Word document.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "filename",
+        "password"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "replace_block_between_manual_anchors",
+    "description": "Replace all content between start_anchor_text and end_anchor_text (or next logical header if not provided).",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "type": "string"
+        },
+        "start_anchor_text": {
+          "type": "string"
+        },
+        "new_paragraphs": {
+          "items": {},
+          "type": "array"
+        },
+        "end_anchor_text": {
+          "default": null,
+          "type": "string"
+        },
+        "match_fn": {
+          "default": null,
+          "title": "Match Fn"
+        },
+        "new_paragraph_style": {
+          "default": null,
+          "type": "string"
+        }
+      },
+      "required": [
+        "filename",
+        "start_anchor_text",
+        "new_paragraphs"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "replace_paragraph_block_below_header",
+    "description": "Reemplaza el bloque de p\u00e1rrafos debajo de un encabezado, evitando modificar TOC.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "type": "string"
+        },
+        "header_text": {
+          "type": "string"
+        },
+        "new_paragraphs": {
+          "items": {},
+          "type": "array"
+        },
+        "detect_block_end_fn": {
+          "default": null,
+          "title": "Detect Block End Fn"
+        }
+      },
+      "required": [
+        "filename",
+        "header_text",
+        "new_paragraphs"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "search_and_replace",
+    "description": "Search for text and replace all occurrences.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "type": "string"
+        },
+        "find_text": {
+          "type": "string"
+        },
+        "replace_text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "filename",
+        "find_text",
+        "replace_text"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "set_table_alignment_all",
+    "description": "Set text alignment for all cells in a table.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "type": "string"
+        },
+        "table_index": {
+          "type": "integer"
+        },
+        "horizontal": {
+          "default": "left",
+          "type": "string"
+        },
+        "vertical": {
+          "default": "top",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filename",
+        "table_index"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "set_table_cell_alignment",
+    "description": "Set text alignment for a specific table cell.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "type": "string"
+        },
+        "table_index": {
+          "type": "integer"
+        },
+        "row_index": {
+          "type": "integer"
+        },
+        "col_index": {
+          "type": "integer"
+        },
+        "horizontal": {
+          "default": "left",
+          "type": "string"
+        },
+        "vertical": {
+          "default": "top",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filename",
+        "table_index",
+        "row_index",
+        "col_index"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "set_table_cell_padding",
+    "description": "Set padding/margins for a specific table cell.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "type": "string"
+        },
+        "table_index": {
+          "type": "integer"
+        },
+        "row_index": {
+          "type": "integer"
+        },
+        "col_index": {
+          "type": "integer"
+        },
+        "top": {
+          "default": null,
+          "type": "number"
+        },
+        "bottom": {
+          "default": null,
+          "type": "number"
+        },
+        "left": {
+          "default": null,
+          "type": "number"
+        },
+        "right": {
+          "default": null,
+          "type": "number"
+        },
+        "unit": {
+          "default": "points",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filename",
+        "table_index",
+        "row_index",
+        "col_index"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "set_table_cell_shading",
+    "description": "Apply shading/filling to a specific table cell.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "type": "string"
+        },
+        "table_index": {
+          "type": "integer"
+        },
+        "row_index": {
+          "type": "integer"
+        },
+        "col_index": {
+          "type": "integer"
+        },
+        "fill_color": {
+          "type": "string"
+        },
+        "pattern": {
+          "default": "clear",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filename",
+        "table_index",
+        "row_index",
+        "col_index",
+        "fill_color"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "set_table_column_width",
+    "description": "Set the width of a specific table column.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "type": "string"
+        },
+        "table_index": {
+          "type": "integer"
+        },
+        "col_index": {
+          "type": "integer"
+        },
+        "width": {
+          "type": "number"
+        },
+        "width_type": {
+          "default": "points",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filename",
+        "table_index",
+        "col_index",
+        "width"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "set_table_column_widths",
+    "description": "Set the widths of multiple table columns.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "type": "string"
+        },
+        "table_index": {
+          "type": "integer"
+        },
+        "widths": {
+          "items": {},
+          "type": "array"
+        },
+        "width_type": {
+          "default": "points",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filename",
+        "table_index",
+        "widths"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "set_table_width",
+    "description": "Set the overall width of a table.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "type": "string"
+        },
+        "table_index": {
+          "type": "integer"
+        },
+        "width": {
+          "type": "number"
+        },
+        "width_type": {
+          "default": "points",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filename",
+        "table_index",
+        "width"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "unprotect_document",
+    "description": "Remove password protection from a Word document.",
+    "inputSchema": {
+      "properties": {
+        "filename": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "filename",
+        "password"
+      ],
+      "type": "object"
+    },
+    "_meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    },
+    "server": "word"
+  },
+  {
+    "name": "add_bullet_points",
+    "description": "Add bullet points to a placeholder.",
+    "inputSchema": {
+      "properties": {
+        "slide_index": {
+          "title": "Slide Index",
+          "type": "integer"
+        },
+        "placeholder_idx": {
+          "title": "Placeholder Idx",
+          "type": "integer"
+        },
+        "bullet_points": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Bullet Points",
+          "type": "array"
+        },
+        "presentation_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Presentation Id"
+        }
+      },
+      "required": [
+        "slide_index",
+        "placeholder_idx",
+        "bullet_points"
+      ],
+      "title": "add_bullet_pointsArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "add_bullet_pointsOutput",
+      "type": "object"
+    },
+    "server": "pptx"
+  },
+  {
+    "name": "add_chart",
+    "description": "Add a chart to a slide with comprehensive formatting options.",
+    "inputSchema": {
+      "properties": {
+        "slide_index": {
+          "title": "Slide Index",
+          "type": "integer"
+        },
+        "chart_type": {
+          "title": "Chart Type",
+          "type": "string"
+        },
+        "left": {
+          "title": "Left",
+          "type": "number"
+        },
+        "top": {
+          "title": "Top",
+          "type": "number"
+        },
+        "width": {
+          "title": "Width",
+          "type": "number"
+        },
+        "height": {
+          "title": "Height",
+          "type": "number"
+        },
+        "categories": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Categories",
+          "type": "array"
+        },
+        "series_names": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Series Names",
+          "type": "array"
+        },
+        "series_values": {
+          "items": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array"
+          },
+          "title": "Series Values",
+          "type": "array"
+        },
+        "has_legend": {
+          "default": true,
+          "title": "Has Legend",
+          "type": "boolean"
+        },
+        "legend_position": {
+          "default": "right",
+          "title": "Legend Position",
+          "type": "string"
+        },
+        "has_data_labels": {
+          "default": false,
+          "title": "Has Data Labels",
+          "type": "boolean"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Title"
+        },
+        "x_axis_title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "X Axis Title"
+        },
+        "y_axis_title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Y Axis Title"
+        },
+        "color_scheme": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Color Scheme"
+        },
+        "presentation_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Presentation Id"
+        }
+      },
+      "required": [
+        "slide_index",
+        "chart_type",
+        "left",
+        "top",
+        "width",
+        "height",
+        "categories",
+        "series_names",
+        "series_values"
+      ],
+      "title": "add_chartArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "add_chartOutput",
+      "type": "object"
+    },
+    "server": "pptx"
+  },
+  {
+    "name": "add_connector",
+    "description": "\n        Add connector lines/arrows between points on a slide.\n        \n        Args:\n            slide_index: Index of the slide (0-based)\n            connector_type: Type of connector (\"straight\", \"elbow\", \"curved\")\n            start_x: Starting X coordinate in inches\n            start_y: Starting Y coordinate in inches\n            end_x: Ending X coordinate in inches  \n            end_y: Ending Y coordinate in inches\n            line_width: Width of the connector line in points\n            color: RGB color as [r, g, b] list\n            presentation_id: Optional presentation ID (uses current if not provided)\n            \n        Returns:\n            Dictionary with operation results\n        ",
+    "inputSchema": {
+      "properties": {
+        "slide_index": {
+          "title": "Slide Index",
+          "type": "integer"
+        },
+        "connector_type": {
+          "title": "Connector Type",
+          "type": "string"
+        },
+        "start_x": {
+          "title": "Start X",
+          "type": "number"
+        },
+        "start_y": {
+          "title": "Start Y",
+          "type": "number"
+        },
+        "end_x": {
+          "title": "End X",
+          "type": "number"
+        },
+        "end_y": {
+          "title": "End Y",
+          "type": "number"
+        },
+        "line_width": {
+          "default": 1.0,
+          "title": "Line Width",
+          "type": "number"
+        },
+        "color": {
+          "default": null,
+          "items": {
+            "type": "integer"
+          },
+          "title": "Color",
+          "type": "array"
+        },
+        "presentation_id": {
+          "default": null,
+          "title": "Presentation Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "slide_index",
+        "connector_type",
+        "start_x",
+        "start_y",
+        "end_x",
+        "end_y"
+      ],
+      "title": "add_connectorArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "add_connectorOutput",
+      "type": "object"
+    },
+    "server": "pptx"
+  },
+  {
+    "name": "add_shape",
+    "description": "Add an auto shape to a slide with enhanced options.",
+    "inputSchema": {
+      "properties": {
+        "slide_index": {
+          "title": "Slide Index",
+          "type": "integer"
+        },
+        "shape_type": {
+          "title": "Shape Type",
+          "type": "string"
+        },
+        "left": {
+          "title": "Left",
+          "type": "number"
+        },
+        "top": {
+          "title": "Top",
+          "type": "number"
+        },
+        "width": {
+          "title": "Width",
+          "type": "number"
+        },
+        "height": {
+          "title": "Height",
+          "type": "number"
+        },
+        "fill_color": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fill Color"
+        },
+        "line_color": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Line Color"
+        },
+        "line_width": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Line Width"
+        },
+        "text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Text"
+        },
+        "font_size": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Font Size"
+        },
+        "font_color": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Font Color"
+        },
+        "presentation_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Presentation Id"
+        }
+      },
+      "required": [
+        "slide_index",
+        "shape_type",
+        "left",
+        "top",
+        "width",
+        "height"
+      ],
+      "title": "add_shapeArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "add_shapeOutput",
+      "type": "object"
+    },
+    "server": "pptx"
+  },
+  {
+    "name": "add_slide",
+    "description": "Add a new slide to the presentation with optional background styling.",
+    "inputSchema": {
+      "properties": {
+        "layout_index": {
+          "default": 1,
+          "title": "Layout Index",
+          "type": "integer"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Title"
+        },
+        "background_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Background Type"
+        },
+        "background_colors": {
+          "anyOf": [
+            {
+              "items": {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Background Colors"
+        },
+        "gradient_direction": {
+          "default": "horizontal",
+          "title": "Gradient Direction",
+          "type": "string"
+        },
+        "color_scheme": {
+          "default": "modern_blue",
+          "title": "Color Scheme",
+          "type": "string"
+        },
+        "presentation_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Presentation Id"
+        }
+      },
+      "title": "add_slideArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "add_slideOutput",
+      "type": "object"
+    },
+    "server": "pptx"
+  },
+  {
+    "name": "add_table",
+    "description": "Add a table to a slide with enhanced formatting options.",
+    "inputSchema": {
+      "properties": {
+        "slide_index": {
+          "title": "Slide Index",
+          "type": "integer"
+        },
+        "rows": {
+          "title": "Rows",
+          "type": "integer"
+        },
+        "cols": {
+          "title": "Cols",
+          "type": "integer"
+        },
+        "left": {
+          "title": "Left",
+          "type": "number"
+        },
+        "top": {
+          "title": "Top",
+          "type": "number"
+        },
+        "width": {
+          "title": "Width",
+          "type": "number"
+        },
+        "height": {
+          "title": "Height",
+          "type": "number"
+        },
+        "data": {
+          "anyOf": [
+            {
+              "items": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Data"
+        },
+        "header_row": {
+          "default": true,
+          "title": "Header Row",
+          "type": "boolean"
+        },
+        "header_font_size": {
+          "default": 12,
+          "title": "Header Font Size",
+          "type": "integer"
+        },
+        "body_font_size": {
+          "default": 10,
+          "title": "Body Font Size",
+          "type": "integer"
+        },
+        "header_bg_color": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Header Bg Color"
+        },
+        "body_bg_color": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Body Bg Color"
+        },
+        "border_color": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Border Color"
+        },
+        "presentation_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Presentation Id"
+        }
+      },
+      "required": [
+        "slide_index",
+        "rows",
+        "cols",
+        "left",
+        "top",
+        "width",
+        "height"
+      ],
+      "title": "add_tableArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "add_tableOutput",
+      "type": "object"
+    },
+    "server": "pptx"
+  },
+  {
+    "name": "apply_picture_effects",
+    "description": "Apply multiple picture effects in combination.",
+    "inputSchema": {
+      "properties": {
+        "slide_index": {
+          "title": "Slide Index",
+          "type": "integer"
+        },
+        "shape_index": {
+          "title": "Shape Index",
+          "type": "integer"
+        },
+        "effects": {
+          "additionalProperties": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Effects",
+          "type": "object"
+        },
+        "presentation_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Presentation Id"
+        }
+      },
+      "required": [
+        "slide_index",
+        "shape_index",
+        "effects"
+      ],
+      "title": "apply_picture_effectsArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "apply_picture_effectsOutput",
+      "type": "object"
+    },
+    "server": "pptx"
+  },
+  {
+    "name": "apply_professional_design",
+    "description": "Unified professional design tool for themes, slides, and visual enhancements.\n        This applies professional styling and themes rather than structural layout changes.",
+    "inputSchema": {
+      "properties": {
+        "operation": {
+          "title": "Operation",
+          "type": "string"
+        },
+        "slide_index": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Slide Index"
+        },
+        "slide_type": {
+          "default": "title_content",
+          "title": "Slide Type",
+          "type": "string"
+        },
+        "color_scheme": {
+          "default": "modern_blue",
+          "title": "Color Scheme",
+          "type": "string"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Title"
+        },
+        "content": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Content"
+        },
+        "apply_to_existing": {
+          "default": true,
+          "title": "Apply To Existing",
+          "type": "boolean"
+        },
+        "enhance_title": {
+          "default": true,
+          "title": "Enhance Title",
+          "type": "boolean"
+        },
+        "enhance_content": {
+          "default": true,
+          "title": "Enhance Content",
+          "type": "boolean"
+        },
+        "enhance_shapes": {
+          "default": true,
+          "title": "Enhance Shapes",
+          "type": "boolean"
+        },
+        "enhance_charts": {
+          "default": true,
+          "title": "Enhance Charts",
+          "type": "boolean"
+        },
+        "presentation_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Presentation Id"
+        }
+      },
+      "required": [
+        "operation"
+      ],
+      "title": "apply_professional_designArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "apply_professional_designOutput",
+      "type": "object"
+    },
+    "server": "pptx"
+  },
+  {
+    "name": "apply_slide_template",
+    "description": "\n        Apply a structured layout template to an existing slide.\n        This modifies slide layout and content structure using predefined templates.\n        \n        Args:\n            slide_index: Index of the slide to apply template to\n            template_id: ID of the template to apply (e.g., 'title_slide', 'text_with_image')\n            color_scheme: Color scheme to use ('modern_blue', 'corporate_gray', 'elegant_green', 'warm_red')\n            content_mapping: Dictionary mapping element roles to custom content\n            image_paths: Dictionary mapping image element roles to file paths\n            presentation_id: Presentation ID (uses current if None)\n        ",
+    "inputSchema": {
+      "properties": {
+        "slide_index": {
+          "title": "Slide Index",
+          "type": "integer"
+        },
+        "template_id": {
+          "title": "Template Id",
+          "type": "string"
+        },
+        "color_scheme": {
+          "default": "modern_blue",
+          "title": "Color Scheme",
+          "type": "string"
+        },
+        "content_mapping": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Content Mapping"
+        },
+        "image_paths": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Image Paths"
+        },
+        "presentation_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Presentation Id"
+        }
+      },
+      "required": [
+        "slide_index",
+        "template_id"
+      ],
+      "title": "apply_slide_templateArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "apply_slide_templateOutput",
+      "type": "object"
+    },
+    "server": "pptx"
+  },
+  {
+    "name": "auto_generate_presentation",
+    "description": "\n        Automatically generate a presentation based on topic and preferences.\n        \n        Args:\n            topic: Main topic/theme for the presentation\n            slide_count: Number of slides to generate (3-20)\n            presentation_type: Type of presentation ('business', 'academic', 'creative')\n            color_scheme: Color scheme to use\n            include_charts: Whether to include chart slides\n            include_images: Whether to include image placeholders\n            presentation_id: Presentation ID (uses current if None)\n        ",
+    "inputSchema": {
+      "properties": {
+        "topic": {
+          "title": "Topic",
+          "type": "string"
+        },
+        "slide_count": {
+          "default": 5,
+          "title": "Slide Count",
+          "type": "integer"
+        },
+        "presentation_type": {
+          "default": "business",
+          "title": "Presentation Type",
+          "type": "string"
+        },
+        "color_scheme": {
+          "default": "modern_blue",
+          "title": "Color Scheme",
+          "type": "string"
+        },
+        "include_charts": {
+          "default": true,
+          "title": "Include Charts",
+          "type": "boolean"
+        },
+        "include_images": {
+          "default": false,
+          "title": "Include Images",
+          "type": "boolean"
+        },
+        "presentation_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Presentation Id"
+        }
+      },
+      "required": [
+        "topic"
+      ],
+      "title": "auto_generate_presentationArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "auto_generate_presentationOutput",
+      "type": "object"
+    },
+    "server": "pptx"
+  },
+  {
+    "name": "create_presentation",
+    "description": "Create a new PowerPoint presentation.",
+    "inputSchema": {
+      "properties": {
+        "id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Id"
+        }
+      },
+      "title": "create_presentationArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "create_presentationOutput",
+      "type": "object"
+    },
+    "server": "pptx"
+  },
+  {
+    "name": "create_presentation_from_template",
+    "description": "Create a new PowerPoint presentation from a template file.",
+    "inputSchema": {
+      "properties": {
+        "template_path": {
+          "title": "Template Path",
+          "type": "string"
+        },
+        "id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Id"
+        }
+      },
+      "required": [
+        "template_path"
+      ],
+      "title": "create_presentation_from_templateArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "create_presentation_from_templateOutput",
+      "type": "object"
+    },
+    "server": "pptx"
+  },
+  {
+    "name": "create_presentation_from_templates",
+    "description": "\n        Create a complete presentation from a sequence of templates.\n        \n        Args:\n            template_sequence: List of template configurations, each containing:\n                - template_id: Template to use\n                - content: Content mapping for the template\n                - images: Image path mapping for the template\n            color_scheme: Color scheme to apply to all slides\n            presentation_title: Optional title for the presentation\n            presentation_id: Presentation ID (uses current if None)\n        \n        Example template_sequence:\n        [\n            {\n                \"template_id\": \"title_slide\",\n                \"content\": {\n                    \"title\": \"My Presentation\",\n                    \"subtitle\": \"Annual Report 2024\",\n                    \"author\": \"John Doe\"\n                }\n            },\n            {\n                \"template_id\": \"text_with_image\",\n                \"content\": {\n                    \"title\": \"Key Results\",\n                    \"content\": \"\u2022 Achievement 1\\n\u2022 Achievement 2\"\n                },\n                \"images\": {\n                    \"supporting\": \"/path/to/image.jpg\"\n                }\n            }\n        ]\n        ",
+    "inputSchema": {
+      "properties": {
+        "template_sequence": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Template Sequence",
+          "type": "array"
+        },
+        "color_scheme": {
+          "default": "modern_blue",
+          "title": "Color Scheme",
+          "type": "string"
+        },
+        "presentation_title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Presentation Title"
+        },
+        "presentation_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Presentation Id"
+        }
+      },
+      "required": [
+        "template_sequence"
+      ],
+      "title": "create_presentation_from_templatesArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "create_presentation_from_templatesOutput",
+      "type": "object"
+    },
+    "server": "pptx"
+  },
+  {
+    "name": "create_slide_from_template",
+    "description": "\n        Create a new slide using a layout template.\n        \n        Args:\n            template_id: ID of the template to use (e.g., 'title_slide', 'text_with_image')\n            color_scheme: Color scheme to use ('modern_blue', 'corporate_gray', 'elegant_green', 'warm_red')\n            content_mapping: Dictionary mapping element roles to custom content\n            image_paths: Dictionary mapping image element roles to file paths\n            layout_index: PowerPoint layout index to use as base (default: 1)\n            presentation_id: Presentation ID (uses current if None)\n        ",
+    "inputSchema": {
+      "properties": {
+        "template_id": {
+          "title": "Template Id",
+          "type": "string"
+        },
+        "color_scheme": {
+          "default": "modern_blue",
+          "title": "Color Scheme",
+          "type": "string"
+        },
+        "content_mapping": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Content Mapping"
+        },
+        "image_paths": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Image Paths"
+        },
+        "layout_index": {
+          "default": 1,
+          "title": "Layout Index",
+          "type": "integer"
+        },
+        "presentation_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Presentation Id"
+        }
+      },
+      "required": [
+        "template_id"
+      ],
+      "title": "create_slide_from_templateArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "create_slide_from_templateOutput",
+      "type": "object"
+    },
+    "server": "pptx"
+  },
+  {
+    "name": "extract_presentation_text",
+    "description": "Extract all text content from all slides in the presentation.",
+    "inputSchema": {
+      "properties": {
+        "presentation_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Presentation Id"
+        },
+        "include_slide_info": {
+          "default": true,
+          "title": "Include Slide Info",
+          "type": "boolean"
+        }
+      },
+      "title": "extract_presentation_textArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "extract_presentation_textOutput",
+      "type": "object"
+    },
+    "server": "pptx"
+  },
+  {
+    "name": "extract_slide_text",
+    "description": "Extract all text content from a specific slide.",
+    "inputSchema": {
+      "properties": {
+        "slide_index": {
+          "title": "Slide Index",
+          "type": "integer"
+        },
+        "presentation_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Presentation Id"
+        }
+      },
+      "required": [
+        "slide_index"
+      ],
+      "title": "extract_slide_textArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "extract_slide_textOutput",
+      "type": "object"
+    },
+    "server": "pptx"
+  },
+  {
+    "name": "format_table_cell",
+    "description": "Format a specific table cell.",
+    "inputSchema": {
+      "properties": {
+        "slide_index": {
+          "title": "Slide Index",
+          "type": "integer"
+        },
+        "shape_index": {
+          "title": "Shape Index",
+          "type": "integer"
+        },
+        "row": {
+          "title": "Row",
+          "type": "integer"
+        },
+        "col": {
+          "title": "Col",
+          "type": "integer"
+        },
+        "font_size": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Font Size"
+        },
+        "font_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Font Name"
+        },
+        "bold": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bold"
+        },
+        "italic": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Italic"
+        },
+        "color": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Color"
+        },
+        "bg_color": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bg Color"
+        },
+        "alignment": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Alignment"
+        },
+        "vertical_alignment": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Vertical Alignment"
+        },
+        "presentation_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Presentation Id"
+        }
+      },
+      "required": [
+        "slide_index",
+        "shape_index",
+        "row",
+        "col"
+      ],
+      "title": "format_table_cellArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "format_table_cellOutput",
+      "type": "object"
+    },
+    "server": "pptx"
+  },
+  {
+    "name": "get_presentation_info",
+    "description": "Get information about a presentation.",
+    "inputSchema": {
+      "properties": {
+        "presentation_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Presentation Id"
+        }
+      },
+      "title": "get_presentation_infoArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "get_presentation_infoOutput",
+      "type": "object"
+    },
+    "server": "pptx"
+  },
+  {
+    "name": "get_server_info",
+    "description": "Get information about the MCP server.",
+    "inputSchema": {
+      "properties": {},
+      "title": "get_server_infoArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "get_server_infoOutput",
+      "type": "object"
+    },
+    "server": "pptx"
+  },
+  {
+    "name": "get_slide_info",
+    "description": "Get information about a specific slide.",
+    "inputSchema": {
+      "properties": {
+        "slide_index": {
+          "title": "Slide Index",
+          "type": "integer"
+        },
+        "presentation_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Presentation Id"
+        }
+      },
+      "required": [
+        "slide_index"
+      ],
+      "title": "get_slide_infoArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "get_slide_infoOutput",
+      "type": "object"
+    },
+    "server": "pptx"
+  },
+  {
+    "name": "get_template_file_info",
+    "description": "Get information about a template file including layouts and properties.",
+    "inputSchema": {
+      "properties": {
+        "template_path": {
+          "title": "Template Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "template_path"
+      ],
+      "title": "get_template_file_infoArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "get_template_file_infoOutput",
+      "type": "object"
+    },
+    "server": "pptx"
+  },
+  {
+    "name": "get_template_info",
+    "description": "\n        Get detailed information about a specific template.\n        \n        Args:\n            template_id: ID of the template to get information about\n        ",
+    "inputSchema": {
+      "properties": {
+        "template_id": {
+          "title": "Template Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "template_id"
+      ],
+      "title": "get_template_infoArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "get_template_infoOutput",
+      "type": "object"
+    },
+    "server": "pptx"
+  },
+  {
+    "name": "list_presentations",
+    "description": "List all loaded presentations.",
+    "inputSchema": {
+      "properties": {},
+      "title": "list_presentationsArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "list_presentationsOutput",
+      "type": "object"
+    },
+    "server": "pptx"
+  },
+  {
+    "name": "list_slide_templates",
+    "description": "List all available slide layout templates.",
+    "inputSchema": {
+      "properties": {},
+      "title": "list_slide_templatesArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "list_slide_templatesOutput",
+      "type": "object"
+    },
+    "server": "pptx"
+  },
+  {
+    "name": "manage_fonts",
+    "description": "Unified font management tool for analysis, optimization, and recommendations.",
+    "inputSchema": {
+      "properties": {
+        "operation": {
+          "title": "Operation",
+          "type": "string"
+        },
+        "font_path": {
+          "title": "Font Path",
+          "type": "string"
+        },
+        "output_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Output Path"
+        },
+        "presentation_type": {
+          "default": "business",
+          "title": "Presentation Type",
+          "type": "string"
+        },
+        "text_content": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Text Content"
+        }
+      },
+      "required": [
+        "operation",
+        "font_path"
+      ],
+      "title": "manage_fontsArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "manage_fontsOutput",
+      "type": "object"
+    },
+    "server": "pptx"
+  },
+  {
+    "name": "manage_hyperlinks",
+    "description": "\n        Manage hyperlinks in text shapes and runs.\n        \n        Args:\n            operation: Operation type (\"add\", \"remove\", \"list\", \"update\")\n            slide_index: Index of the slide (0-based)\n            shape_index: Index of the shape on the slide (0-based)\n            text: Text to make into hyperlink (for \"add\" operation)\n            url: URL for the hyperlink\n            run_index: Index of text run within the shape (0-based)\n            presentation_id: Optional presentation ID (uses current if not provided)\n            \n        Returns:\n            Dictionary with operation results\n        ",
+    "inputSchema": {
+      "properties": {
+        "operation": {
+          "title": "Operation",
+          "type": "string"
+        },
+        "slide_index": {
+          "title": "Slide Index",
+          "type": "integer"
+        },
+        "shape_index": {
+          "default": null,
+          "title": "Shape Index",
+          "type": "integer"
+        },
+        "text": {
+          "default": null,
+          "title": "Text",
+          "type": "string"
+        },
+        "url": {
+          "default": null,
+          "title": "Url",
+          "type": "string"
+        },
+        "run_index": {
+          "default": 0,
+          "title": "Run Index",
+          "type": "integer"
+        },
+        "presentation_id": {
+          "default": null,
+          "title": "Presentation Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "operation",
+        "slide_index"
+      ],
+      "title": "manage_hyperlinksArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "manage_hyperlinksOutput",
+      "type": "object"
+    },
+    "server": "pptx"
+  },
+  {
+    "name": "manage_image",
+    "description": "Unified image management tool for adding and enhancing images.",
+    "inputSchema": {
+      "properties": {
+        "slide_index": {
+          "title": "Slide Index",
+          "type": "integer"
+        },
+        "operation": {
+          "title": "Operation",
+          "type": "string"
+        },
+        "image_source": {
+          "title": "Image Source",
+          "type": "string"
+        },
+        "source_type": {
+          "default": "file",
+          "title": "Source Type",
+          "type": "string"
+        },
+        "left": {
+          "default": 1.0,
+          "title": "Left",
+          "type": "number"
+        },
+        "top": {
+          "default": 1.0,
+          "title": "Top",
+          "type": "number"
+        },
+        "width": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Width"
+        },
+        "height": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Height"
+        },
+        "enhancement_style": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Enhancement Style"
+        },
+        "brightness": {
+          "default": 1.0,
+          "title": "Brightness",
+          "type": "number"
+        },
+        "contrast": {
+          "default": 1.0,
+          "title": "Contrast",
+          "type": "number"
+        },
+        "saturation": {
+          "default": 1.0,
+          "title": "Saturation",
+          "type": "number"
+        },
+        "sharpness": {
+          "default": 1.0,
+          "title": "Sharpness",
+          "type": "number"
+        },
+        "blur_radius": {
+          "default": 0,
+          "title": "Blur Radius",
+          "type": "number"
+        },
+        "filter_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Filter Type"
+        },
+        "output_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Output Path"
+        },
+        "presentation_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Presentation Id"
+        }
+      },
+      "required": [
+        "slide_index",
+        "operation",
+        "image_source"
+      ],
+      "title": "manage_imageArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "manage_imageOutput",
+      "type": "object"
+    },
+    "server": "pptx"
+  },
+  {
+    "name": "manage_slide_masters",
+    "description": "\n        Access and manage slide master properties and layouts.\n        \n        Args:\n            operation: Operation type (\"list\", \"get_layouts\", \"get_info\")\n            master_index: Index of the slide master (0-based)\n            layout_index: Index of specific layout within master (0-based)\n            presentation_id: Optional presentation ID (uses current if not provided)\n            \n        Returns:\n            Dictionary with slide master information\n        ",
+    "inputSchema": {
+      "properties": {
+        "operation": {
+          "title": "Operation",
+          "type": "string"
+        },
+        "master_index": {
+          "default": 0,
+          "title": "Master Index",
+          "type": "integer"
+        },
+        "layout_index": {
+          "default": null,
+          "title": "Layout Index",
+          "type": "integer"
+        },
+        "presentation_id": {
+          "default": null,
+          "title": "Presentation Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "operation"
+      ],
+      "title": "manage_slide_mastersArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "manage_slide_mastersOutput",
+      "type": "object"
+    },
+    "server": "pptx"
+  },
+  {
+    "name": "manage_slide_transitions",
+    "description": "\n        Manage slide transitions and timing.\n        \n        Args:\n            slide_index: Index of the slide (0-based)\n            operation: Operation type (\"set\", \"remove\", \"get\")\n            transition_type: Type of transition (basic support)\n            duration: Duration of transition in seconds\n            presentation_id: Optional presentation ID (uses current if not provided)\n            \n        Returns:\n            Dictionary with transition information\n        ",
+    "inputSchema": {
+      "properties": {
+        "slide_index": {
+          "title": "Slide Index",
+          "type": "integer"
+        },
+        "operation": {
+          "title": "Operation",
+          "type": "string"
+        },
+        "transition_type": {
+          "default": null,
+          "title": "Transition Type",
+          "type": "string"
+        },
+        "duration": {
+          "default": 1.0,
+          "title": "Duration",
+          "type": "number"
+        },
+        "presentation_id": {
+          "default": null,
+          "title": "Presentation Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "slide_index",
+        "operation"
+      ],
+      "title": "manage_slide_transitionsArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "manage_slide_transitionsOutput",
+      "type": "object"
+    },
+    "server": "pptx"
+  },
+  {
+    "name": "manage_text",
+    "description": "Unified text management tool for adding, formatting, validating text, and formatting multiple text runs.",
+    "inputSchema": {
+      "properties": {
+        "slide_index": {
+          "title": "Slide Index",
+          "type": "integer"
+        },
+        "operation": {
+          "title": "Operation",
+          "type": "string"
+        },
+        "left": {
+          "default": 1.0,
+          "title": "Left",
+          "type": "number"
+        },
+        "top": {
+          "default": 1.0,
+          "title": "Top",
+          "type": "number"
+        },
+        "width": {
+          "default": 4.0,
+          "title": "Width",
+          "type": "number"
+        },
+        "height": {
+          "default": 2.0,
+          "title": "Height",
+          "type": "number"
+        },
+        "text": {
+          "default": "",
+          "title": "Text",
+          "type": "string"
+        },
+        "shape_index": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Shape Index"
+        },
+        "text_runs": {
+          "anyOf": [
+            {
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Text Runs"
+        },
+        "font_size": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Font Size"
+        },
+        "font_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Font Name"
+        },
+        "bold": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bold"
+        },
+        "italic": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Italic"
+        },
+        "underline": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Underline"
+        },
+        "color": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Color"
+        },
+        "bg_color": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bg Color"
+        },
+        "alignment": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Alignment"
+        },
+        "vertical_alignment": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Vertical Alignment"
+        },
+        "auto_fit": {
+          "default": true,
+          "title": "Auto Fit",
+          "type": "boolean"
+        },
+        "validation_only": {
+          "default": false,
+          "title": "Validation Only",
+          "type": "boolean"
+        },
+        "min_font_size": {
+          "default": 8,
+          "title": "Min Font Size",
+          "type": "integer"
+        },
+        "max_font_size": {
+          "default": 72,
+          "title": "Max Font Size",
+          "type": "integer"
+        },
+        "presentation_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Presentation Id"
+        }
+      },
+      "required": [
+        "slide_index",
+        "operation"
+      ],
+      "title": "manage_textArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "manage_textOutput",
+      "type": "object"
+    },
+    "server": "pptx"
+  },
+  {
+    "name": "open_presentation",
+    "description": "Open an existing PowerPoint presentation from a file.",
+    "inputSchema": {
+      "properties": {
+        "file_path": {
+          "title": "File Path",
+          "type": "string"
+        },
+        "id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Id"
+        }
+      },
+      "required": [
+        "file_path"
+      ],
+      "title": "open_presentationArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "open_presentationOutput",
+      "type": "object"
+    },
+    "server": "pptx"
+  },
+  {
+    "name": "optimize_slide_text",
+    "description": "\n        Optimize text elements on a slide for better readability and fit.\n        \n        Args:\n            slide_index: Index of the slide to optimize\n            auto_resize: Whether to automatically resize fonts to fit containers\n            auto_wrap: Whether to apply intelligent text wrapping\n            optimize_spacing: Whether to optimize line spacing\n            min_font_size: Minimum allowed font size\n            max_font_size: Maximum allowed font size\n            presentation_id: Presentation ID (uses current if None)\n        ",
+    "inputSchema": {
+      "properties": {
+        "slide_index": {
+          "title": "Slide Index",
+          "type": "integer"
+        },
+        "auto_resize": {
+          "default": true,
+          "title": "Auto Resize",
+          "type": "boolean"
+        },
+        "auto_wrap": {
+          "default": true,
+          "title": "Auto Wrap",
+          "type": "boolean"
+        },
+        "optimize_spacing": {
+          "default": true,
+          "title": "Optimize Spacing",
+          "type": "boolean"
+        },
+        "min_font_size": {
+          "default": 8,
+          "title": "Min Font Size",
+          "type": "integer"
+        },
+        "max_font_size": {
+          "default": 36,
+          "title": "Max Font Size",
+          "type": "integer"
+        },
+        "presentation_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Presentation Id"
+        }
+      },
+      "required": [
+        "slide_index"
+      ],
+      "title": "optimize_slide_textArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "optimize_slide_textOutput",
+      "type": "object"
+    },
+    "server": "pptx"
+  },
+  {
+    "name": "populate_placeholder",
+    "description": "Populate a placeholder with text.",
+    "inputSchema": {
+      "properties": {
+        "slide_index": {
+          "title": "Slide Index",
+          "type": "integer"
+        },
+        "placeholder_idx": {
+          "title": "Placeholder Idx",
+          "type": "integer"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "presentation_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Presentation Id"
+        }
+      },
+      "required": [
+        "slide_index",
+        "placeholder_idx",
+        "text"
+      ],
+      "title": "populate_placeholderArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "populate_placeholderOutput",
+      "type": "object"
+    },
+    "server": "pptx"
+  },
+  {
+    "name": "save_presentation",
+    "description": "Save a presentation to a file.",
+    "inputSchema": {
+      "properties": {
+        "file_path": {
+          "title": "File Path",
+          "type": "string"
+        },
+        "presentation_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Presentation Id"
+        }
+      },
+      "required": [
+        "file_path"
+      ],
+      "title": "save_presentationArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "save_presentationOutput",
+      "type": "object"
+    },
+    "server": "pptx"
+  },
+  {
+    "name": "set_core_properties",
+    "description": "Set core document properties.",
+    "inputSchema": {
+      "properties": {
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Title"
+        },
+        "subject": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subject"
+        },
+        "author": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Author"
+        },
+        "keywords": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Keywords"
+        },
+        "comments": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Comments"
+        },
+        "presentation_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Presentation Id"
+        }
+      },
+      "title": "set_core_propertiesArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "set_core_propertiesOutput",
+      "type": "object"
+    },
+    "server": "pptx"
+  },
+  {
+    "name": "switch_presentation",
+    "description": "Switch to a different loaded presentation.",
+    "inputSchema": {
+      "properties": {
+        "presentation_id": {
+          "title": "Presentation Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "presentation_id"
+      ],
+      "title": "switch_presentationArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "switch_presentationOutput",
+      "type": "object"
+    },
+    "server": "pptx"
+  },
+  {
+    "name": "update_chart_data",
+    "description": "\n        Replace existing chart data with new categories and series.\n        \n        Args:\n            slide_index: Index of the slide (0-based)\n            shape_index: Index of the chart shape (0-based)\n            categories: List of category names\n            series_data: List of dictionaries with 'name' and 'values' keys\n            presentation_id: Optional presentation ID (uses current if not provided)\n            \n        Returns:\n            Dictionary with operation results\n        ",
+    "inputSchema": {
+      "properties": {
+        "slide_index": {
+          "title": "Slide Index",
+          "type": "integer"
+        },
+        "shape_index": {
+          "title": "Shape Index",
+          "type": "integer"
+        },
+        "categories": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Categories",
+          "type": "array"
+        },
+        "series_data": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Series Data",
+          "type": "array"
+        },
+        "presentation_id": {
+          "default": null,
+          "title": "Presentation Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "slide_index",
+        "shape_index",
+        "categories",
+        "series_data"
+      ],
+      "title": "update_chart_dataArguments",
+      "type": "object"
+    },
+    "outputSchema": {
+      "properties": {
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "update_chart_dataOutput",
+      "type": "object"
+    },
+    "server": "pptx"
+  },
+  {
+    "name": "apply_formula",
+    "description": "\n    Apply Excel formula to cell.\n    Excel formula will write to cell with verification.\n    ",
+    "inputSchema": {
+      "properties": {
+        "filepath": {
+          "title": "Filepath",
+          "type": "string"
+        },
+        "sheet_name": {
+          "title": "Sheet Name",
+          "type": "string"
+        },
+        "cell": {
+          "title": "Cell",
+          "type": "string"
+        },
+        "formula": {
+          "title": "Formula",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filepath",
+        "sheet_name",
+        "cell",
+        "formula"
+      ],
+      "title": "apply_formulaArguments",
+      "type": "object"
+    },
+    "server": "excel"
+  },
+  {
+    "name": "copy_range",
+    "description": "Copy a range of cells to another location.",
+    "inputSchema": {
+      "properties": {
+        "filepath": {
+          "title": "Filepath",
+          "type": "string"
+        },
+        "sheet_name": {
+          "title": "Sheet Name",
+          "type": "string"
+        },
+        "source_start": {
+          "title": "Source Start",
+          "type": "string"
+        },
+        "source_end": {
+          "title": "Source End",
+          "type": "string"
+        },
+        "target_start": {
+          "title": "Target Start",
+          "type": "string"
+        },
+        "target_sheet": {
+          "default": null,
+          "title": "Target Sheet",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filepath",
+        "sheet_name",
+        "source_start",
+        "source_end",
+        "target_start"
+      ],
+      "title": "copy_rangeArguments",
+      "type": "object"
+    },
+    "server": "excel"
+  },
+  {
+    "name": "copy_worksheet",
+    "description": "Copy worksheet within workbook.",
+    "inputSchema": {
+      "properties": {
+        "filepath": {
+          "title": "Filepath",
+          "type": "string"
+        },
+        "source_sheet": {
+          "title": "Source Sheet",
+          "type": "string"
+        },
+        "target_sheet": {
+          "title": "Target Sheet",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filepath",
+        "source_sheet",
+        "target_sheet"
+      ],
+      "title": "copy_worksheetArguments",
+      "type": "object"
+    },
+    "server": "excel"
+  },
+  {
+    "name": "create_chart",
+    "description": "Create chart in worksheet.",
+    "inputSchema": {
+      "properties": {
+        "filepath": {
+          "title": "Filepath",
+          "type": "string"
+        },
+        "sheet_name": {
+          "title": "Sheet Name",
+          "type": "string"
+        },
+        "data_range": {
+          "title": "Data Range",
+          "type": "string"
+        },
+        "chart_type": {
+          "title": "Chart Type",
+          "type": "string"
+        },
+        "target_cell": {
+          "title": "Target Cell",
+          "type": "string"
+        },
+        "title": {
+          "default": "",
+          "title": "Title",
+          "type": "string"
+        },
+        "x_axis": {
+          "default": "",
+          "title": "X Axis",
+          "type": "string"
+        },
+        "y_axis": {
+          "default": "",
+          "title": "Y Axis",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filepath",
+        "sheet_name",
+        "data_range",
+        "chart_type",
+        "target_cell"
+      ],
+      "title": "create_chartArguments",
+      "type": "object"
+    },
+    "server": "excel"
+  },
+  {
+    "name": "create_pivot_table",
+    "description": "Create pivot table in worksheet.",
+    "inputSchema": {
+      "properties": {
+        "filepath": {
+          "title": "Filepath",
+          "type": "string"
+        },
+        "sheet_name": {
+          "title": "Sheet Name",
+          "type": "string"
+        },
+        "data_range": {
+          "title": "Data Range",
+          "type": "string"
+        },
+        "rows": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Rows",
+          "type": "array"
+        },
+        "values": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Values",
+          "type": "array"
+        },
+        "columns": {
+          "default": null,
+          "items": {
+            "type": "string"
+          },
+          "title": "Columns",
+          "type": "array"
+        },
+        "agg_func": {
+          "default": "mean",
+          "title": "Agg Func",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filepath",
+        "sheet_name",
+        "data_range",
+        "rows",
+        "values"
+      ],
+      "title": "create_pivot_tableArguments",
+      "type": "object"
+    },
+    "server": "excel"
+  },
+  {
+    "name": "create_table",
+    "description": "Creates a native Excel table from a specified range of data.",
+    "inputSchema": {
+      "properties": {
+        "filepath": {
+          "title": "Filepath",
+          "type": "string"
+        },
+        "sheet_name": {
+          "title": "Sheet Name",
+          "type": "string"
+        },
+        "data_range": {
+          "title": "Data Range",
+          "type": "string"
+        },
+        "table_name": {
+          "default": null,
+          "title": "Table Name",
+          "type": "string"
+        },
+        "table_style": {
+          "default": "TableStyleMedium9",
+          "title": "Table Style",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filepath",
+        "sheet_name",
+        "data_range"
+      ],
+      "title": "create_tableArguments",
+      "type": "object"
+    },
+    "server": "excel"
+  },
+  {
+    "name": "create_workbook",
+    "description": "Create new Excel workbook.",
+    "inputSchema": {
+      "properties": {
+        "filepath": {
+          "title": "Filepath",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filepath"
+      ],
+      "title": "create_workbookArguments",
+      "type": "object"
+    },
+    "server": "excel"
+  },
+  {
+    "name": "create_worksheet",
+    "description": "Create new worksheet in workbook.",
+    "inputSchema": {
+      "properties": {
+        "filepath": {
+          "title": "Filepath",
+          "type": "string"
+        },
+        "sheet_name": {
+          "title": "Sheet Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filepath",
+        "sheet_name"
+      ],
+      "title": "create_worksheetArguments",
+      "type": "object"
+    },
+    "server": "excel"
+  },
+  {
+    "name": "delete_range",
+    "description": "Delete a range of cells and shift remaining cells.",
+    "inputSchema": {
+      "properties": {
+        "filepath": {
+          "title": "Filepath",
+          "type": "string"
+        },
+        "sheet_name": {
+          "title": "Sheet Name",
+          "type": "string"
+        },
+        "start_cell": {
+          "title": "Start Cell",
+          "type": "string"
+        },
+        "end_cell": {
+          "title": "End Cell",
+          "type": "string"
+        },
+        "shift_direction": {
+          "default": "up",
+          "title": "Shift Direction",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filepath",
+        "sheet_name",
+        "start_cell",
+        "end_cell"
+      ],
+      "title": "delete_rangeArguments",
+      "type": "object"
+    },
+    "server": "excel"
+  },
+  {
+    "name": "delete_worksheet",
+    "description": "Delete worksheet from workbook.",
+    "inputSchema": {
+      "properties": {
+        "filepath": {
+          "title": "Filepath",
+          "type": "string"
+        },
+        "sheet_name": {
+          "title": "Sheet Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filepath",
+        "sheet_name"
+      ],
+      "title": "delete_worksheetArguments",
+      "type": "object"
+    },
+    "server": "excel"
+  },
+  {
+    "name": "format_range",
+    "description": "Apply formatting to a range of cells.",
+    "inputSchema": {
+      "properties": {
+        "filepath": {
+          "title": "Filepath",
+          "type": "string"
+        },
+        "sheet_name": {
+          "title": "Sheet Name",
+          "type": "string"
+        },
+        "start_cell": {
+          "title": "Start Cell",
+          "type": "string"
+        },
+        "end_cell": {
+          "default": null,
+          "title": "End Cell",
+          "type": "string"
+        },
+        "bold": {
+          "default": false,
+          "title": "Bold",
+          "type": "boolean"
+        },
+        "italic": {
+          "default": false,
+          "title": "Italic",
+          "type": "boolean"
+        },
+        "underline": {
+          "default": false,
+          "title": "Underline",
+          "type": "boolean"
+        },
+        "font_size": {
+          "default": null,
+          "title": "Font Size",
+          "type": "integer"
+        },
+        "font_color": {
+          "default": null,
+          "title": "Font Color",
+          "type": "string"
+        },
+        "bg_color": {
+          "default": null,
+          "title": "Bg Color",
+          "type": "string"
+        },
+        "border_style": {
+          "default": null,
+          "title": "Border Style",
+          "type": "string"
+        },
+        "border_color": {
+          "default": null,
+          "title": "Border Color",
+          "type": "string"
+        },
+        "number_format": {
+          "default": null,
+          "title": "Number Format",
+          "type": "string"
+        },
+        "alignment": {
+          "default": null,
+          "title": "Alignment",
+          "type": "string"
+        },
+        "wrap_text": {
+          "default": false,
+          "title": "Wrap Text",
+          "type": "boolean"
+        },
+        "merge_cells": {
+          "default": false,
+          "title": "Merge Cells",
+          "type": "boolean"
+        },
+        "protection": {
+          "additionalProperties": true,
+          "default": null,
+          "title": "Protection",
+          "type": "object"
+        },
+        "conditional_format": {
+          "additionalProperties": true,
+          "default": null,
+          "title": "Conditional Format",
+          "type": "object"
+        }
+      },
+      "required": [
+        "filepath",
+        "sheet_name",
+        "start_cell"
+      ],
+      "title": "format_rangeArguments",
+      "type": "object"
+    },
+    "server": "excel"
+  },
+  {
+    "name": "get_data_validation_info",
+    "description": "\n    Get all data validation rules in a worksheet.\n    \n    This tool helps identify which cell ranges have validation rules\n    and what types of validation are applied.\n    \n    Args:\n        filepath: Path to Excel file\n        sheet_name: Name of worksheet\n        \n    Returns:\n        JSON string containing all validation rules in the worksheet\n    ",
+    "inputSchema": {
+      "properties": {
+        "filepath": {
+          "title": "Filepath",
+          "type": "string"
+        },
+        "sheet_name": {
+          "title": "Sheet Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filepath",
+        "sheet_name"
+      ],
+      "title": "get_data_validation_infoArguments",
+      "type": "object"
+    },
+    "server": "excel"
+  },
+  {
+    "name": "get_workbook_metadata",
+    "description": "Get metadata about workbook including sheets, ranges, etc.",
+    "inputSchema": {
+      "properties": {
+        "filepath": {
+          "title": "Filepath",
+          "type": "string"
+        },
+        "include_ranges": {
+          "default": false,
+          "title": "Include Ranges",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "filepath"
+      ],
+      "title": "get_workbook_metadataArguments",
+      "type": "object"
+    },
+    "server": "excel"
+  },
+  {
+    "name": "merge_cells",
+    "description": "Merge a range of cells.",
+    "inputSchema": {
+      "properties": {
+        "filepath": {
+          "title": "Filepath",
+          "type": "string"
+        },
+        "sheet_name": {
+          "title": "Sheet Name",
+          "type": "string"
+        },
+        "start_cell": {
+          "title": "Start Cell",
+          "type": "string"
+        },
+        "end_cell": {
+          "title": "End Cell",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filepath",
+        "sheet_name",
+        "start_cell",
+        "end_cell"
+      ],
+      "title": "merge_cellsArguments",
+      "type": "object"
+    },
+    "server": "excel"
+  },
+  {
+    "name": "read_data_from_excel",
+    "description": "\n    Read data from Excel worksheet with cell metadata including validation rules.\n    \n    Args:\n        filepath: Path to Excel file\n        sheet_name: Name of worksheet\n        start_cell: Starting cell (default A1)\n        end_cell: Ending cell (optional, auto-expands if not provided)\n        preview_only: Whether to return preview only\n    \n    Returns:  \n    JSON string containing structured cell data with validation metadata.\n    Each cell includes: address, value, row, column, and validation info (if any).\n    ",
+    "inputSchema": {
+      "properties": {
+        "filepath": {
+          "title": "Filepath",
+          "type": "string"
+        },
+        "sheet_name": {
+          "title": "Sheet Name",
+          "type": "string"
+        },
+        "start_cell": {
+          "default": "A1",
+          "title": "Start Cell",
+          "type": "string"
+        },
+        "end_cell": {
+          "default": null,
+          "title": "End Cell",
+          "type": "string"
+        },
+        "preview_only": {
+          "default": false,
+          "title": "Preview Only",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "filepath",
+        "sheet_name"
+      ],
+      "title": "read_data_from_excelArguments",
+      "type": "object"
+    },
+    "server": "excel"
+  },
+  {
+    "name": "rename_worksheet",
+    "description": "Rename worksheet in workbook.",
+    "inputSchema": {
+      "properties": {
+        "filepath": {
+          "title": "Filepath",
+          "type": "string"
+        },
+        "old_name": {
+          "title": "Old Name",
+          "type": "string"
+        },
+        "new_name": {
+          "title": "New Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filepath",
+        "old_name",
+        "new_name"
+      ],
+      "title": "rename_worksheetArguments",
+      "type": "object"
+    },
+    "server": "excel"
+  },
+  {
+    "name": "unmerge_cells",
+    "description": "Unmerge a range of cells.",
+    "inputSchema": {
+      "properties": {
+        "filepath": {
+          "title": "Filepath",
+          "type": "string"
+        },
+        "sheet_name": {
+          "title": "Sheet Name",
+          "type": "string"
+        },
+        "start_cell": {
+          "title": "Start Cell",
+          "type": "string"
+        },
+        "end_cell": {
+          "title": "End Cell",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filepath",
+        "sheet_name",
+        "start_cell",
+        "end_cell"
+      ],
+      "title": "unmerge_cellsArguments",
+      "type": "object"
+    },
+    "server": "excel"
+  },
+  {
+    "name": "validate_excel_range",
+    "description": "Validate if a range exists and is properly formatted.",
+    "inputSchema": {
+      "properties": {
+        "filepath": {
+          "title": "Filepath",
+          "type": "string"
+        },
+        "sheet_name": {
+          "title": "Sheet Name",
+          "type": "string"
+        },
+        "start_cell": {
+          "title": "Start Cell",
+          "type": "string"
+        },
+        "end_cell": {
+          "default": null,
+          "title": "End Cell",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filepath",
+        "sheet_name",
+        "start_cell"
+      ],
+      "title": "validate_excel_rangeArguments",
+      "type": "object"
+    },
+    "server": "excel"
+  },
+  {
+    "name": "validate_formula_syntax",
+    "description": "Validate Excel formula syntax without applying it.",
+    "inputSchema": {
+      "properties": {
+        "filepath": {
+          "title": "Filepath",
+          "type": "string"
+        },
+        "sheet_name": {
+          "title": "Sheet Name",
+          "type": "string"
+        },
+        "cell": {
+          "title": "Cell",
+          "type": "string"
+        },
+        "formula": {
+          "title": "Formula",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filepath",
+        "sheet_name",
+        "cell",
+        "formula"
+      ],
+      "title": "validate_formula_syntaxArguments",
+      "type": "object"
+    },
+    "server": "excel"
+  },
+  {
+    "name": "write_data_to_excel",
+    "description": "\n    Write data to Excel worksheet.\n    Excel formula will write to cell without any verification.\n\n    PARAMETERS:  \n    filepath: Path to Excel file\n    sheet_name: Name of worksheet to write to\n    data: List of lists containing data to write to the worksheet, sublists are assumed to be rows\n    start_cell: Cell to start writing to, default is \"A1\"\n  \n    ",
+    "inputSchema": {
+      "properties": {
+        "filepath": {
+          "title": "Filepath",
+          "type": "string"
+        },
+        "sheet_name": {
+          "title": "Sheet Name",
+          "type": "string"
+        },
+        "data": {
+          "items": {
+            "items": {},
+            "type": "array"
+          },
+          "title": "Data",
+          "type": "array"
+        },
+        "start_cell": {
+          "default": "A1",
+          "title": "Start Cell",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filepath",
+        "sheet_name",
+        "data"
+      ],
+      "title": "write_data_to_excelArguments",
+      "type": "object"
+    },
+    "server": "excel"
+  },
+  {
+    "name": "convert_time",
+    "description": "Convert time between timezones",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "source_timezone": {
+          "type": "string",
+          "description": "Source IANA timezone name (e.g., 'America/New_York', 'Europe/London'). Use 'UTC' as local timezone if no source timezone provided by the user."
+        },
+        "time": {
+          "type": "string",
+          "description": "Time to convert in 24-hour format (HH:MM)"
+        },
+        "target_timezone": {
+          "type": "string",
+          "description": "Target IANA timezone name (e.g., 'Asia/Tokyo', 'America/San_Francisco'). Use 'UTC' as local timezone if no target timezone provided by the user."
+        }
+      },
+      "required": [
+        "source_timezone",
+        "time",
+        "target_timezone"
+      ]
+    },
+    "server": "time"
+  },
+  {
+    "name": "get_current_time",
+    "description": "Get current time in a specific timezones",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "timezone": {
+          "type": "string",
+          "description": "IANA timezone name (e.g., 'America/New_York', 'Europe/London'). Use 'UTC' as local timezone if no timezone provided by the user."
+        }
+      },
+      "required": [
+        "timezone"
+      ]
+    },
+    "server": "time"
+  }
+]

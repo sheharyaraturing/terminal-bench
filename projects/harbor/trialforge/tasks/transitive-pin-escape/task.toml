@@ -1,0 +1,132 @@
+# Harbor task config. Schema is validated by harbor 0.21.0.
+schema_version = "1.4"
+
+[task]
+name = "turing/transitive-pin-escape"
+version = "1.0.0"
+description = "Dependency forensics on a 52-commit build repository: a loosened direct pin that is a red herring, a breaking version that arrives through a transitive dependency nothing pins, and a lockfile that protected exactly one release"
+
+[metadata]
+persona   = "Build Engineer"
+domain    = "software-engineering"
+target_tool_calls = 27             # measured, not aspirational. Six trials on sha fb6cf35
+                                   # took 17, 27, 27, 27, 32 and 8 calls; median 27. The
+                                   # previous 48 was a walk-through estimate that the runs
+                                   # did not bear out. 27 tiers this as medium (30-50 is
+                                   # medium, 20-30 easy) and is above the rubric floor of 20.
+target_claims = 15                 # aim for 8-15
+
+# Provider payload fields; inline table so it stays one key.
+extra_llm_params = { reasoning = { effort = "medium" } }
+
+# One tool result, capped.
+tool_output_cap = 200000
+
+
+# Tool allowlist handed to the vendored harness as `enabledTools`.
+enabled_tools = [
+  # needed
+  "git_git_log",
+  "git_git_show",
+  "git_git_diff",
+  "git_git_branch",
+  "filesystem_list_directory",
+  "filesystem_search_files",
+  "filesystem_read_text_file",
+  # same-server distractors
+  "git_git_status",                   # the tree is clean; says nothing
+  "git_git_checkout",                 # mutating trap: detaches HEAD and loses the pinned main branch the task anchors on
+  "git_git_diff_staged",              # nothing is ever staged - always empty
+  "git_git_diff_unstaged",            # nothing is ever dirty - always empty
+  "filesystem_read_multiple_files",
+  "filesystem_directory_tree",
+  # off-server distractors
+  "desktop-commander_read_file",      # redundant read path
+  "desktop-commander_list_directory",
+  "desktop-commander_get_file_info",
+  "desktop-commander_start_search",   # searches text, cannot search history
+  "cli-mcp-server_run_command",       # crippled: no pipes, /data only, so the obvious `git log | grep` is unavailable
+  "cli-mcp-server_show_security_rules",
+  "calculator_calculate",             # near-miss: arithmetic will not order version strings, which is the real trap
+  "context7_resolve-library-id",      # far-field but very tempting: look the
+  "context7_query-docs",              # dependency up in third-party docs instead of reading the recorded set
+  "ddg-search_search",                # far-field: search for the error text
+  "whois_whois_domain",               # far-field
+]
+
+[agent]
+timeout_sec = 3600.0               # long-horizon tasks need room
+
+[verifier]
+# 15 criteria judged individually, each a separate model call, plus image pull and
+# rewardkit startup. 600s left no headroom: a slow judge or a retried call ran the
+# container out of time before reward.json was written, which harbor reports as
+# RewardFileNotFoundError rather than as a timeout.
+timeout_sec = 1800.0
+
+# "separate" scores the trial's RECORDED artifacts in a fresh container, which is what `harbor job regrade` needs.
+environment_mode = "separate"
+
+# A separate verifier needs its OWN image.
+[verifier.environment]
+network_mode = "public"            # the judge needs to reach OpenRouter
+
+# The judge calls litellm, which reads OPENROUTER_API_KEY; ${VAR} pulls it from the host.
+[verifier.env]
+OPENROUTER_API_KEY = "${OPENROUTER_API_KEY}"
+
+[environment]
+# NO docker_image KEY ON PURPOSE.
+cpus = 4                           # CPU is the binding constraint, not memory
+memory_mb = 4096                   # measured: 19 servers idle at ~2.1 GB
+storage_mb = 10240
+
+# ── MCP servers ───────────────────────────────────────────────────────────────
+
+[[environment.mcp_servers]]
+name = "git"
+transport = "stdio"
+command = "uvx"
+args = ["--with", "mcp<2", "mcp-server-git==2026.7.10"]
+
+[[environment.mcp_servers]]
+name = "filesystem"
+transport = "stdio"
+command = "npx"
+args = ["@modelcontextprotocol/server-filesystem@2026.7.10", "/data"]
+
+[[environment.mcp_servers]]
+name = "desktop-commander"
+transport = "stdio"
+command = "npx"
+args = ["@wonderwhy-er/desktop-commander@0.2.47"]
+
+[[environment.mcp_servers]]
+name = "cli-mcp-server"
+transport = "stdio"
+command = "uvx"
+args = ["--with", "mcp<2", "cli-mcp-server==0.2.5"]
+
+[[environment.mcp_servers]]
+name = "calculator"
+transport = "stdio"
+command = "uvx"
+args = ["--with", "mcp<2", "mcp-server-calculator==0.2.1"]
+
+[[environment.mcp_servers]]
+name = "context7"
+transport = "stdio"
+command = "npx"
+args = ["@upstash/context7-mcp@4.0.2"]
+
+[[environment.mcp_servers]]
+name = "ddg-search"
+transport = "stdio"
+command = "uvx"
+args = ["--with", "mcp<2", "duckduckgo-mcp-server==0.6.1"]
+
+[[environment.mcp_servers]]
+name = "whois"
+transport = "stdio"
+command = "npx"
+args = ["@bharathvaj/whois-mcp@1.0.1"]

@@ -1,0 +1,98 @@
+# rewardkit reward definition.
+
+[judge]
+# openrouter/ prefix routes litellm to OpenRouter. rewardkit reads [judge].judge, never [judge].model.
+judge = "openrouter/openai/gpt-5.6-luna"
+mode = "individual"        # judge each claim on its own, not all at once
+reasoning_effort = "medium"
+timeout = 300
+
+# The judge grades the agent's FINAL ANSWER, so it must be given it.
+files = ["/logs/artifacts/final_answer.txt"]   # a separate verifier sees only artifacts, never /logs/agent
+
+[scoring]
+aggregation = "weighted_mean"   # graded partial credit; no weight keys, so every claim weighs 1.0
+
+
+# ── Claims ────────────────────────────────────────────────────────────────────
+# ONE CLAIM, ONE ASSERTION. The judge scores every subordinate clause as its own
+# gate, so rationale, rejects and asides silently become requirements. Keep
+# tolerances inline; put the reasoning in NOTES.md, never here.
+
+# ── Phase 1: the offset ───────────────────────────────────────────────────────
+
+[[criterion]]
+description = "Gives the database host's clock offset as a single exact value of 135.000 seconds, or 2 minutes 15 seconds, not as a mean, a median, or a range of nearby values."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "States that the database host's clock is ahead, so its recorded timestamps must be reduced by 135 seconds."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "States that the offset is one constant value across the whole window rather than drift or jitter. A narrow band from a one-sided estimator satisfies this; an offset modelled as changing over time does not."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "States that 23 requests were answered 502. Any name for that service counts."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "States that with uncorrected timestamps the first pool exhaustion appears 48 seconds after the first 502, within one second. Stating both raw instants, 09:30:12 and 09:31:00, and that the database appears to fail second also satisfies this."
+type = "likert"
+points = 3
+
+
+# ── Phase 2: method and the inversion ─────────────────────────────────────────
+
+[[criterion]]
+description = "States that the offset was established by pairing records that share a request identifier across services."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "States that the corrected first pool exhaustion is 09:28:45.000 and precedes the first 502 by 87 seconds, each within one second."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "States that the worker recorded receiving a pool-exhausted response at 09:28:45.900 while the database's own record of that same failure is stamped 09:31:00.000."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "States that the corrected database failure precedes the 502 for all 23 requests answered 502, not only for the first event of each kind."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "States that 8 requests took a pool-exhausted response, were retried by the worker, and were still answered 200 by the edge."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Names connection-pool exhaustion on the database host as the first failure and the root cause of the incident."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "States that the corrected order rules out the competing explanation that the edge service's upstream timeout fired first and the database errors are wreckage of queries it abandoned."
+type = "likert"
+points = 3
+
+
+# ── Phase 3: the decoy, and the shortcut that does not work ──────────────────
+
+[[criterion]]
+description = "Identifies req-8625f445 as an application-level requeue rather than a second skewed clock, citing its 1.340-second discrepancy and its requeue delay of 1340 ms."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "States that comparing the logs' own extents does not give the offset: their first timestamps differ by about 19 seconds and their last by about four minutes."
+type = "likert"
+points = 3

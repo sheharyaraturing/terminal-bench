@@ -1,0 +1,119 @@
+# rewardkit reward definition.
+
+[judge]
+# One judge model, named by bare model id and passed to litellm as written.
+judge = "openrouter/openai/gpt-5.6-luna"
+mode = "individual"        # judge each claim on its own, not all at once
+reasoning_effort = "medium"
+timeout = 300
+
+# The judge grades the agent's FINAL ANSWER, so it must be given it.
+files = ["/logs/artifacts/final_answer.txt"]   # a separate verifier sees only collected artifacts, never /logs/agent
+
+[scoring]
+aggregation = "weighted_mean"   # graded partial credit; no weight keys, so every claim weighs 1.0
+
+
+# ── Claims ────────────────────────────────────────────────────────────────────
+#
+# Sixteen claims. Every value below is recomputed from environment/fixtures, not
+# copied from solve.sh.
+#
+# Wording rule applied throughout: a claim scores the FINDING the prompt asked
+# for. Where a particular presentation (a layer triple, an exhaustive listing)
+# is one good way to show that finding, it is named as acceptable rather than
+# required, so a correct answer that demonstrates the same thing another way is
+# not half-marked. Nothing here rewards vocabulary the prompt never uses.
+
+
+# ── Release authority and cohort resolution ──────────────────────────────────
+
+[[criterion]]
+description = "Uses production snapshot prod-2026.08.21.4 at the review cutoff as current authority and rejects the pending migration draft as evidence for this release because it is unapproved and targets prod-2026.09.1. Any unambiguous designation of that document counts in full - the July draft, the September-targeted draft, or the pending layer-simplification proposal - because it is dated 2026-07-02 and targets the September release; the label chosen is not a deduction."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Explains the active precedence as default followed by staging followed by production, with later definitions winning, then applies only the runtime override IDs named for the request cohort in the production snapshot."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Confirms that the read-only resolver export alongside the snapshot agrees with an independent resolution of the active layers, so it is corroborating evidence rather than a separate source of truth. Full credit requires stating that the export was checked against the layers and found to agree; treating the export as authoritative without checking it, or reporting it as wrong or stale, does not earn credit."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Reports the effective gate count and per-layer breakdown for both live cohorts: 21 effective gates each, with stable decided by 13 values from prod.json, 6 from staging.json and 2 from default.json, and canary decided by 13 from prod.json, 5 from staging.json, 2 from default.json and 1 from runtime override ovr-canary-ledger-20260821."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Names the stable staging winners as billing.proration_v3, checkout.express_lane, identity.passkey_enrolment, payments.dual_write_ledger, reporting.async_export and search.typo_tolerance, and states that canary has the same list except payments.dual_write_ledger."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Reports payments.dual_write_ledger as true for stable traffic and false for canary traffic because the canary override corrects it, so the incorrect value affects 80 percent of production traffic."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "States that payments.dual_write_ledger is the only canonical gate violating any of the four shipping-source production requirements, and that only the stable cohort violates its required false value."
+type = "likert"
+points = 3
+
+# ── Shipping liveness, aliases and fallbacks ─────────────────────────────────
+
+[[criterion]]
+description = "Identifies billing.legacy_invoice_pdf as production-dead despite its test and historical-document mentions, and accounts for how it is configured across the three layers - default false, staging true, production false. Naming all three values explicitly counts in full, and so does any equivalent complete statement that establishes production false against staging true; omitting the default value alone is not a deduction provided nothing is misstated."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Identifies billing.legacy_invoice_pdf as the only configured canonical gate with no reference from the manifest-defined production-shipping source set, supporting uniqueness through an exhaustive comparison or an equivalent complete proof."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Explains that shipping source uses reporting.background_export through FLAG_ASYNC_EXPORT, the registry canonicalizes that alias to reporting.async_export, and the canonical configured gate is therefore live."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Identifies search.semantic_rerank as read by shipping code but absent from every active layer and override, and explains that it falls back to false in the server ranker and true in the browser results panel."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Identifies search.semantic_rerank as the only canonical gate read by production-shipping code but absent from every active configuration layer, supporting uniqueness through an exhaustive alias-normalized comparison or an equivalent complete proof."
+type = "likert"
+points = 3
+
+# ── Cleanup taxonomy ──────────────────────────────────────────────────────────
+#
+# The last three claims score the three cases the prompt asks to be kept apart.
+# What is scored is the entry named, the resolved value removal would expose,
+# and whether shipping source reads the gate. Stating the underlying layer
+# values is one acceptable way to demonstrate that and is not separately
+# required.
+
+[[criterion]]
+description = "Classifies notifications.digest_window_minutes as live but fully redundant: default, staging and production are all 30, so removing the later entries changes neither its resolved value nor behaviour."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Classifies the production entry for billing.legacy_invoice_pdf as value-changing but behaviour-neutral: removing it would expose staging true instead of false, but shipping source never reads the gate."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Identifies identity.session_pinning and notifications.push_quiet_hours as production entries that shipping source reads, and states that removing either production entry exposes staging's false and so changes production behaviour. Citing the layer values behind that effect - default true, staging false, production true - is one acceptable way to show it; any equivalent complete statement of the exposed value and its live consequence earns full credit."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Identifies platform.request_shadowing and web.new_nav as production entries that shipping source reads, and states that removing either production entry exposes staging's true and so changes production behaviour. Citing the layer values behind that effect - default false, staging true, production false - is one acceptable way to show it; any equivalent complete statement of the exposed value and its live consequence earns full credit."
+type = "likert"
+points = 3

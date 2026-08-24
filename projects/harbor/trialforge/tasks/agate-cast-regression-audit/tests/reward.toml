@@ -1,0 +1,99 @@
+# rewardkit reward definition: one Criterion per [[criterion]] block, aggregated into /logs/verifier/reward.json. mode = "individual" plus weighted_mean reproduces the target benchmark, which scores each claim independently against the FINAL ANSWER with partial credit; do NOT switch to all_pass, an all-or-nothing reward is near-zero on early long-horizon rollouts and gives RL no gradient.
+
+[judge]
+# THE KEY IS `judge`, NOT `model`: rewardkit does judge_config.get("judge", <default>) and passes it as LLMJudge(model=...), so a `model =` key here is silently ignored.
+judge = "openrouter/openai/gpt-5.6-luna"
+mode = "individual"        # judge each claim on its own, not all at once
+reasoning_effort = "medium"
+timeout = 300
+files = ["/logs/artifacts/final_answer.txt"]
+
+[scoring]
+aggregation = "weighted_mean"   # graded partial credit
+
+# ── Claims: 15 atomic, every value derived from the pinned bundle at 7aa490cb and the eight CSVs at /data (see NOTES.md); likert with points = 3 reproduces MCP-Atlas's 1/2/3 -> 0.0/0.5/1.0. ──
+
+# ── Phase 1-2: the commits and what they actually touched ────────────────────
+
+[[criterion]]
+description = "Identifies commit fff4714 (issue #217, 'Handle percents and currency symbols when casting numbers') as the change that introduced percent and currency-symbol stripping."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "States that commit fff4714 added the stripping only to the type-testing path (Number.test) and did not change the value-conversion path (Number.cast), contradicting its own commit subject. Merely repeating the commit subject does not satisfy this."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Identifies commit ed3b6f8 (issue #333, 'Fix stripping currency symbols') as the change that added the same stripping to the value-conversion path."
+type = "likert"
+points = 3
+
+# ── Phase 3: commits mapped to releases ──────────────────────────────────────
+
+[[criterion]]
+description = "States that the change from issue #217 first shipped in release 0.8.0."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "States that the fix from issue #333 first shipped in release 1.0.1."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Reports the precise five-release affected interval, starting at 0.8.0 and ending at 1.0.0 inclusive; an equivalent release-by-release listing counts in full."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Describes the failure mode as an asymmetry in which the type sniffer classifies a column as numeric while conversion of those same values raises a cast error, not merely as 'currency was unsupported'."
+type = "likert"
+points = 3
+
+# ── Phase 4: quantified impact on the baked CSVs ─────────────────────────────
+
+[[criterion]]
+description = "Reports that 7 columns across the eight CSVs are inferred as numeric but fail to convert on the pinned version."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Reports that those columns amount to 343 individual failing values, within rounding or stated as 31 plus 312."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Names the affected columns as Price from the barber shop file plus the six currency columns of the pet-care weekly financials file (daily care, grooming, training, total weekly revenue, total weekly expenses, weekly profits)."
+type = "likert"
+points = 3
+
+# ── The discriminating exclusions ────────────────────────────────────────────
+
+[[criterion]]
+description = "Excludes the Gross column of the movies file from the affected set and gives the reason: values such as $28.34M carry a magnitude suffix, so the sniffer never classifies the column as numeric in the first place."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Excludes the salary column of the fantasy sports file from the affected set for the same reason — values such as $4M are rejected by the sniffer, not merely unaffected by the fix."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "States that the negative-currency change from issue #595 (first released in 1.4.0) has no effect on this data, because none of the eight CSVs contain a negative currency value."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Identifies commit d8dfc3a (issue #382, 'Collapse DataType.test', first released in 1.1.0) as removing Number.test entirely so that the generic test becomes a thin wrapper around cast, making this class of disagreement structurally impossible and distinguishing that structural change from the earlier 1.0.1 patch."
+type = "likert"
+points = 3
+
+# ── Phase 5: the warehouse consequence ───────────────────────────────────────
+
+[[criterion]]
+description = "States that the warehouse stores all 72 columns across the eight tables as TEXT and therefore does not corroborate the cast failure, then recommends taking the library bump while treating warehouse retyping or migration as separate required work because the upgrade will not change existing stored data; equivalent wording and ordering count in full."
+type = "likert"
+points = 3

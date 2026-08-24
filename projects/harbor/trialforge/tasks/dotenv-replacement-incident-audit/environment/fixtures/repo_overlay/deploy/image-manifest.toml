@@ -1,0 +1,27 @@
+# Fictional immutable deployment mapping, approved at the incident cutoff.
+cutoff = "2026-08-17T18:00:00Z"
+
+[[image]]
+digest = "sha256:a79d834d437639db0f4a09dcd0cc76e3a48d7c29190c37001f374a0671f40a28"
+release = "v0.8.0"
+source_tag = "replace-v0.8.0"
+
+[[image]]
+digest = "sha256:250581914b29e5be60cbb7b346115f632b9984b4b7459c5c206d55eeaa6e8124"
+release = "v0.8.1"
+source_tag = "replace-v0.8.1"
+
+[[image]]
+digest = "sha256:8265338c0fc43070b8fb4364fb7eb653f85c8c082a1e252805d416a9ebea05a4"
+release = "v0.9.0"
+source_tag = "replace-v0.9.0"
+
+[[image]]
+digest = "sha256:45541b8b7f3bc36a0393fd4fec0dfc3a15dcc10be7e988eff19fd4eb2a36dd32"
+release = "v0.9.1"
+source_tag = "replace-v0.9.1"
+
+[[image]]
+digest = "sha256:d0f157e5480991b9bb3dab96b98645009d038bc0ab7b60bcc7111883961ec8ca"
+release = "v1.0.0-rc1"
+source_tag = "replace-v1.0.0-rc1"

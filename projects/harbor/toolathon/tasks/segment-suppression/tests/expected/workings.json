@@ -1,0 +1,22 @@
+{
+  "eligible_visits": 355,
+  "excluded": {
+    "duplicate_visit_id": 7,
+    "internal_channel": 9,
+    "outside_period": 9,
+    "unknown_segment": 5,
+    "void_status": 14
+  },
+  "metric": "conversion_rate_by_segment",
+  "period_end": "2026-02-28",
+  "period_start": "2026-02-01",
+  "rows_read": 399,
+  "segments_published": 5,
+  "segments_suppressed": {
+    "LOW_BASE": 2,
+    "NO_BASE": 2
+  },
+  "total_denominator": 314,
+  "total_numerator": 72,
+  "total_rate": 22.93
+}

@@ -1,0 +1,109 @@
+# rewardkit reward definition.
+
+[judge]
+# A bare model id, with no provider prefix: litellm routes it through the default provider
+judge = "openrouter/openai/gpt-5.6-luna"
+mode = "individual"        # judge each claim on its own, not all at once
+reasoning_effort = "medium"
+timeout = 300
+
+# The judge grades the agent's FINAL ANSWER, so it must be given it.
+files = ["/logs/artifacts/final_answer.txt"]   # a separate verifier sees only collected artifacts, never /logs/agent
+
+[scoring]
+aggregation = "weighted_mean"   # graded partial credit; no weight keys, so every claim weighs 1.0
+
+
+# ── Claims ────────────────────────────────────────────────────────────────────
+
+
+# ── Phase 1: the entries that do not foot ────────────────────────────────────
+
+[[criterion]]
+description = "States that the journal extract holds 400 posting lines making up 140 distinct entries. Stating the 400 lines and 140 entries satisfies this whether or not the JE-0001 through JE-0140 reference range is restated."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Reports that exactly 5 entries have total debits not equal to total credits."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Names all five out-of-balance entries: JE-0018, JE-0047, JE-0073, JE-0098 and JE-0121."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Identifies JE-0073 as the largest single imbalance at 40,500.00: debits 45,000.00 against credits 4,500.00, within rounding."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "States that the signed total of debits minus credits across the five imbalanced entries is 39,703.50, within rounding."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "States that with those five entries set aside the remainder of the ledger foots exactly: debits 3,739,435.04 and credits 3,739,435.04, within rounding."
+type = "likert"
+points = 3
+
+
+# ── Phase 2: the entry booked after its period was closed ─────────────────
+
+[[criterion]]
+description = "Identifies JE-0064 as the only entry posted after its accounting period had closed: booked to period 2024-05 and posted on 2024-06-19."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "States that period 2024-05 was closed on 2024-06-07, so JE-0064 was posted 12 days after the close."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "States that JE-0064 is internally balanced at 26,750.00, so a debits-versus-credits check cannot flag it. Stating that it balances at 26,750.00 satisfies this whether or not the equal debit and credit totals are written out separately."
+type = "likert"
+points = 3
+
+
+# ── Phase 3: the reversal that does not offset ───────────────────────────────
+
+[[criterion]]
+description = "Identifies JE-0106 as a reversal raised against JE-0079 that does not offset it."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "States that JE-0079 is denominated in EUR while its reversal JE-0106 is denominated in USD, both for 18,450.00."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Reports that account 5210, Professional Fees, is left with 18,450.00 EUR of expense still on the books against 18,450.00 USD that was removed but never posted. Giving both 18,450.00 figures on account 5210 in opposite currencies satisfies this whether or not the words 'residual' or 'net' are used."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Identifies JE-0138 as a reversal of JE-0131 that does not offset it because it credits a different account than JE-0131 charged. Noting the wrong credit account satisfies this whether or not the matching currency and amount are separately restated."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "States that JE-0131 debited account 6100 (Depreciation Expense) but its reversal JE-0138 credits account 5400 (Facilities Expense) instead of 6100, both for 15,300.00 USD, so the 15,300.00 charge on account 6100 is never reversed."
+type = "likert"
+points = 3
+
+
+# ── Phase 4: the two entries to be excluded ────────────────────────────────────
+
+[[criterion]]
+description = "States that JE-0055 is NOT one of the imbalances and must not be reported, because it carries no amounts and foots at zero. Correctly excluding it on that basis satisfies this whether or not each line's 0.00 debit and 0.00 credit is written out."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "States that JE-0082 is NOT a valid finding because it was posted on its period's close date, 2024-07-05, rather than after it, so the books were still open. Identifying it as posted on the close date rather than after satisfies this whether or not the 2024-06 period is separately named."
+type = "likert"
+points = 3

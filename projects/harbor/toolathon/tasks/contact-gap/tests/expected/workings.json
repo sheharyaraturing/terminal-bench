@@ -1,0 +1,12 @@
+{
+  "metric": "customers_without_contact",
+  "period_start": "2025-04-01",
+  "period_end": "2025-06-30",
+  "customers_total": 96,
+  "customers_with_contact": 75,
+  "value": 21,
+  "contact_rate": 0.7813,
+  "orphan_tickets": 4,
+  "soft_deleted_tickets": 11,
+  "out_of_period_tickets": 29
+}

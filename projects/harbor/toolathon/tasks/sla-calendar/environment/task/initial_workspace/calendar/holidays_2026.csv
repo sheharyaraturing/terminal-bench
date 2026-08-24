@@ -1,0 +1,31 @@
+Date,Calendar,Name,Type
+2026-01-01,IE,New Year's Day,FULL
+2026-02-02,IE,St Brigid's Day,FULL
+2026-03-17,IE,St Patrick's Day,FULL
+2026-04-06,IE,Easter Monday,FULL
+2026-05-04,IE,May Bank Holiday,FULL
+2026-06-01,IE,June Bank Holiday,FULL
+2026-08-03,IE,August Bank Holiday,FULL
+2026-10-26,IE,October Bank Holiday,FULL
+2026-12-24,IE,Christmas Eve,HALF
+2026-12-25,IE,Christmas Day,FULL
+2026-01-01,UK-ENG,New Year's Day,FULL
+2026-04-02,UK-ENG,Maundy Thursday desk close,HALF
+2026-04-03,UK-ENG,Good Friday,FULL
+2026-04-06,UK-ENG,Easter Monday,FULL
+2026-05-04,UK-ENG,Early May Bank Holiday,FULL
+2026-05-25,UK-ENG,Spring Bank Holiday,FULL
+2026-08-14,UK-ENG,Summer Friday desk close,HALF
+2026-08-31,UK-ENG,Summer Bank Holiday,FULL
+2026-12-25,UK-ENG,Christmas Day,FULL
+2026-12-28,UK-ENG,Boxing Day (substitute),FULL
+2026-01-01,UK-SCT,New Year's Day,FULL
+2026-01-02,UK-SCT,2 January,FULL
+2026-04-03,UK-SCT,Good Friday,FULL
+2026-05-04,UK-SCT,Early May Bank Holiday,FULL
+2026-05-25,UK-SCT,Spring Bank Holiday,FULL
+2026-08-03,UK-SCT,Summer Bank Holiday,FULL
+2026-09-25,UK-SCT,Autumn desk close,HALF
+2026-11-30,UK-SCT,St Andrew's Day,FULL
+2026-12-25,UK-SCT,Christmas Day,FULL
+2026-12-28,UK-SCT,Boxing Day (substitute),FULL

@@ -1,0 +1,15 @@
+hostname,rotated_on,old_serial,new_serial,reason,change_ticket,performed_by
+catalog-api-04.corp.hbl.example.com,2026-05-19,12A00B4031B07D6C1DD216EAC66E19AE,2755496702197ADE095426E1CFD0CEAD,scheduled annual rotation,CHG-20260519-R,a.solberg
+webhook-relay-02.stage.hbl.example.com,2026-05-23,89BAF538109F489EF2605D3A97223228,C78D8DDCEA35D2736A8476F47D12C0E2,scheduled annual rotation,CHG-20260523-R,c.marchetti
+reporting-api-03.corp.hbl.example.com,2026-05-30,53C2532449E1DA88D74E764B5EDC8C6F,D0BB03AE64DD9EE685ACF3BA9C220366,scheduled annual rotation,CHG-20260530-R,a.solberg
+checkout-web-01.corp.hbl.example.com,2026-06-06,84DBA0361BD941FC965BADEE31B36107,15C4F44A7DAF97FA43253E248CA2F35C,scheduled annual rotation,CHG-20260606-R,e.haavisto
+status-page-03.corp.hbl.example.com,2026-06-13,E0195EACC594A4EE200B490DED8289AF,66BF241E5F7AD6B69846BC48264C99F3,"listener migrated to the new load balancer, certificate re-cut",CHG-20260613-R,j.karlsson
+checkout-web-02.stage.hbl.example.com,2026-06-21,C608092EAC5D2BC98848EEFC3DD5F06E,20AB2D6E4CD9DFBFBD702390EB936F22,scheduled annual rotation,CHG-20260621-R,a.solberg
+media-cdn-02.dr.hbl.example.com,2026-06-22,3297F73A16D7F3B62761EF221C86ECCB,96056BE961A2F0D4137696EA3BB5E755,"listener migrated to the new load balancer, certificate re-cut",CHG-20260622-R,b.okonkwo
+media-cdn-01.corp.hbl.example.com,2026-06-23,8EC3ED9AA67D5DEF2F421FB3AA6D093C,D61D35D349144BC7C98EC0A5604C7331,"listener migrated to the new load balancer, certificate re-cut",CHG-20260623-R,h.vasquez
+notify-worker-03.dr.hbl.example.com,2026-07-02,84CD79040CD5C9AD890BAAC8E9761B10,7A78A37A094360E994B9BC2BFC2EA499,scheduled annual rotation,CHG-20260702-R,i.dlamini
+billing-api-03.corp.hbl.example.com,2026-07-03,C8E4BB3DFBFB84E8F187EEEAD366E73E,10B9F76340312C02D94AC0761798988E,scheduled annual rotation,CHG-20260703-R,c.marchetti
+orders-api-04.corp.hbl.example.com,2026-07-11,DCE1983EDAF923EAD7F8959302406FAB,2306AD96ECB57ED03782D8A36C5884C4,scheduled annual rotation,CHG-20260711-R,e.haavisto
+partner-gw-01.stage.hbl.example.com,2026-08-01,559B6192BFB97FADAE979B3BC889A1B2,8EDB7871316E28A64850683881DD7E9E,emergency re-key following the internal CA cross-sign refresh,CHG-20260801-R,b.okonkwo
+admin-console-01.prod.hbl.example.com,2026-08-03,FA8741E35213FFACD69D5EC493F9F1AD,46E4C4EE8166C7B76FD8FF57A7AAABFC,issuing-CA batch re-issue after the key-ceremony finding,CHG-20260803-R,b.okonkwo
+session-store-03.dr.hbl.example.com,2026-08-08,4EFBF22ECDBE27E7BD663D443C934CFB,CDD2E8253D79873639C1867208AC29D9,re-issue after the June crypto-policy update,CHG-20260808-R,g.pettersen

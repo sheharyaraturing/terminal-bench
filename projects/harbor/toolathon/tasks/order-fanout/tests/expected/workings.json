@@ -1,0 +1,17 @@
+{
+  "metric": "revenue_by_customer",
+  "value": 21799.94,
+  "undefined": false,
+  "undefined_reason": null,
+  "denominator": null,
+  "population": {
+    "included": 24,
+    "excluded": {
+      "internal_account": 3,
+      "out_of_period": 6,
+      "cancelled_or_draft": 5
+    },
+    "rows_before_join": 24,
+    "rows_after_join": 59
+  }
+}

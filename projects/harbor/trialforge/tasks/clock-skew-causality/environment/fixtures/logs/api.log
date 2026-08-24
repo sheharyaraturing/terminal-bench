@@ -1,0 +1,423 @@
+2024-11-14T09:30:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=48
+2024-11-14T09:30:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=77
+2024-11-14T09:30:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=86
+2024-11-14T09:30:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=106
+2024-11-14T09:30:21.860Z ERROR api    host=api-7c req=req-70d638b9 stage=responded status=502 duration_ms=8000 error=upstream_timeout
+2024-11-14T09:30:22.742Z INFO  api    host=api-7c req=req-bd24e4d8 stage=received route=GET:/v1/cart client=203.0.113.91
+2024-11-14T09:30:22.782Z INFO  api    host=api-7c req=req-bd24e4d8 stage=dispatched queue=orders.work
+2024-11-14T09:30:22.980Z INFO  api    host=api-7c req=req-9471378a stage=received route=POST:/v1/cart/items client=203.0.113.8
+2024-11-14T09:30:23.020Z INFO  api    host=api-7c req=req-9471378a stage=dispatched queue=orders.work
+2024-11-14T09:30:23.634Z INFO  api    host=api-7c req=req-bd24e4d8 stage=responded status=200 duration_ms=852
+2024-11-14T09:30:26.694Z ERROR api    host=api-7c req=req-5ed5618f stage=responded status=502 duration_ms=8000 error=upstream_timeout
+2024-11-14T09:30:28.046Z INFO  api    host=api-7c req=req-ef85e5e4 stage=received route=POST:/v1/payment/authorize client=203.0.113.8
+2024-11-14T09:30:28.086Z INFO  api    host=api-7c req=req-ef85e5e4 stage=dispatched queue=orders.work
+2024-11-14T09:30:30.000Z WARN  api    host=api-7c stage=healthcheck upstream=worker.orders status=degraded p99_ms=2857
+2024-11-14T09:30:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=118
+2024-11-14T09:30:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=38
+2024-11-14T09:30:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=62
+2024-11-14T09:30:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=43
+2024-11-14T09:30:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=66
+2024-11-14T09:30:31.020Z ERROR api    host=api-7c req=req-9471378a stage=responded status=502 duration_ms=8000 error=upstream_timeout
+2024-11-14T09:30:32.688Z INFO  api    host=api-7c req=req-3867703d stage=received route=POST:/v1/orders client=203.0.113.55
+2024-11-14T09:30:32.728Z INFO  api    host=api-7c req=req-3867703d stage=dispatched queue=orders.work
+2024-11-14T09:30:36.086Z ERROR api    host=api-7c req=req-ef85e5e4 stage=responded status=502 duration_ms=8000 error=upstream_timeout
+2024-11-14T09:30:37.382Z INFO  api    host=api-7c req=req-082af5e9 stage=received route=POST:/v1/orders client=203.0.113.17
+2024-11-14T09:30:37.422Z INFO  api    host=api-7c req=req-082af5e9 stage=dispatched queue=orders.work
+2024-11-14T09:30:40.000Z WARN  api    host=api-7c stage=healthcheck upstream=worker.orders status=degraded p99_ms=2528
+2024-11-14T09:30:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=118
+2024-11-14T09:30:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=113
+2024-11-14T09:30:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=44
+2024-11-14T09:30:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=74
+2024-11-14T09:30:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=114
+2024-11-14T09:30:40.728Z ERROR api    host=api-7c req=req-3867703d stage=responded status=502 duration_ms=8000 error=upstream_timeout
+2024-11-14T09:30:41.894Z INFO  api    host=api-7c req=req-7831243f stage=received route=POST:/v1/cart/items client=203.0.113.55
+2024-11-14T09:30:41.934Z INFO  api    host=api-7c req=req-7831243f stage=dispatched queue=orders.work
+2024-11-14T09:30:45.422Z ERROR api    host=api-7c req=req-082af5e9 stage=responded status=502 duration_ms=8000 error=upstream_timeout
+2024-11-14T09:30:46.780Z INFO  api    host=api-7c req=req-25f4d6b7 stage=received route=GET:/v1/orders client=203.0.113.240
+2024-11-14T09:30:46.820Z INFO  api    host=api-7c req=req-25f4d6b7 stage=dispatched queue=orders.work
+2024-11-14T09:30:49.934Z ERROR api    host=api-7c req=req-7831243f stage=responded status=502 duration_ms=8000 error=upstream_timeout
+2024-11-14T09:30:50.000Z WARN  api    host=api-7c stage=healthcheck upstream=worker.orders status=degraded p99_ms=2425
+2024-11-14T09:30:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=88
+2024-11-14T09:30:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=94
+2024-11-14T09:30:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=117
+2024-11-14T09:30:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=116
+2024-11-14T09:30:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=113
+2024-11-14T09:30:50.974Z INFO  api    host=api-7c req=req-9494edfb stage=received route=GET:/v1/orders client=203.0.113.126
+2024-11-14T09:30:51.014Z INFO  api    host=api-7c req=req-9494edfb stage=dispatched queue=orders.work
+2024-11-14T09:30:54.820Z ERROR api    host=api-7c req=req-25f4d6b7 stage=responded status=502 duration_ms=8000 error=upstream_timeout
+2024-11-14T09:30:56.098Z INFO  api    host=api-7c req=req-4e9a7a1d stage=received route=POST:/v1/checkout client=203.0.113.91
+2024-11-14T09:30:56.138Z INFO  api    host=api-7c req=req-4e9a7a1d stage=dispatched queue=orders.work
+2024-11-14T09:30:57.370Z INFO  api    host=api-7c req=req-a258f646 stage=received route=GET:/v1/orders client=203.0.113.17
+2024-11-14T09:30:57.410Z INFO  api    host=api-7c req=req-a258f646 stage=dispatched queue=orders.work
+2024-11-14T09:30:58.196Z INFO  api    host=api-7c req=req-a258f646 stage=responded status=200 duration_ms=786
+2024-11-14T09:30:59.014Z ERROR api    host=api-7c req=req-9494edfb stage=responded status=502 duration_ms=8000 error=upstream_timeout
+2024-11-14T09:31:00.000Z WARN  api    host=api-7c stage=healthcheck upstream=worker.orders status=degraded p99_ms=4078
+2024-11-14T09:31:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=61
+2024-11-14T09:31:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=82
+2024-11-14T09:31:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=111
+2024-11-14T09:31:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=45
+2024-11-14T09:31:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=84
+2024-11-14T09:31:00.916Z INFO  api    host=api-7c req=req-2123c40c stage=received route=GET:/v1/cart client=203.0.113.17
+2024-11-14T09:31:00.956Z INFO  api    host=api-7c req=req-2123c40c stage=dispatched queue=orders.work
+2024-11-14T09:31:04.138Z ERROR api    host=api-7c req=req-4e9a7a1d stage=responded status=502 duration_ms=8000 error=upstream_timeout
+2024-11-14T09:31:05.520Z INFO  api    host=api-7c req=req-eefd0389 stage=received route=POST:/v1/cart/items client=203.0.113.17
+2024-11-14T09:31:05.560Z INFO  api    host=api-7c req=req-eefd0389 stage=dispatched queue=orders.work
+2024-11-14T09:31:08.956Z ERROR api    host=api-7c req=req-2123c40c stage=responded status=502 duration_ms=8000 error=upstream_timeout
+2024-11-14T09:31:10.000Z WARN  api    host=api-7c stage=healthcheck upstream=worker.orders status=degraded p99_ms=2857
+2024-11-14T09:31:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=77
+2024-11-14T09:31:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=99
+2024-11-14T09:31:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=73
+2024-11-14T09:31:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=120
+2024-11-14T09:31:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=45
+2024-11-14T09:31:10.298Z INFO  api    host=api-7c req=req-3759aa8b stage=received route=POST:/v1/payment/authorize client=203.0.113.17
+2024-11-14T09:31:10.338Z INFO  api    host=api-7c req=req-3759aa8b stage=dispatched queue=orders.work
+2024-11-14T09:31:13.560Z ERROR api    host=api-7c req=req-eefd0389 stage=responded status=502 duration_ms=8000 error=upstream_timeout
+2024-11-14T09:31:14.510Z INFO  api    host=api-7c req=req-fd648579 stage=received route=POST:/v1/orders client=203.0.113.55
+2024-11-14T09:31:14.550Z INFO  api    host=api-7c req=req-fd648579 stage=dispatched queue=orders.work
+2024-11-14T09:31:18.338Z ERROR api    host=api-7c req=req-3759aa8b stage=responded status=502 duration_ms=8000 error=upstream_timeout
+2024-11-14T09:31:19.400Z INFO  api    host=api-7c req=req-fd829015 stage=received route=POST:/v1/cart/items client=203.0.113.203
+2024-11-14T09:31:19.440Z INFO  api    host=api-7c req=req-fd829015 stage=dispatched queue=orders.work
+2024-11-14T09:31:20.000Z WARN  api    host=api-7c stage=healthcheck upstream=worker.orders status=degraded p99_ms=3005
+2024-11-14T09:31:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=57
+2024-11-14T09:31:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=119
+2024-11-14T09:31:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=46
+2024-11-14T09:31:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=108
+2024-11-14T09:31:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=111
+2024-11-14T09:31:22.550Z ERROR api    host=api-7c req=req-fd648579 stage=responded status=502 duration_ms=8000 error=upstream_timeout
+2024-11-14T09:31:24.092Z INFO  api    host=api-7c req=req-0ca2d8f5 stage=received route=POST:/v1/payment/authorize client=203.0.113.91
+2024-11-14T09:31:24.132Z INFO  api    host=api-7c req=req-0ca2d8f5 stage=dispatched queue=orders.work
+2024-11-14T09:31:27.440Z ERROR api    host=api-7c req=req-fd829015 stage=responded status=502 duration_ms=8000 error=upstream_timeout
+2024-11-14T09:31:28.776Z INFO  api    host=api-7c req=req-56191b42 stage=received route=GET:/v1/orders client=203.0.113.55
+2024-11-14T09:31:28.816Z INFO  api    host=api-7c req=req-56191b42 stage=dispatched queue=orders.work
+2024-11-14T09:31:30.000Z WARN  api    host=api-7c stage=healthcheck upstream=worker.orders status=degraded p99_ms=2927
+2024-11-14T09:31:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=60
+2024-11-14T09:31:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=90
+2024-11-14T09:31:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=46
+2024-11-14T09:31:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=84
+2024-11-14T09:31:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=108
+2024-11-14T09:31:31.344Z INFO  api    host=api-7c req=req-23cc6200 stage=received route=POST:/v1/checkout client=203.0.113.8
+2024-11-14T09:31:31.384Z INFO  api    host=api-7c req=req-23cc6200 stage=dispatched queue=orders.work
+2024-11-14T09:31:31.588Z INFO  api    host=api-7c req=req-23cc6200 stage=responded status=200 duration_ms=204
+2024-11-14T09:31:32.132Z ERROR api    host=api-7c req=req-0ca2d8f5 stage=responded status=502 duration_ms=8000 error=upstream_timeout
+2024-11-14T09:31:33.278Z INFO  api    host=api-7c req=req-b278fd6e stage=received route=GET:/v1/orders client=203.0.113.126
+2024-11-14T09:31:33.318Z INFO  api    host=api-7c req=req-b278fd6e stage=dispatched queue=orders.work
+2024-11-14T09:31:36.816Z ERROR api    host=api-7c req=req-56191b42 stage=responded status=502 duration_ms=8000 error=upstream_timeout
+2024-11-14T09:31:38.478Z INFO  api    host=api-7c req=req-9abd778b stage=received route=POST:/v1/cart/items client=203.0.113.203
+2024-11-14T09:31:38.518Z INFO  api    host=api-7c req=req-9abd778b stage=dispatched queue=orders.work
+2024-11-14T09:31:40.000Z WARN  api    host=api-7c stage=healthcheck upstream=worker.orders status=degraded p99_ms=3347
+2024-11-14T09:31:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=68
+2024-11-14T09:31:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=97
+2024-11-14T09:31:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=104
+2024-11-14T09:31:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=67
+2024-11-14T09:31:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=79
+2024-11-14T09:31:41.318Z ERROR api    host=api-7c req=req-b278fd6e stage=responded status=502 duration_ms=8000 error=upstream_timeout
+2024-11-14T09:31:43.106Z INFO  api    host=api-7c req=req-899177cc stage=received route=POST:/v1/cart/items client=203.0.113.203
+2024-11-14T09:31:43.146Z INFO  api    host=api-7c req=req-899177cc stage=dispatched queue=orders.work
+2024-11-14T09:31:46.518Z ERROR api    host=api-7c req=req-9abd778b stage=responded status=502 duration_ms=8000 error=upstream_timeout
+2024-11-14T09:31:47.890Z INFO  api    host=api-7c req=req-38425b96 stage=received route=GET:/v1/cart client=203.0.113.17
+2024-11-14T09:31:47.930Z INFO  api    host=api-7c req=req-38425b96 stage=dispatched queue=orders.work
+2024-11-14T09:31:50.000Z WARN  api    host=api-7c stage=healthcheck upstream=worker.orders status=degraded p99_ms=1891
+2024-11-14T09:31:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=74
+2024-11-14T09:31:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=65
+2024-11-14T09:31:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=78
+2024-11-14T09:31:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=115
+2024-11-14T09:31:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=110
+2024-11-14T09:31:51.146Z ERROR api    host=api-7c req=req-899177cc stage=responded status=502 duration_ms=8000 error=upstream_timeout
+2024-11-14T09:31:55.930Z ERROR api    host=api-7c req=req-38425b96 stage=responded status=502 duration_ms=8000 error=upstream_timeout
+2024-11-14T09:32:00.000Z WARN  api    host=api-7c stage=healthcheck upstream=worker.orders status=degraded p99_ms=2888
+2024-11-14T09:32:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=101
+2024-11-14T09:32:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=69
+2024-11-14T09:32:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=120
+2024-11-14T09:32:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=48
+2024-11-14T09:32:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=116
+2024-11-14T09:32:07.684Z INFO  api    host=api-7c req=req-9984c00b stage=received route=POST:/v1/payment/authorize client=203.0.113.240
+2024-11-14T09:32:07.724Z INFO  api    host=api-7c req=req-9984c00b stage=dispatched queue=orders.work
+2024-11-14T09:32:08.262Z INFO  api    host=api-7c req=req-9984c00b stage=responded status=200 duration_ms=538
+2024-11-14T09:32:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=worker.orders status=ok p99_ms=111
+2024-11-14T09:32:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=77
+2024-11-14T09:32:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=53
+2024-11-14T09:32:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=60
+2024-11-14T09:32:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=77
+2024-11-14T09:32:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=103
+2024-11-14T09:32:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=worker.orders status=ok p99_ms=58
+2024-11-14T09:32:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=108
+2024-11-14T09:32:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=85
+2024-11-14T09:32:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=85
+2024-11-14T09:32:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=75
+2024-11-14T09:32:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=90
+2024-11-14T09:32:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=worker.orders status=ok p99_ms=42
+2024-11-14T09:32:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=41
+2024-11-14T09:32:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=90
+2024-11-14T09:32:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=94
+2024-11-14T09:32:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=86
+2024-11-14T09:32:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=59
+2024-11-14T09:32:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=worker.orders status=ok p99_ms=65
+2024-11-14T09:32:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=73
+2024-11-14T09:32:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=45
+2024-11-14T09:32:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=45
+2024-11-14T09:32:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=71
+2024-11-14T09:32:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=103
+2024-11-14T09:32:43.698Z INFO  api    host=api-7c req=req-fa691b70 stage=received route=GET:/v1/cart client=203.0.113.203
+2024-11-14T09:32:43.738Z INFO  api    host=api-7c req=req-fa691b70 stage=dispatched queue=orders.work
+2024-11-14T09:32:44.434Z INFO  api    host=api-7c req=req-fa691b70 stage=responded status=200 duration_ms=696
+2024-11-14T09:32:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=worker.orders status=ok p99_ms=95
+2024-11-14T09:32:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=67
+2024-11-14T09:32:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=43
+2024-11-14T09:32:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=103
+2024-11-14T09:32:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=65
+2024-11-14T09:32:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=47
+2024-11-14T09:33:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=worker.orders status=ok p99_ms=40
+2024-11-14T09:33:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=46
+2024-11-14T09:33:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=50
+2024-11-14T09:33:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=64
+2024-11-14T09:33:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=113
+2024-11-14T09:33:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=61
+2024-11-14T09:33:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=worker.orders status=ok p99_ms=75
+2024-11-14T09:33:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=96
+2024-11-14T09:33:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=72
+2024-11-14T09:33:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=54
+2024-11-14T09:33:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=107
+2024-11-14T09:33:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=60
+2024-11-14T09:33:18.070Z INFO  api    host=api-7c req=req-eca659d0 stage=received route=GET:/v1/cart client=203.0.113.44
+2024-11-14T09:33:18.110Z INFO  api    host=api-7c req=req-eca659d0 stage=dispatched queue=orders.work
+2024-11-14T09:33:18.248Z INFO  api    host=api-7c req=req-eca659d0 stage=responded status=200 duration_ms=138
+2024-11-14T09:33:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=worker.orders status=ok p99_ms=91
+2024-11-14T09:33:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=52
+2024-11-14T09:33:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=42
+2024-11-14T09:33:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=77
+2024-11-14T09:33:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=111
+2024-11-14T09:33:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=89
+2024-11-14T09:33:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=worker.orders status=ok p99_ms=120
+2024-11-14T09:33:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=58
+2024-11-14T09:33:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=109
+2024-11-14T09:33:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=106
+2024-11-14T09:33:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=55
+2024-11-14T09:33:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=71
+2024-11-14T09:33:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=worker.orders status=ok p99_ms=58
+2024-11-14T09:33:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=71
+2024-11-14T09:33:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=113
+2024-11-14T09:33:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=50
+2024-11-14T09:33:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=99
+2024-11-14T09:33:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=76
+2024-11-14T09:33:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=worker.orders status=ok p99_ms=45
+2024-11-14T09:33:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=97
+2024-11-14T09:33:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=117
+2024-11-14T09:33:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=95
+2024-11-14T09:33:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=117
+2024-11-14T09:33:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=76
+2024-11-14T09:33:50.186Z INFO  api    host=api-7c req=req-779d1f56 stage=received route=GET:/v1/orders client=203.0.113.17
+2024-11-14T09:33:50.226Z INFO  api    host=api-7c req=req-779d1f56 stage=dispatched queue=orders.work
+2024-11-14T09:33:50.352Z INFO  api    host=api-7c req=req-779d1f56 stage=responded status=200 duration_ms=126
+2024-11-14T09:34:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=worker.orders status=ok p99_ms=98
+2024-11-14T09:34:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=109
+2024-11-14T09:34:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=65
+2024-11-14T09:34:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=115
+2024-11-14T09:34:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=44
+2024-11-14T09:34:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=99
+2024-11-14T09:34:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=worker.orders status=ok p99_ms=56
+2024-11-14T09:34:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=49
+2024-11-14T09:34:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=103
+2024-11-14T09:34:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=58
+2024-11-14T09:34:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=43
+2024-11-14T09:34:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=48
+2024-11-14T09:34:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=worker.orders status=ok p99_ms=93
+2024-11-14T09:34:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=86
+2024-11-14T09:34:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=45
+2024-11-14T09:34:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=120
+2024-11-14T09:34:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=49
+2024-11-14T09:34:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=91
+2024-11-14T09:34:25.136Z INFO  api    host=api-7c req=req-21b8f5ce stage=received route=POST:/v1/payment/authorize client=203.0.113.17
+2024-11-14T09:34:25.176Z INFO  api    host=api-7c req=req-21b8f5ce stage=dispatched queue=orders.work
+2024-11-14T09:34:25.872Z INFO  api    host=api-7c req=req-21b8f5ce stage=responded status=200 duration_ms=696
+2024-11-14T09:34:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=worker.orders status=ok p99_ms=71
+2024-11-14T09:34:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=47
+2024-11-14T09:34:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=79
+2024-11-14T09:34:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=44
+2024-11-14T09:34:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=59
+2024-11-14T09:34:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=50
+2024-11-14T09:34:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=worker.orders status=ok p99_ms=85
+2024-11-14T09:34:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=72
+2024-11-14T09:34:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=42
+2024-11-14T09:34:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=64
+2024-11-14T09:34:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=59
+2024-11-14T09:34:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=58
+2024-11-14T09:34:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=worker.orders status=ok p99_ms=40
+2024-11-14T09:34:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=77
+2024-11-14T09:34:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=54
+2024-11-14T09:34:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=86
+2024-11-14T09:34:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=48
+2024-11-14T09:34:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=91
+2024-11-14T09:35:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=worker.orders status=ok p99_ms=45
+2024-11-14T09:35:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=57
+2024-11-14T09:35:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=65
+2024-11-14T09:35:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=72
+2024-11-14T09:35:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=88
+2024-11-14T09:35:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=80
+2024-11-14T09:35:03.884Z INFO  api    host=api-7c req=req-f87c6d2c stage=received route=POST:/v1/checkout client=203.0.113.55
+2024-11-14T09:35:03.924Z INFO  api    host=api-7c req=req-f87c6d2c stage=dispatched queue=orders.work
+2024-11-14T09:35:04.542Z INFO  api    host=api-7c req=req-f87c6d2c stage=responded status=200 duration_ms=618
+2024-11-14T09:35:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=worker.orders status=ok p99_ms=76
+2024-11-14T09:35:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=104
+2024-11-14T09:35:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=108
+2024-11-14T09:35:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=117
+2024-11-14T09:35:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=59
+2024-11-14T09:35:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=64
+2024-11-14T09:35:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=worker.orders status=ok p99_ms=50
+2024-11-14T09:35:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=105
+2024-11-14T09:35:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=88
+2024-11-14T09:35:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=79
+2024-11-14T09:35:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=90
+2024-11-14T09:35:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=71
+2024-11-14T09:35:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=worker.orders status=ok p99_ms=58
+2024-11-14T09:35:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=104
+2024-11-14T09:35:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=40
+2024-11-14T09:35:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=95
+2024-11-14T09:35:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=54
+2024-11-14T09:35:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=74
+2024-11-14T09:35:38.274Z INFO  api    host=api-7c req=req-e30258d1 stage=received route=POST:/v1/orders client=203.0.113.240
+2024-11-14T09:35:38.314Z INFO  api    host=api-7c req=req-e30258d1 stage=dispatched queue=orders.work
+2024-11-14T09:35:39.172Z INFO  api    host=api-7c req=req-e30258d1 stage=responded status=200 duration_ms=858
+2024-11-14T09:35:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=worker.orders status=ok p99_ms=119
+2024-11-14T09:35:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=90
+2024-11-14T09:35:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=118
+2024-11-14T09:35:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=73
+2024-11-14T09:35:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=109
+2024-11-14T09:35:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=83
+2024-11-14T09:35:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=worker.orders status=ok p99_ms=117
+2024-11-14T09:35:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=90
+2024-11-14T09:35:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=103
+2024-11-14T09:35:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=66
+2024-11-14T09:35:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=89
+2024-11-14T09:35:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=41
+2024-11-14T09:36:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=worker.orders status=ok p99_ms=42
+2024-11-14T09:36:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=57
+2024-11-14T09:36:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=120
+2024-11-14T09:36:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=72
+2024-11-14T09:36:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=108
+2024-11-14T09:36:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=85
+2024-11-14T09:36:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=worker.orders status=ok p99_ms=48
+2024-11-14T09:36:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=86
+2024-11-14T09:36:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=80
+2024-11-14T09:36:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=71
+2024-11-14T09:36:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=106
+2024-11-14T09:36:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=115
+2024-11-14T09:36:11.132Z INFO  api    host=api-7c req=req-56aecfdb stage=received route=POST:/v1/orders client=203.0.113.44
+2024-11-14T09:36:11.172Z INFO  api    host=api-7c req=req-56aecfdb stage=dispatched queue=orders.work
+2024-11-14T09:36:12.020Z INFO  api    host=api-7c req=req-56aecfdb stage=responded status=200 duration_ms=848
+2024-11-14T09:36:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=worker.orders status=ok p99_ms=86
+2024-11-14T09:36:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=87
+2024-11-14T09:36:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=39
+2024-11-14T09:36:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=42
+2024-11-14T09:36:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=58
+2024-11-14T09:36:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=47
+2024-11-14T09:36:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=worker.orders status=ok p99_ms=111
+2024-11-14T09:36:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=114
+2024-11-14T09:36:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=87
+2024-11-14T09:36:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=80
+2024-11-14T09:36:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=69
+2024-11-14T09:36:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=99
+2024-11-14T09:36:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=worker.orders status=ok p99_ms=66
+2024-11-14T09:36:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=60
+2024-11-14T09:36:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=67
+2024-11-14T09:36:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=68
+2024-11-14T09:36:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=71
+2024-11-14T09:36:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=83
+2024-11-14T09:36:47.554Z INFO  api    host=api-7c req=req-4f9244da stage=received route=POST:/v1/orders client=203.0.113.8
+2024-11-14T09:36:47.594Z INFO  api    host=api-7c req=req-4f9244da stage=dispatched queue=orders.work
+2024-11-14T09:36:47.820Z INFO  api    host=api-7c req=req-4f9244da stage=responded status=200 duration_ms=226
+2024-11-14T09:36:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=worker.orders status=ok p99_ms=55
+2024-11-14T09:36:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=55
+2024-11-14T09:36:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=90
+2024-11-14T09:36:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=52
+2024-11-14T09:36:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=93
+2024-11-14T09:36:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=119
+2024-11-14T09:37:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=worker.orders status=ok p99_ms=57
+2024-11-14T09:37:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=57
+2024-11-14T09:37:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=52
+2024-11-14T09:37:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=116
+2024-11-14T09:37:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=38
+2024-11-14T09:37:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=93
+2024-11-14T09:37:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=worker.orders status=ok p99_ms=78
+2024-11-14T09:37:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=74
+2024-11-14T09:37:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=80
+2024-11-14T09:37:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=90
+2024-11-14T09:37:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=50
+2024-11-14T09:37:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=68
+2024-11-14T09:37:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=worker.orders status=ok p99_ms=92
+2024-11-14T09:37:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=64
+2024-11-14T09:37:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=102
+2024-11-14T09:37:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=76
+2024-11-14T09:37:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=90
+2024-11-14T09:37:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=113
+2024-11-14T09:37:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=worker.orders status=ok p99_ms=85
+2024-11-14T09:37:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=104
+2024-11-14T09:37:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=99
+2024-11-14T09:37:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=78
+2024-11-14T09:37:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=65
+2024-11-14T09:37:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=68
+2024-11-14T09:37:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=worker.orders status=ok p99_ms=49
+2024-11-14T09:37:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=52
+2024-11-14T09:37:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=55
+2024-11-14T09:37:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=84
+2024-11-14T09:37:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=116
+2024-11-14T09:37:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=111
+2024-11-14T09:37:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=worker.orders status=ok p99_ms=56
+2024-11-14T09:37:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=69
+2024-11-14T09:37:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=46
+2024-11-14T09:37:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=117
+2024-11-14T09:37:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=54
+2024-11-14T09:37:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=50
+2024-11-14T09:38:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=worker.orders status=ok p99_ms=107
+2024-11-14T09:38:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=39
+2024-11-14T09:38:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=96
+2024-11-14T09:38:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=102
+2024-11-14T09:38:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=53
+2024-11-14T09:38:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=40
+2024-11-14T09:38:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=worker.orders status=ok p99_ms=106
+2024-11-14T09:38:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=114
+2024-11-14T09:38:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=84
+2024-11-14T09:38:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=96
+2024-11-14T09:38:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=92
+2024-11-14T09:38:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=66
+2024-11-14T09:38:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=worker.orders status=ok p99_ms=81
+2024-11-14T09:38:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=101
+2024-11-14T09:38:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=41
+2024-11-14T09:38:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=98
+2024-11-14T09:38:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=44
+2024-11-14T09:38:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=55
+2024-11-14T09:38:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=worker.orders status=ok p99_ms=114
+2024-11-14T09:38:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=109
+2024-11-14T09:38:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=44
+2024-11-14T09:38:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=64
+2024-11-14T09:38:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=114
+2024-11-14T09:38:30.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=57
+2024-11-14T09:38:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=worker.orders status=ok p99_ms=77
+2024-11-14T09:38:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=78
+2024-11-14T09:38:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=88
+2024-11-14T09:38:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=69
+2024-11-14T09:38:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=57
+2024-11-14T09:38:40.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=116
+2024-11-14T09:38:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=worker.orders status=ok p99_ms=68
+2024-11-14T09:38:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=103
+2024-11-14T09:38:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=113
+2024-11-14T09:38:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=50
+2024-11-14T09:38:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=73
+2024-11-14T09:38:50.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=115
+2024-11-14T09:39:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=worker.orders status=ok p99_ms=104
+2024-11-14T09:39:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=101
+2024-11-14T09:39:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=84
+2024-11-14T09:39:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=101
+2024-11-14T09:39:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=102
+2024-11-14T09:39:00.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=56
+2024-11-14T09:39:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=worker.orders status=ok p99_ms=63
+2024-11-14T09:39:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=48
+2024-11-14T09:39:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=38
+2024-11-14T09:39:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=39
+2024-11-14T09:39:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=119
+2024-11-14T09:39:10.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=113
+2024-11-14T09:39:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=worker.orders status=ok p99_ms=46
+2024-11-14T09:39:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=cache.session status=ok p99_ms=72
+2024-11-14T09:39:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=authz.tokens status=ok p99_ms=72
+2024-11-14T09:39:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=search.catalog status=ok p99_ms=104
+2024-11-14T09:39:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=media.assets status=ok p99_ms=102
+2024-11-14T09:39:20.000Z INFO  api    host=api-7c stage=healthcheck upstream=ledger.postings status=ok p99_ms=57

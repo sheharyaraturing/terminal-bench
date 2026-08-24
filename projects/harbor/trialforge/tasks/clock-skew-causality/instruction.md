@@ -1,0 +1,7 @@
+Hey, I am Dario Feldt. I was on call for the checkout platform through last Thursday's outage, so the incident review is mine to write and it goes to the whole engineering org on Monday. The three services involved each kept their own record of that window, and read at face value those records disagree about what failed first. The current draft blames a component I do not believe is at fault.
+
+Work out whether the recorded timestamps can be taken at face value. Where they cannot, tell me how far they are wrong, in which direction, and what evidence pins that correction down rather than estimating it — to the millisecond, not as a range, because the review has to say why the number is what it is. Tell me too which cheaper reads of these files you tried and rejected, and what each one gave instead. I will be asked why I did not simply line the three files up end to end, and I would rather answer that with a number than an opinion.
+
+Then reconstruct the true order of the failures from the corrected times: which component actually failed first, how long it had been failing before any customer saw an error, what was absorbing the failures until then, and how many customer requests the outage cost us. On that corrected sequence, tell me which competing root-cause theory the evidence supports and which one it rules out.
+
+Anything out of order for a reason other than the timestamp discrepancy you identify should be called out separately, with the reason. I do not want a coincidental ordering issue presented to the engineering org as causal.

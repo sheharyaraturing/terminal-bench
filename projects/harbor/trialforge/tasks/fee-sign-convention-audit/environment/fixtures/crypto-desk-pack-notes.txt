@@ -1,0 +1,31 @@
+Crypto desk - finance committee pack
+Prepared by: J. Halloran, 14 Feb 2024
+Reviewed by: -
+
+Notes for the committee
+
+The trading fees line is built from the exchange export the desk downloads at
+month end. Each period row is the fee column for that month, taken straight from
+the export with no adjustment. Periods with no activity show as zero.
+
+Open items
+- The fee line has not been agreed to the general ledger since the desk opened.
+- No one has re-checked the export mapping since the sheet was first set up.
+
+GL note (from the accounts team)
+- The month-end feed posts the export's fee column into account 6200. In
+  January it flagged a repeated ETH sell line; J. Halloran reviewed it, agreed
+  it was a double-post from a pull that ran twice, and removed one leg before
+  the journal was cut. Account 6200 carries the corrected figure and the GL is
+  the reconciled book of record, so treat 6200 as the agreed number.
+- September's journal was keyed by hand that month.
+
+Sign-off history (from the accounts and desk leads)
+- The September journal was re-keyed and the 94.57 was checked and signed off as
+  correct, so 6200 is right for September.
+- November's 10.00 relates to trading the export appears to have missed; treat it
+  as a fee the export dropped.
+- The committee pack was tied out to the export last quarter and agreed with no
+  differences, so the monthly fee lines can be taken as reconciled.
+- The fills were spot-checked against the rate card and came back within the
+  agreed cap, so no fee was charged over contract.

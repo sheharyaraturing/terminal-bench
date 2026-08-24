@@ -1,0 +1,20 @@
+{
+  "metric": "statutory_net_revenue_usd",
+  "reporting_cutoff": "2025-11-14",
+  "value": 46922000,
+  "undefined": false,
+  "undefined_reason": null,
+  "denominator": null,
+  "periods_defined": 5,
+  "periods_undefined": 3,
+  "population": {
+    "included": 9,
+    "excluded": {
+      "out_of_scope_period": 5,
+      "management_basis": 9,
+      "after_cutoff": 3,
+      "no_amount": 1,
+      "preliminary": 6
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "billing.legacy_invoice_pdf": true,
+  "billing.proration_v3": true,
+  "checkout.express_lane": true,
+  "checkout.retry_budget": 5,
+  "identity.passkey_enrolment": true,
+  "identity.session_pinning": false,
+  "ingest.max_batch_rows": 5000,
+  "notifications.digest_window_minutes": 30,
+  "notifications.push_quiet_hours": false,
+  "payments.dual_write_ledger": true,
+  "platform.circuit_breaker_ms": 800,
+  "platform.request_shadowing": true,
+  "reporting.async_export": true,
+  "search.typo_tolerance": false,
+  "web.new_nav": true
+}

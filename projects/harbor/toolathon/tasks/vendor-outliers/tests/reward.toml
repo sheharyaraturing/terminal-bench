@@ -1,0 +1,7 @@
+[[reward]]
+name = "a_reward"
+aggregation = "weighted_mean"
+
+[[reward]]
+name = "reward"
+aggregation = "weighted_mean"

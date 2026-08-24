@@ -1,0 +1,8 @@
+Document-Type: Invoice
+Reference: ACME-4501
+
+Amount due: 2410.75
+Payment terms: net 30
+Raised by accounts payable.
+
+(Filed by hand under 'Employment Contract' during the migration.)

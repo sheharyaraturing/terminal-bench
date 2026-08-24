@@ -1,0 +1,139 @@
+# Harbor task config. Schema is validated by harbor 0.21.0.
+schema_version = "1.4"
+
+[task]
+name = "turing/duplicate-detection-strategy"
+version = "1.1.3"
+description = "One deduplication rule for the whole warehouse, refused with evidence: three of the eight tables carry exact duplicates and the keyless ones cannot prove theirs are errors"
+
+[metadata]
+persona   = "Data Quality Engineer"
+domain    = "software-engineering"
+target_tool_calls = 52             # aim for 40-70
+target_claims = 18                 # aim for 8-15
+
+# Cap on a SINGLE tool result, in characters. Guards one oversized read from
+# swallowing the context window; omit it and the harness applies no cap.
+tool_output_cap = 60000
+
+# Provider payload fields; inline table so it stays one key. Spread into the request
+# LAST; model/messages/tools/api_key are refused. Provider-dependent - a gateway may
+# accept reasoning effort with HTTP 200 and ignore it.
+extra_llm_params = { reasoning = { effort = "medium" } }
+
+# Tool allowlist handed to the vendored harness as `enabledTools`.
+# Rationale and the needed/distractor split: docs/TOOL_ALLOWLISTS.md
+# 17 tools across 5 servers. sqlite and filesystem are the primary route; calculator,
+# desktop-commander and cli-mcp-server are redundant-but-valid routes (they can read
+# the CSVs or do arithmetic), not dead ends. No code-execution server is exposed: it
+# is deliberately withheld so every count and mean has to be expressed as a query
+# rather than one pandas script, which is what carries the tool-call count. The
+# far-field dead-end servers (memory, ddg-search, whois) are also not declared, per
+# the MCP-Atlas design where distraction turns on tool discovery, not dismissing whole
+# servers by name.
+# Names are verbatim from ci/tool_inventory.txt - double prefixes are real.
+enabled_tools = [
+  # needed
+  "sqlite_list_tables",
+  "sqlite_get_table_schema",
+  "sqlite_query",
+  "sqlite_db_info",
+  "filesystem_list_directory",
+  "filesystem_read_text_file",
+  "calculator_calculate",
+  # same-server distractors
+  "sqlite_read_records",              # equality-only: cannot express COUNT(*) vs COUNT(DISTINCT *)
+  "sqlite_update_records",            # mutating trap: tempts "cleaning" the duplicates it was asked to report
+  "filesystem_read_multiple_files",
+  "filesystem_write_file",
+  # redundant-but-usable routes (can read the CSVs / run commands over /data)
+  "desktop-commander_read_file",      # redundant read path
+  "desktop-commander_get_file_info",
+  "desktop-commander_list_directory",
+  "desktop-commander_start_process",
+  "cli-mcp-server_run_command",       # crippled: no pipes, /data only, so `sort | uniq -d` is unavailable
+  "cli-mcp-server_show_security_rules",
+]
+
+[agent]
+timeout_sec = 3600.0               # long-horizon tasks need room
+
+[verifier]
+timeout_sec = 900.0                # 12 claims judged individually
+
+# "separate" runs the verifier in its own container against the trial's RECORDED
+# artifacts under /logs/artifacts, not the live agent sandbox. It is the only mode
+# `harbor job regrade` accepts. The contract: every input the judge reads must live
+# under /logs/artifacts (/logs/agent is agent-private and is not collected). solve.sh
+# tees the answer there, and reward.toml [judge].files points there.
+environment_mode = "separate"
+
+# A separate verifier needs its own image. With this block present but carrying no
+# docker_image, harbor builds tests/Dockerfile with tests/ as the build context -
+# the only way /tests/test.sh reaches the container, because separate mode does not
+# upload tests/ at run time. (The agent still uses [environment].docker_image below.)
+[verifier.environment]
+network_mode = "public"            # the judge needs to reach OpenRouter
+
+[verifier.env]
+# rewardkit routes the judge through OpenRouter (reward.toml [judge].judge), so
+# litellm needs OPENROUTER_API_KEY inside the verifier container. Without this
+# block the variable is simply absent there and tests/test.sh exports an empty
+# string, which fails the judge call and leaves no reward.json behind.
+OPENROUTER_API_KEY = "${OPENROUTER_API_KEY}"
+
+[environment]
+# docker_image IS set here, unlike agate-cast-regression-audit. That task omits it
+# on purpose because it must build a fixture bundle into the image; this task ships
+# no fixture and reads only the data already baked into the base image, so the
+# prebuilt pull is correct and skipping the build is a straight speedup.
+# environment/Dockerfile is kept (fixtures block deleted) so `--force-build` still
+# produces an identical image.
+docker_image = "us-central1-docker.pkg.dev/turing-delivery-rl-gym/daytona/turing-mcpatlas:0.0.3"
+cpus = 4                           # CPU is the binding constraint, not memory
+memory_mb = 4096                   # measured: 19 servers idle at ~2.1 GB
+storage_mb = 10240
+
+# ── MCP servers ───────────────────────────────────────────────────────────────
+# 5 servers, every one genuinely usable. sqlite and filesystem are the primary route;
+# calculator, desktop-commander and cli-mcp-server are redundant-but-valid routes
+# (they can read the CSVs or run commands over /data), so a model that uses them still
+# makes progress. No code-execution server is exposed: it is deliberately withheld so
+# each count and mean is a query, not one pandas script. The far-field dead-end servers
+# (memory, ddg-search, whois) are NOT declared, per the MCP-Atlas design where
+# distraction turns on tool discovery, not dismissing whole servers by name. Every
+# declared server carries at least one exposed tool and every exposed tool's server
+# is declared.
+# Pins are copied from tasks/TEMPLATE/task.toml — see NOTES.md, which records
+# where the TEMPLATE and the agate task disagree on three of these versions.
+# Every uvx server carries --with mcp<2 - do not remove it.
+
+[[environment.mcp_servers]]
+name = "sqlite"
+transport = "stdio"
+command = "npx"
+args = ["mcp-sqlite@1.0.9", "/data/db/turing.db"]
+
+[[environment.mcp_servers]]
+name = "filesystem"
+transport = "stdio"
+command = "npx"
+args = ["@modelcontextprotocol/server-filesystem@2026.7.10", "/data"]
+
+[[environment.mcp_servers]]
+name = "calculator"
+transport = "stdio"
+command = "uvx"
+args = ["--with", "mcp<2", "mcp-server-calculator==0.2.1"]
+
+[[environment.mcp_servers]]
+name = "desktop-commander"
+transport = "stdio"
+command = "npx"
+args = ["@wonderwhy-er/desktop-commander@0.2.47"]
+
+[[environment.mcp_servers]]
+name = "cli-mcp-server"
+transport = "stdio"
+command = "uvx"
+args = ["--with", "mcp<2", "cli-mcp-server==0.2.5"]

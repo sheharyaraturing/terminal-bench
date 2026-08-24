@@ -1,0 +1,6 @@
+Document-Type: Receipt
+Reference: TRV-0312
+
+Amount paid: 212.40
+Settled by corporate card.
+Retain for expense reconciliation.

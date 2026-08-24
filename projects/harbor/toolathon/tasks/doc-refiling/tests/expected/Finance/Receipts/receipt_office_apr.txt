@@ -1,0 +1,6 @@
+Document-Type: Receipt
+Reference: OFF-0417
+
+Amount paid: 88.15
+Settled by corporate card.
+Retain for expense reconciliation.

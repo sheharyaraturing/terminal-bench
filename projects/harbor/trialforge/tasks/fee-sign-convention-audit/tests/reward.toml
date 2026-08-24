@@ -1,0 +1,109 @@
+# rewardkit reward definition.
+# Each claim is scored independently against the agent final answer; scores are averaged.
+
+[judge]
+judge = "openrouter/openai/gpt-5.6-luna"
+mode = "individual"
+reasoning_effort = "medium"
+timeout = 300
+files = ["/logs/artifacts/final_answer.txt"]   # separate verifier: /logs/agent is not visible
+
+[scoring]
+aggregation = "weighted_mean"
+
+# No weights anywhere. Two claims carry graded partial credit: the fee-ratio spread
+# (its positive and negative extremes are the two ends of one measurement) and the
+# rate-card fills with their recoverable overcharge. Each is one measurement with two
+# ends, not two separate goals, so neither is a weighting device.
+#     two-part: both halves -> 1.0 | one half -> 0.5 | neither -> 0.0
+
+# --- Trade-fee spine and per-row reconciliation ---------------------------------
+
+[[criterion]]
+description = "Gives the fees actually paid as 218.71 USD (sum of absolute fees), the straight signed sum as 102.47 USD, and the gap as 116.24 USD, all to the cent over the export as shipped, and explains the gap arises because the signed sum nets the negative sell fees against the buys instead of adding them."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "States that the pack does not tie two months: 2023-03 shows -9.72 against the ledger's -10.72 and 2023-04 shows -12.44 against -11.44, each a one dollar difference. The amounts need not carry their signs, and the two months may be named as 2023-03 and 2023-04 or as March and April 2023."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Weighs each fee against its own trade's subtotal, not a blended rate, and gives the worst ratio at each end: about +1.25 percent (or +0.80 percent with the 0.01 floor-charge fills set aside), and about 0.80 percent on the 2023-08-26 sell, signed or unsigned. Both ends, with the second attributed to a sell, scores 1.0; the positive end with a smallest-ratio figure such as 0.33 percent in place of the sell-side end scores 0.5; a single blended or per-side average rate scores 0.0."
+type = "likert"
+points = 3
+
+# --- General-ledger reconciliation (two standalone claims) -----------------------
+
+[[criterion]]
+description = "Names the three months where the export's gross monthly fees disagree with the general-ledger postings: 2023-01, 2023-09 and 2023-11."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "On the September break, states that the export's 95.47 is the correct figure and the general ledger's 94.57 is the error."
+type = "likert"
+points = 3
+
+# --- November (split into two standalone claims) --------------------------------
+
+[[criterion]]
+description = "On November, states that the ledger has no November trading activity at all. An answer that reports November trades, or that does not address whether November had any activity, does not satisfy this."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "On November, states that the general ledger's 10.00 is not a trading fee the export omitted. Saying it is a non-trading charge, or that it has no trading behind it and should be reversed or evidenced rather than added to the fees, all satisfy this equally. Treating the 10.00 as a trading fee the export dropped or should add does not."
+type = "likert"
+points = 3
+
+# --- January adjudication (split into two standalone claims) ---------------------
+
+[[criterion]]
+description = "On the January break, states that the general ledger's 7.40 wrongly dropped a leg and the export's 9.20 is correct. Treating the 7.40 as right, or the export as double-counting, does not satisfy this."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "States that the fees-paid total is unchanged at 218.71 USD once the January line is resolved, not lowered by removing a leg. An answer that drops a January leg and reduces the total to about 216.91 does not satisfy this; correcting the general ledger's 7.40 up to the export's 9.20 is not an adjustment to the total and does not fail this."
+type = "likert"
+points = 3
+
+# --- Rate-card overcharge (compounded: fills + recoverable) ----------------------
+
+[[criterion]]
+description = "Against the 0.65 percent cap, names all four over-cap fills (2023-08-26 BTC sell, 2023-09-01 ETH buy, 2023-10-16 ETH buy, 2023-12-20 BTC buy) and the 6.35 recoverable overcharge. These two halves are scored independently: both correct scores 1.0; either the complete four-fill set or the 6.35 correct, regardless of the other, scores 0.5; neither scores 0.0."
+type = "likert"
+points = 3
+
+# --- General-ledger line detail (split into two standalone claims) ---------------
+
+[[criterion]]
+description = "States that the general-ledger detail for 2023-04 ties in total (11.44) but does not agree with the export line by line. Reporting the April detail as agreed because the monthly total matches does not satisfy this."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "On the 2023-04 detail, identifies the two mis-keyed lines: it carries 3.51 where the export has 3.15, and 0.03 in place of the export's 0.39. A general statement that the lines differ, without these figures, does not satisfy this."
+type = "likert"
+points = 3
+
+# --- Wire-statement reconciliation (two standalone claims) -----------------------
+
+[[criterion]]
+description = "On the venue's account activity statement of 13 wire charges totalling 325.00 USD, states that 2023-07-19 is the sole charge with no withdrawal behind it."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Gives the total recoverable from the venue as 31.35 USD: the 6.35 overcharge above the cap plus the 25.00 orphan wire."
+type = "likert"
+points = 3
+
+# --- All-in cost (standalone: the exclusion a model reliably misses) -------------
+
+[[criterion]]
+description = "Combines the desk's trade-fee total with the 300.00 of agreed-rate wires into one all-in figure, excluding the disputed 2023-07-19 charge. Satisfied whether or not the trade-fee total is exact, since a separate claim scores that. Including the disputed 2023-07-19 wire, or giving no wire cost, does not satisfy this."
+type = "likert"
+points = 3

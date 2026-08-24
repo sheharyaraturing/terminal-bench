@@ -1,0 +1,122 @@
+# Harbor task config. Schema is validated by harbor 0.21.0.
+schema_version = "1.4"
+
+[task]
+name = "turing/agate-cast-regression-audit"
+version = "1.0.0"
+description = "Commit-level audit of a real type-casting regression, quantified against the baked CSVs"
+
+[metadata]
+persona   = "Data Platform Engineer"
+domain    = "software-engineering"
+target_tool_calls = 52             # aim for 40-70
+target_claims = 15                 # aim for 8-15
+
+# Cap on a SINGLE tool result, in characters; omit it and the harness applies no cap.
+tool_output_cap = 60000
+
+# Spread into the provider payload LAST; model/messages/tools/api_key are refused. Silently provider-dependent - a gateway may accept reasoning effort with HTTP 200 and ignore it, so only compare trials run on the same provider.
+extra_llm_params = { reasoning = { effort = "medium" } }
+
+# `enabledTools` for the vendored harness: 10 needed + 6 same-server + 10 off-server distractors = 26 exposed, names verbatim from ci/tool_inventory.txt (double prefixes are real), split rationale in docs/TOOL_ALLOWLISTS.md.
+enabled_tools = [
+  # needed
+  "filesystem_list_directory",
+  "filesystem_read_text_file",
+  "filesystem_search_files",
+  "git_git_log",
+  "git_git_show",
+  "sqlite_list_tables",
+  "sqlite_get_table_schema",
+  "sqlite_query",
+  "mcp-code-executor_execute_code",
+  "calculator_calculate",
+  # same-server distractors
+  "git_git_diff",
+  "git_git_status",
+  "filesystem_read_multiple_files",
+  "filesystem_write_file",
+  "sqlite_read_records",
+  "mcp-code-executor_install_dependencies",
+  # off-server distractors
+  "desktop-commander_read_file",
+  "desktop-commander_start_process",
+  "cli-mcp-server_run_command",
+  "cli-mcp-server_show_security_rules",
+  "mcp-server-code-runner_run-code",
+  "ddg-search_search",
+  "ddg-search_fetch_content",
+  "fetch_fetch",
+  "time_get_current_time",
+  "whois_whois_domain",
+]
+
+[agent]
+timeout_sec = 3600.0               # long-horizon tasks need room
+
+[verifier]
+timeout_sec = 1800.0               # 15 claims judged individually
+environment_mode = "separate"
+
+[verifier.environment]
+network_mode = "public"
+
+[verifier.env]
+# litellm needs OPENROUTER_API_KEY inside the verifier container; without this block tests/test.sh exports an empty string, the judge call fails and no reward.json is written.
+OPENROUTER_API_KEY = "${OPENROUTER_API_KEY}"
+
+[environment]
+# NO docker_image KEY ON PURPOSE: with it set harbor skips environment/Dockerfile, which clones the repo this task audits, leaving /data/repos empty and the task unsolvable.
+cpus = 4                           # CPU is the binding constraint, not memory
+memory_mb = 4096                   # measured: 19 servers idle at ~2.1 GB
+storage_mb = 10240
+
+# ── MCP servers. Every uvx server carries --with mcp<2 - do not remove it. ──
+
+[[environment.mcp_servers]]
+name = "filesystem"
+transport = "stdio"
+command = "npx"
+args = ["@modelcontextprotocol/server-filesystem@2026.7.10", "/data"]
+
+[[environment.mcp_servers]]
+name = "git"
+transport = "stdio"
+command = "uvx"
+args = ["--with", "mcp<2", "mcp-server-git==2026.7.10"]
+
+[[environment.mcp_servers]]
+name = "sqlite"
+transport = "stdio"
+command = "npx"
+args = ["mcp-sqlite@1.0.9", "/data/db/turing.db"]
+
+[[environment.mcp_servers]]
+name = "mcp-code-executor"
+transport = "stdio"
+command = "npx"
+args = ["@geobio/code_execution_server@0.2.1"]
+
+[[environment.mcp_servers]]
+name = "calculator"
+transport = "stdio"
+command = "uvx"
+args = ["--with", "mcp<2", "mcp-server-calculator==0.2.0"]
+
+[[environment.mcp_servers]]
+name = "desktop-commander"
+transport = "stdio"
+command = "npx"
+args = ["@wonderwhy-er/desktop-commander@0.2.7"]
+
+[[environment.mcp_servers]]
+name = "cli-mcp-server"
+transport = "stdio"
+command = "uvx"
+args = ["--with", "mcp<2", "cli-mcp-server==0.2.5"]
+
+[[environment.mcp_servers]]
+name = "ddg-search"
+transport = "stdio"
+command = "uvx"
+args = ["--with", "mcp<2", "duckduckgo-mcp-server==0.5.0"]

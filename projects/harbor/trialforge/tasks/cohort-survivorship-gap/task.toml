@@ -1,0 +1,162 @@
+# Harbor task config. Schema is validated by harbor 0.21.0.
+schema_version = "1.4"
+
+[task]
+name = "turing/cohort-survivorship-gap"
+version = "1.0.0"
+description = "Survivorship audit of a 180-subject two-arm cohort whose outcome table holds rows only for completers: the true retention, the arm the dropouts concentrate in, the between-arm comparison that reverses once everyone is carried in, and the one missing score that is not a dropout"
+
+[metadata]
+persona   = "Research Analyst"
+domain    = "research-science"
+target_tool_calls = 56             # aim for 40-70
+target_claims = 12                 # aim for 8-15
+
+# Provider payload fields; inline table so it stays one key.
+extra_llm_params = { reasoning = { effort = "medium" } }
+
+# One tool result, capped.
+tool_output_cap = 200000
+
+
+# Tool allowlist handed to the vendored harness as `enabledTools`.
+enabled_tools = [
+  # needed
+  "sqlite_list_tables",
+  "sqlite_db_info",
+  "sqlite_get_table_schema",
+  "sqlite_query",
+  "mcp-code-executor_execute_code",
+  "mcp-code-executor_initialize_code_file",
+  "mcp-code-executor_execute_code_file",
+  "calculator_calculate",
+  "filesystem_list_directory",
+  # same-server distractors
+  "sqlite_read_records",                  # equality-only filter: it cannot express the LEFT JOIN or the max-visit lookup, which
+  "sqlite_update_records",                # mutating trap: tempts "repairing" the missing score instead of reporting it
+  "sqlite_create_record",                 # same trap, blunter: inserting the absent outcome row destroys the decoy
+  "mcp-code-executor_install_dependencies",  # the sharpest dead end here: the
+                                          # image has no egress, so a model that decides it needs scipy for a p-value burns calls and gets
+  "mcp-code-executor_check_installed_packages",
+  "filesystem_read_text_file",            # nothing in this task lives in a file
+  # off-server distractors
+  "desktop-commander_read_file",          # redundant read path
+  "desktop-commander_start_search",
+  "desktop-commander_list_directory",
+  "cli-mcp-server_run_command",           # crippled: no pipes, /data only
+  "cli-mcp-server_show_security_rules",
+  "mcp-server-code-runner_run-code",      # one-shot, no state between calls
+  "arxiv_search_papers",                  # near-miss cluster: this reads as a
+  "paper-search_search_pubmed",           # clinical-trial question, so looking
+  "crossref_search_works",                # up how attrition "should" be handled is tempting and answers nothing about this cohort
+  "ddg-search_search",
+  "memory_create_entities",
+  "whois_whois_domain",                   # far-field
+]
+
+[agent]
+timeout_sec = 3600.0               # long-horizon tasks need room
+
+[verifier]
+# 12 criteria judged individually, each a separate model call, plus image pull and
+# rewardkit startup. 600s left no headroom: a slow judge or a retried call ran the
+# container out of time before reward.json was written, which harbor reports as
+# RewardFileNotFoundError rather than as a timeout.
+timeout_sec = 1800.0
+
+# "separate" scores the trial's RECORDED artifacts in a fresh container, which is what `harbor job regrade` needs.
+environment_mode = "separate"
+
+# A separate verifier needs its OWN image.
+[verifier.environment]
+network_mode = "public"            # the judge needs to reach OpenRouter
+
+# The judge calls litellm, which reads OPENROUTER_API_KEY; ${VAR} pulls it from the host.
+[verifier.env]
+OPENROUTER_API_KEY = "${OPENROUTER_API_KEY}"
+
+[environment]
+# NO docker_image KEY ON PURPOSE.
+cpus = 4                           # CPU is the binding constraint, not memory
+memory_mb = 4096                   # measured: 19 servers idle at ~2.1 GB
+storage_mb = 10240
+
+# ── MCP servers ───────────────────────────────────────────────────────────────
+
+[[environment.mcp_servers]]
+name = "sqlite"
+transport = "stdio"
+command = "npx"
+args = ["mcp-sqlite@1.0.9", "/data/db/turing.db"]
+
+[[environment.mcp_servers]]
+name = "mcp-code-executor"
+transport = "stdio"
+command = "npx"
+args = ["@geobio/code_execution_server@0.2.1"]
+
+[[environment.mcp_servers]]
+name = "calculator"
+transport = "stdio"
+command = "uvx"
+args = ["--with", "mcp<2", "mcp-server-calculator==0.2.1"]
+
+[[environment.mcp_servers]]
+name = "filesystem"
+transport = "stdio"
+command = "npx"
+args = ["@modelcontextprotocol/server-filesystem@2026.7.10", "/data"]
+
+[[environment.mcp_servers]]
+name = "desktop-commander"
+transport = "stdio"
+command = "npx"
+args = ["@wonderwhy-er/desktop-commander@0.2.47"]
+
+[[environment.mcp_servers]]
+name = "cli-mcp-server"
+transport = "stdio"
+command = "uvx"
+args = ["--with", "mcp<2", "cli-mcp-server==0.2.5"]
+
+[[environment.mcp_servers]]
+name = "mcp-server-code-runner"
+transport = "stdio"
+command = "npx"
+args = ["mcp-server-code-runner@0.1.8"]
+
+[[environment.mcp_servers]]
+name = "arxiv"
+transport = "stdio"
+command = "uvx"
+args = ["--with", "mcp<2", "arxiv-mcp-server==0.6.3"]
+
+[[environment.mcp_servers]]
+name = "paper-search"
+transport = "stdio"
+command = "uvx"
+args = ["--with", "mcp<2", "--from", "paper-search-mcp==0.1.4", "paper-search-mcp"]
+
+[[environment.mcp_servers]]
+name = "crossref"
+transport = "stdio"
+command = "uvx"
+args = ["--with", "mcp<2", "--from", "crossref-mcp==0.1.0", "crossref-mcp"]
+
+[[environment.mcp_servers]]
+name = "ddg-search"
+transport = "stdio"
+command = "uvx"
+args = ["--with", "mcp<2", "duckduckgo-mcp-server==0.6.1"]
+
+[[environment.mcp_servers]]
+name = "memory"
+transport = "stdio"
+command = "npx"
+args = ["@modelcontextprotocol/server-memory@2026.7.4"]
+
+[[environment.mcp_servers]]
+name = "whois"
+transport = "stdio"
+command = "npx"
+args = ["@bharathvaj/whois-mcp@1.0.1"]

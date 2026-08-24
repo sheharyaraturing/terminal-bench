@@ -1,0 +1,31 @@
+{
+  "metric": "usd_revenue",
+  "period_start": "2023-04-01",
+  "period_end": "2023-06-30",
+  "total_usd_revenue": 18927531.32,
+  "transactions_by_currency": {
+    "AUD": 1,
+    "BRL": 3,
+    "CAD": 6,
+    "CHF": 6,
+    "EUR": 8,
+    "GBP": 7,
+    "INR": 3,
+    "JPY": 1,
+    "MXN": 3,
+    "NGN": 2,
+    "NOK": 1,
+    "PLN": 2,
+    "SEK": 4,
+    "SGD": 1,
+    "TVR": 5,
+    "USD": 6,
+    "ZAR": 1
+  },
+  "carried_forward_count": 19,
+  "undefined_count": 3,
+  "undefined_by_reason": {
+    "NO_RATE_FOR_CURRENCY": 2,
+    "NO_RATE_ON_OR_BEFORE_DATE": 1
+  }
+}
