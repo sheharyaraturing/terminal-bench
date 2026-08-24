@@ -1,0 +1,6 @@
+Document-Type: Receipt
+Reference: CLT-0225
+
+Amount paid: 143.00
+Settled by corporate card.
+Retain for expense reconciliation.

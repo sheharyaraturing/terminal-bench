@@ -1,0 +1,29 @@
+2026-04-01T01:00:00Z INFO run_id=PURGE-2026-04-01-A worker=purge-worker-01 deployment_id=DPL-20260401-017 event=worker_started
+2026-04-01T01:02:04Z WARN run_id=PURGE-2026-04-01-A record_id=REC-00005 attempt=1 result=skipped code=object_locked object_path=/objects/retention/REC-00005.json cached_at=2025-02-02T00:00:00Z
+2026-04-01T01:02:16Z INFO run_id=PURGE-2026-04-01-A record_id=REC-00026 attempt=1 result=deleted receipt_id=DEL-20260401-0004
+2026-04-01T01:02:36Z INFO run_id=PURGE-2026-04-01-A record_id=REC-00038 attempt=1 result=deleted receipt_id=DEL-20260401-0009
+2026-04-01T01:02:52Z INFO run_id=PURGE-2026-04-01-A record_id=REC-00047 attempt=1 result=deleted receipt_id=DEL-20260401-0013
+2026-04-01T01:03:15Z WARN run_id=PURGE-2026-04-01-A record_id=REC-00061 attempt=1 result=receipt_voided code=confirmation_timeout receipt_id=DEL-PROV-20260401-0019
+2026-04-01T01:03:16Z INFO run_id=PURGE-2026-04-01-A record_id=REC-00061 attempt=2 result=deleted receipt_id=DEL-20260401-0019
+2026-04-01T01:03:40Z INFO run_id=PURGE-2026-04-01-A record_id=REC-00077 attempt=1 result=deleted receipt_id=DEL-20260401-0025
+2026-04-01T01:04:04Z INFO run_id=PURGE-2026-04-01-A record_id=REC-00093 attempt=1 result=deleted receipt_id=DEL-20260401-0031
+2026-04-01T01:04:28Z INFO run_id=PURGE-2026-04-01-A record_id=REC-00101 attempt=1 result=deleted receipt_id=DEL-20260401-0037
+2026-04-01T01:04:48Z INFO run_id=PURGE-2026-04-01-A record_id=REC-00114 attempt=1 result=deleted receipt_id=DEL-20260401-0042
+2026-04-01T01:05:12Z INFO run_id=PURGE-2026-04-01-A record_id=REC-00132 attempt=1 result=deleted receipt_id=DEL-20260401-0048
+2026-04-01T01:05:36Z INFO run_id=PURGE-2026-04-01-A record_id=REC-00143 attempt=1 result=deleted receipt_id=DEL-20260401-0054
+2026-04-01T01:06:00Z INFO run_id=PURGE-2026-04-01-A record_id=REC-00160 attempt=1 result=deleted receipt_id=DEL-20260401-0060
+2026-04-01T01:06:24Z INFO run_id=PURGE-2026-04-01-A record_id=REC-00176 attempt=1 result=deleted receipt_id=DEL-20260401-0066
+2026-04-01T01:06:48Z INFO run_id=PURGE-2026-04-01-A record_id=REC-00197 attempt=1 result=deleted receipt_id=DEL-20260401-0072
+2026-04-01T01:07:12Z INFO run_id=PURGE-2026-04-01-A record_id=REC-00211 attempt=1 result=deleted receipt_id=DEL-20260401-0078
+2026-04-01T01:07:36Z INFO run_id=PURGE-2026-04-01-A record_id=REC-00226 attempt=1 result=deleted receipt_id=DEL-20260401-0084
+2026-04-01T01:08:00Z INFO run_id=PURGE-2026-04-01-A record_id=REC-00237 attempt=1 result=deleted receipt_id=DEL-20260401-0090
+2026-04-01T01:08:24Z INFO run_id=PURGE-2026-04-01-A record_id=REC-00261 attempt=1 result=deleted receipt_id=DEL-20260401-0096
+2026-04-01T01:08:48Z INFO run_id=PURGE-2026-04-01-A record_id=REC-00295 attempt=1 result=deleted receipt_id=DEL-20260401-0102
+2026-04-01T01:09:12Z INFO run_id=PURGE-2026-04-01-A record_id=REC-00309 attempt=1 result=deleted receipt_id=DEL-20260401-0108
+2026-04-01T01:09:36Z INFO run_id=PURGE-2026-04-01-A record_id=REC-00318 attempt=1 result=deleted receipt_id=DEL-20260401-0114
+2026-04-01T01:10:00Z INFO run_id=PURGE-2026-04-01-A record_id=REC-00334 attempt=1 result=deleted receipt_id=DEL-20260401-0120
+2026-04-01T01:10:24Z INFO run_id=PURGE-2026-04-01-A record_id=REC-00346 attempt=1 result=deleted receipt_id=DEL-20260401-0126
+2026-04-01T01:10:48Z INFO run_id=PURGE-2026-04-01-A record_id=REC-00361 attempt=1 result=deleted receipt_id=DEL-20260401-0132
+2026-04-01T01:11:12Z INFO run_id=PURGE-2026-04-01-A record_id=REC-00377 attempt=1 result=deleted receipt_id=DEL-20260401-0138
+2026-04-01T01:11:36Z INFO run_id=PURGE-2026-04-01-A record_id=REC-00394 attempt=1 result=deleted receipt_id=DEL-20260401-0144
+2026-04-01T01:18:42Z INFO run_id=PURGE-2026-04-01-A worker=purge-worker-01 event=worker_stopped

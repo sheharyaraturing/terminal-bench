@@ -1,0 +1,21 @@
+# Template rendered by core.registry.create_project.
+# Placeholders (skillbench-test-2, just skill bench but created through the UI, oracle_nop) are substituted
+# at creation time; edit this file to change the defaults for every new
+# harbor project.
+[project]
+name = "skillbench-test-2"
+type = "harbor"
+description = "just skill bench but created through the UI"
+
+[paths]
+tasks = "tasks"
+checks = "checks"
+rubrics = "rubrics/rubrics.toml"
+extra_references = "extra_references"
+
+[checks]
+# Harbor: run the repo-root checks/ common set in addition to this project's checks/.
+include_common = true
+
+[validation]
+mode = "oracle_nop"  # oracle_nop | skip

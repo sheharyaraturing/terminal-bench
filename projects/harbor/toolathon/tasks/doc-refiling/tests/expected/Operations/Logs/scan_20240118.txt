@@ -1,0 +1,6 @@
+Document-Type: System Log
+Reference: LOG-0118
+
+Facility: gateway
+Severity: informational
+Entries truncated at export.

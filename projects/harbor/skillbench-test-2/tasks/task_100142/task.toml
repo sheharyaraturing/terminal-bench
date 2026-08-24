@@ -1,0 +1,29 @@
+schema_version = "1.2"
+
+[task]
+name = "skillbench/web-ui-cvd-safe-palette-audit_pytest_without_skills"
+description = "Audit a categorical UI color palette for color vision deficiency safety by simulating protanopia, deuteranopia, and tritanopia with standard LMS matrices, then measuring pairwise distinguishability in OKLab color space to determine if the palette meets accessibility thresholds."
+authors = []
+keywords = []
+
+[metadata]
+task_id = "task_100142"
+difficulty = "medium"
+task_description = "Audit a categorical UI color palette for color vision deficiency safety by simulating protanopia, deuteranopia, and tritanopia with standard LMS matrices, then measuring pairwise distinguishability in OKLab color space to determine if the palette meets accessibility thresholds."
+source = "skillbench"
+
+[environment]
+build_timeout_sec = 600.0
+cpus = 1
+memory_mb = 2048
+storage_mb = 10240
+gpus = 0
+allow_internet = true
+mcp_servers = []
+workdir = "/root"
+
+[agent]
+timeout_sec = 900.0
+
+[verifier]
+timeout_sec = 900.0

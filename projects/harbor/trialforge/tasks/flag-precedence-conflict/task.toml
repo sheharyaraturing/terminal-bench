@@ -1,0 +1,122 @@
+# Harbor task config. Schema is validated by harbor 0.21.0.
+schema_version = "1.4"
+
+[task]
+name = "turing/flag-precedence-conflict"
+version = "1.0.0"
+description = "Audit a cohort rollout against layered flags and manifest-scoped source, including aliases, requirement exposure, dead or undefined gates, and cleanup impact"
+
+[metadata]
+persona   = "Platform Engineer"
+domain    = "software-engineering"
+target_tool_calls = 32             # V2 GLM/Kimi traces: 16, 22, 31, 32, 33 and 57; mean 31.8
+target_claims = 16                 # equal claims; split the four-gate cleanup bundle for fair partial credit
+
+# Provider payload fields; inline table so it stays one key.
+extra_llm_params = { reasoning = { effort = "medium" } }
+
+# One tool result, capped.
+tool_output_cap = 200000
+
+
+# Tool allowlist handed to the vendored harness as `enabledTools`.
+enabled_tools = [
+  # needed
+  "filesystem_directory_tree",
+  "filesystem_list_directory",
+  "filesystem_read_text_file",
+  "filesystem_search_files",
+  "desktop-commander_start_search",       # the only exposed CONTENT search
+  "desktop-commander_get_more_search_results",
+  "calculator_calculate",
+  # same-server distractors
+  "filesystem_get_file_info",
+  "filesystem_edit_file",                 # mutating trap: tempts "fixing" prod.json instead of reporting it
+  "filesystem_write_file",                # same trap, blunter
+  "desktop-commander_read_file",           # redundant read path
+  "desktop-commander_edit_block",          # mutating trap on the source tree
+  # off-server distractors
+  "cli-mcp-server_run_command",            # crippled: no pipes and /data only
+  "cli-mcp-server_show_security_rules",
+  "git_git_log",                           # plausible but /data/app is not a repository
+  "git_git_status",
+  "git_git_diff",
+  "sqlite_list_tables",                   # the warehouse is irrelevant here
+  "sqlite_query",
+  "context7_resolve-library-id",           # tempts a generic precedence lookup
+  "context7_query-docs",                   # instead of reading the shipped rule
+  "ddg-search_search",
+]
+
+[agent]
+timeout_sec = 3600.0               # long-horizon tasks need room
+
+[verifier]
+timeout_sec = 600.0
+
+# "separate" scores the trial's RECORDED artifacts in a fresh container, which is what `harbor job regrade` needs.
+environment_mode = "separate"
+
+# A separate verifier needs its OWN image.
+[verifier.environment]
+network_mode = "public"            # the judge needs to reach OpenRouter
+
+# The judge calls litellm, which reads OPENROUTER_API_KEY; ${VAR} pulls it from the host.
+[verifier.env]
+OPENROUTER_API_KEY = "${OPENROUTER_API_KEY}"
+
+[environment]
+# NO docker_image KEY ON PURPOSE.
+cpus = 4                           # CPU is the binding constraint, not memory
+memory_mb = 4096                   # measured: 19 servers idle at ~2.1 GB
+storage_mb = 10240
+
+# ── MCP servers ───────────────────────────────────────────────────────────────
+
+[[environment.mcp_servers]]
+name = "filesystem"
+transport = "stdio"
+command = "npx"
+args = ["@modelcontextprotocol/server-filesystem@2026.7.10", "/data"]
+
+[[environment.mcp_servers]]
+name = "desktop-commander"
+transport = "stdio"
+command = "npx"
+args = ["@wonderwhy-er/desktop-commander@0.2.47"]
+
+[[environment.mcp_servers]]
+name = "calculator"
+transport = "stdio"
+command = "uvx"
+args = ["--with", "mcp<2", "mcp-server-calculator==0.2.1"]
+
+[[environment.mcp_servers]]
+name = "cli-mcp-server"
+transport = "stdio"
+command = "uvx"
+args = ["--with", "mcp<2", "cli-mcp-server==0.2.5"]
+
+[[environment.mcp_servers]]
+name = "git"
+transport = "stdio"
+command = "uvx"
+args = ["--with", "mcp<2", "mcp-server-git==2026.7.10"]
+
+[[environment.mcp_servers]]
+name = "sqlite"
+transport = "stdio"
+command = "npx"
+args = ["mcp-sqlite@1.0.9", "/data/db/turing.db"]
+
+[[environment.mcp_servers]]
+name = "context7"
+transport = "stdio"
+command = "npx"
+args = ["@upstash/context7-mcp@4.0.2"]
+
+[[environment.mcp_servers]]
+name = "ddg-search"
+transport = "stdio"
+command = "uvx"
+args = ["--with", "mcp<2", "duckduckgo-mcp-server==0.6.1"]

@@ -1,0 +1,111 @@
+# Harbor task config. Schema is validated by harbor 0.21.0.
+schema_version = "1.4"
+
+[task]
+name = "turing/cert-renewal-drift"
+version = "1.3.3"
+description = "A 240-host TLS certificate inventory exported in eight batches against the renewal programme's own ticket log: find the closed tickets whose certificate was never installed, separate the expired-but-decommissioned host from the real exposures, and clear the open queue"
+
+[metadata]
+persona   = "Security Engineer"
+domain    = "software-engineering"
+# Walked: 3 discovery + 6 spot reads + 2 scope + 14-18 scripted joins + 9-14 checks = 34-43
+target_tool_calls = 40
+target_claims = 19                 # aim for 8-15
+
+# One tool result, capped.
+tool_output_cap = 60000
+
+# Provider payload fields; inline table so it stays one key.
+extra_llm_params = { reasoning = { effort = "medium" } }
+
+
+# Tool allowlist handed to the vendored harness as `enabledTools`.
+# 19 tools across 4 servers. filesystem is the primary route; calculator,
+# desktop-commander and cli-mcp-server are redundant-but-valid routes (they read the
+# CSVs or do arithmetic), not dead ends. No code-execution server is exposed: it is
+# deliberately withheld so the multi-source join across eight batches, the ticket log,
+# the rotation log and the register is worked read by read rather than in one script,
+# which is what carries the tool-call count and exposes the shortcuts. Distraction is
+# same-server near-misses plus those redundant paths; no far-field dead-end servers
+# (time, sqlite, whois, mcp-code-executor) are declared.
+enabled_tools = [
+  # needed
+  "filesystem_list_directory",
+  "filesystem_list_directory_with_sizes",     # the export total is the reason to spread the read
+  "filesystem_search_files",                  # `*.csv` does not match inventory.csv.1
+  "filesystem_read_text_file",
+  "filesystem_read_multiple_files",           # good for two batches, not for eight
+  "calculator_calculate",
+  # same-server near-misses on filesystem
+  "filesystem_directory_tree",
+  "filesystem_get_file_info",
+  "filesystem_write_file",                    # editing the inventory destroys the evidence
+  "filesystem_edit_file",                     # same trap, line-based
+  "filesystem_read_media_file",               # not a text reader; wrong tool for CSVs
+  # redundant-but-usable routes (can read the CSVs over /data)
+  "desktop-commander_read_file",              # redundant read path
+  "desktop-commander_list_directory",
+  "desktop-commander_get_file_info",
+  "desktop-commander_read_multiple_files",
+  "desktop-commander_start_search",           # search near-miss of a plain read
+  "desktop-commander_get_more_search_results",
+  "cli-mcp-server_run_command",       # no pipes, /data only: no `cut | sort | join`
+  "cli-mcp-server_show_security_rules",
+]
+
+[agent]
+timeout_sec = 3600.0               # long-horizon tasks need room
+
+[verifier]
+timeout_sec = 600.0
+
+# "separate" scores recorded artifacts in a fresh container; `harbor job regrade` needs it.
+environment_mode = "separate"
+
+[verifier.environment]
+network_mode = "public"            # the judge needs to reach OpenRouter
+
+[verifier.env]                     # litellm reads OPENROUTER_API_KEY; ${VAR} pulls from the host
+OPENROUTER_API_KEY = "${OPENROUTER_API_KEY}"
+
+[environment]
+# NO docker_image KEY ON PURPOSE — see environment/Dockerfile.
+cpus = 4                           # CPU is the binding constraint, not memory
+memory_mb = 4096                   # measured: 19 servers idle at ~2.1 GB
+storage_mb = 10240
+
+# ── MCP servers ───────────────────────────────────────────────────────────────
+# 4 servers, every one genuinely usable. filesystem is the primary route; calculator,
+# desktop-commander and cli-mcp-server are redundant-but-valid routes (they read the
+# CSVs or do arithmetic), so a model that uses them still makes progress. No
+# code-execution server is exposed: it is deliberately withheld so the multi-source
+# join is worked read by read, not collapsed into one script. The far-field dead-end
+# servers (time, sqlite, whois) are NOT declared either, per the MCP-Atlas design where
+# distraction turns on tool discovery, not dismissing whole servers by name. Every
+# declared server carries at least one exposed tool and every exposed tool's server is
+# declared.
+
+[[environment.mcp_servers]]
+name = "filesystem"
+transport = "stdio"
+command = "npx"
+args = ["@modelcontextprotocol/server-filesystem@2026.7.10", "/data"]
+
+[[environment.mcp_servers]]
+name = "calculator"
+transport = "stdio"
+command = "uvx"
+args = ["--with", "mcp<2", "mcp-server-calculator==0.2.1"]
+
+[[environment.mcp_servers]]
+name = "desktop-commander"
+transport = "stdio"
+command = "npx"
+args = ["@wonderwhy-er/desktop-commander@0.2.47"]
+
+[[environment.mcp_servers]]
+name = "cli-mcp-server"
+transport = "stdio"
+command = "uvx"
+args = ["--with", "mcp<2", "cli-mcp-server==0.2.5"]

@@ -1,0 +1,144 @@
+## excel  (20 tools)
+  apply_formula                      Apply Excel formula to cell.
+  copy_range                         Copy a range of cells to another location.
+  copy_worksheet                     Copy worksheet within workbook.
+  create_chart                       Create chart in worksheet.
+  create_pivot_table                 Create pivot table in worksheet.
+  create_table                       Creates a native Excel table from a specified range of data.
+  create_workbook                    Create new Excel workbook.
+  create_worksheet                   Create new worksheet in workbook.
+  delete_range                       Delete a range of cells and shift remaining cells.
+  delete_worksheet                   Delete worksheet from workbook.
+  format_range                       Apply formatting to a range of cells.
+  get_data_validation_info           Get all data validation rules in a worksheet.
+  get_workbook_metadata              Get metadata about workbook including sheets, ranges, etc.
+  merge_cells                        Merge a range of cells.
+  read_data_from_excel               Read data from Excel worksheet with cell metadata including validation
+  rename_worksheet                   Rename worksheet in workbook.
+  unmerge_cells                      Unmerge a range of cells.
+  validate_excel_range               Validate if a range exists and is properly formatted.
+  validate_formula_syntax            Validate Excel formula syntax without applying it.
+  write_data_to_excel                Write data to Excel worksheet.
+
+## filesystem  (12 tools)
+  create_directory                   Create a new directory or ensure a directory exists. Can create multip
+  directory_tree                     Get a recursive tree view of files and directories as a JSON structure
+  edit_file                          Make line-based edits to a text file. Each edit replaces exact line se
+  get_file_info                      Retrieve detailed metadata about a file or directory. Returns comprehe
+  list_allowed_directories           Returns the list of directories that this server is allowed to access.
+  list_directory                     Get a detailed listing of all files and directories in a specified pat
+  list_directory_with_sizes          Get a detailed listing of all files and directories in a specified pat
+  move_file                          Move or rename files and directories. Can move files between directori
+  read_file                          Read the complete contents of a file from the file system. Handles var
+  read_multiple_files                Read the contents of multiple files simultaneously. This is more effic
+  search_files                       Recursively search for files and directories matching a pattern. Searc
+  write_file                         Create a new file or completely overwrite an existing file with new co
+
+## memory  (9 tools)
+  add_observations                   Add new observations to existing entities in the knowledge graph
+  create_entities                    Create multiple new entities in the knowledge graph
+  create_relations                   Create multiple new relations between entities in the knowledge graph.
+  delete_entities                    Delete multiple entities and their associated relations from the knowl
+  delete_observations                Delete specific observations from entities in the knowledge graph
+  delete_relations                   Delete multiple relations from the knowledge graph
+  open_nodes                         Open specific nodes in the knowledge graph by their names
+  read_graph                         Read the entire knowledge graph
+  search_nodes                       Search for nodes in the knowledge graph based on a query
+
+## pptx  (37 tools)
+  add_bullet_points                  Add bullet points to a placeholder.
+  add_chart                          Add a chart to a slide with comprehensive formatting options.
+  add_connector                      Add connector lines/arrows between points on a slide.
+  add_shape                          Add an auto shape to a slide with enhanced options.
+  add_slide                          Add a new slide to the presentation with optional background styling.
+  add_table                          Add a table to a slide with enhanced formatting options.
+  apply_picture_effects              Apply multiple picture effects in combination.
+  apply_professional_design          Unified professional design tool for themes, slides, and visual enhanc
+  apply_slide_template               Apply a structured layout template to an existing slide.
+  auto_generate_presentation         Automatically generate a presentation based on topic and preferences.
+  create_presentation                Create a new PowerPoint presentation.
+  create_presentation_from_template  Create a new PowerPoint presentation from a template file.
+  create_presentation_from_templates Create a complete presentation from a sequence of templates.
+  create_slide_from_template         Create a new slide using a layout template.
+  extract_presentation_text          Extract all text content from all slides in the presentation.
+  extract_slide_text                 Extract all text content from a specific slide.
+  format_table_cell                  Format a specific table cell.
+  get_presentation_info              Get information about a presentation.
+  get_server_info                    Get information about the MCP server.
+  get_slide_info                     Get information about a specific slide.
+  get_template_file_info             Get information about a template file including layouts and properties
+  get_template_info                  Get detailed information about a specific template.
+  list_presentations                 List all loaded presentations.
+  list_slide_templates               List all available slide layout templates.
+  manage_fonts                       Unified font management tool for analysis, optimization, and recommend
+  manage_hyperlinks                  Manage hyperlinks in text shapes and runs.
+  manage_image                       Unified image management tool for adding and enhancing images.
+  manage_slide_masters               Access and manage slide master properties and layouts.
+  manage_slide_transitions           Manage slide transitions and timing.
+  manage_text                        Unified text management tool for adding, formatting, validating text, 
+  open_presentation                  Open an existing PowerPoint presentation from a file.
+  optimize_slide_text                Optimize text elements on a slide for better readability and fit.
+  populate_placeholder               Populate a placeholder with text.
+  save_presentation                  Save a presentation to a file.
+  set_core_properties                Set core document properties.
+  switch_presentation                Switch to a different loaded presentation.
+  update_chart_data                  Replace existing chart data with new categories and series.
+
+## terminal  (2 tools)
+  run_command                        Allows command (CLI) execution in the directory: /workspace/dumps/work
+  show_security_rules                Show what commands and operations are allowed in this environment.
+
+## time  (2 tools)
+  convert_time                       Convert time between timezones
+  get_current_time                   Get current time in a specific timezones
+
+## word  (47 tools)
+  add_endnote_to_document            Add an endnote to a specific paragraph in a Word document.
+  add_footnote_to_document           Add a footnote to a specific paragraph in a Word document.
+  add_heading                        Add a heading to a Word document.
+  add_page_break                     Add a page break to the document.
+  add_paragraph                      Add a paragraph to a Word document.
+  add_picture                        Add an image to a Word document.
+  add_table                          Add a table to a Word document.
+  apply_table_alternating_rows       Apply alternating row colors to a table for better readability.
+  auto_fit_table_columns             Set table columns to auto-fit based on content.
+  convert_to_pdf                     Convert a Word document to PDF format.
+  copy_document                      Create a copy of a Word document.
+  create_custom_style                Create a custom style in the document.
+  create_document                    Create a new Word document with optional metadata.
+  customize_footnote_style           Customize footnote numbering and formatting in a Word document.
+  delete_paragraph                   Delete a paragraph from a document.
+  find_text_in_document              Find occurrences of specific text in a Word document.
+  format_table                       Format a table with borders, shading, and structure.
+  format_table_cell_text             Format text within a specific table cell.
+  format_text                        Format a specific range of text within a paragraph.
+  get_all_comments                   Extract all comments from a Word document.
+  get_comments_by_author             Extract comments from a specific author in a Word document.
+  get_comments_for_paragraph         Extract comments for a specific paragraph in a Word document.
+  get_document_info                  Get information about a Word document.
+  get_document_outline               Get the structure of a Word document.
+  get_document_text                  Extract all text from a Word document.
+  get_document_xml                   Get the raw XML structure of a Word document.
+  get_paragraph_text_from_document   Get text from a specific paragraph in a Word document.
+  highlight_table_header             Apply special highlighting to table header row.
+  insert_header_near_text            Insert a header (with specified style) before or after the target para
+  insert_line_or_paragraph_near_text Insert a new line or paragraph (with specified or matched style) befor
+  insert_numbered_list_near_text     Insert a numbered list before or after the target paragraph. Specify b
+  list_available_documents           List all .docx files in the specified directory.
+  merge_table_cells                  Merge cells in a rectangular area of a table.
+  merge_table_cells_horizontal       Merge cells horizontally in a single row.
+  merge_table_cells_vertical         Merge cells vertically in a single column.
+  protect_document                   Add password protection to a Word document.
+  replace_block_between_manual_anchors Replace all content between start_anchor_text and end_anchor_text (or 
+  replace_paragraph_block_below_header Reemplaza el bloque de párrafos debajo de un encabezado, evitando modi
+  search_and_replace                 Search for text and replace all occurrences.
+  set_table_alignment_all            Set text alignment for all cells in a table.
+  set_table_cell_alignment           Set text alignment for a specific table cell.
+  set_table_cell_padding             Set padding/margins for a specific table cell.
+  set_table_cell_shading             Apply shading/filling to a specific table cell.
+  set_table_column_width             Set the width of a specific table column.
+  set_table_column_widths            Set the widths of multiple table columns.
+  set_table_width                    Set the overall width of a table.
+  unprotect_document                 Remove password protection from a Word document.
+
+TOTAL: 129 tools

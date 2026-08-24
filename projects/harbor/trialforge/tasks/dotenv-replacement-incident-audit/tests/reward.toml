@@ -1,0 +1,96 @@
+# rewardkit reward definition. Seventeen equal-credit final-answer claims.
+
+[judge]
+judge = "openrouter/openai/gpt-5.6-luna"
+mode = "individual"
+reasoning_effort = "medium"
+timeout = 300
+files = ["/logs/artifacts/final_answer.txt"]
+
+[scoring]
+aggregation = "weighted_mean"
+
+[[criterion]]
+description = "States the link-safe transactional invariant: replace the target directory entry atomically without writing through an existing or broken symlink, without creating or changing its referent, and without leaving a partial target or temporary file on failure. Equivalent precise wording earns full credit."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "States the remaining replacement invariants: read the source before target mutation; keep the source byte-for-byte present on success or failure; leave the target unchanged on source-read failure; preserve the mode of an existing regular target; and replace a missing or symbolic-link target with a regular mode-0600 file."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Classifies v0.8.0, source tag replace-v0.8.0, as unsafe because direct open/write follows existing and broken target links and creates missing targets with mode 0644."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Classifies v0.8.1, source tag replace-v0.8.1, as unsafe because checking and unlinking before a direct open leaves a check/use link-swap race and recreates targets as mode 0644, which can reset established modes."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Classifies v0.9.0, source tag replace-v0.9.0, as link-safe and source-safe but still unshippable because its temporary-file replacement does not carry an existing regular target's mode and therefore resets it to the temporary file's 0600 mode."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Classifies v0.9.1, source tag replace-v0.9.1, as unsafe because os.replace(source, target) moves or removes the source and makes the target inherit the source mode, violating source-retention and target-permission invariants."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Uses the cutoff deployment digest plus the immutable Git image manifest, not stale worker release labels, and reports the allocation as v0.8.0 16, v0.8.1 14, v0.9.0 12, v0.9.1 10, and v1.0.0-rc1 12 workspaces; therefore 52 workspaces were potentially exposed to one of the four unsafe variants."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "States the remediation for deployed versions and for affected files: roll back or replace the four unsafe variants before promotion; restore overwritten referents; repair modes to 0600 or 0640 as applicable; recreate any lost source; and rotate secrets wherever content left the workspace or sat overly permissive. One statement per treatment class counts in full, and verifying restored files against their preflight hashes is credited but not required."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Reconciles exactly 180 worker attempts to 174 logical replacement operations and 174 terminal receipts, identifying exactly 6 retry attempts so retries are not double-counted as separate operations or impacts."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Reports existing-link referent overwrites for WS-0002, WS-0004, WS-0007 and WS-0011, and broken-link referent creation for WS-0003, WS-0009 and WS-0013, citing changed or newly present referent hashes as the evidence. Remedies are judged separately."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Reports link-check race overwrites for exactly WS-0018 and WS-0027, citing a regular target at preflight followed by a post-check symlink observation and an outside referent write. Remedies are judged separately."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Reports new regular files created at mode 0644 for exactly WS-0004, WS-0006, WS-0010, WS-0012, WS-0017, WS-0024 and WS-0029. Remedies are judged separately."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Reports existing-regular mode transitions from 0640 to 0644 for exactly WS-0018, WS-0020 and WS-0048, and from 0640 to 0600 for exactly WS-0035. WS-0018 carries two operations, so it belongs here as well as under the link-check race. Remedies are judged separately."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Reports source movement or removal for exactly WS-0044, WS-0048 and WS-0051, citing a source hash present before the operation and absent after it. Remedies are judged separately."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Deduplicates the treatment sets to exactly 20 actually affected workspaces and identifies the 32 exposed-but-unaffected workspaces as WS-0001, WS-0005, WS-0008, WS-0014, WS-0015, WS-0016, WS-0019, WS-0021, WS-0022, WS-0023, WS-0025, WS-0026, WS-0028, WS-0030, WS-0031, WS-0032, WS-0033, WS-0034, WS-0036, WS-0037, WS-0038, WS-0039, WS-0040, WS-0041, WS-0042, WS-0043, WS-0045, WS-0046, WS-0047, WS-0049, WS-0050 and WS-0052."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Approves v1.0.0-rc1 for controlled promotion based on its contract-compliant rewrite transaction."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Reports WS-0053 through WS-0064, the 12 candidate assignments, as unaffected, citing the canary behaviours: existing and broken links replaced without touching the referent, a new target at 0600, a 0640 target preserved, and an unreadable source failing with the target untouched. The range counts as naming all 12; ordinary successes are credited, not required."
+type = "likert"
+points = 3

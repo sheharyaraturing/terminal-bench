@@ -1,0 +1,371 @@
+2024-11-14T09:32:50.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000AF2 bytes_written=85759 sync_ms=8
+2024-11-14T09:32:50.000Z WARN  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=20 idle=0 waiting=24
+2024-11-14T09:32:50.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=3 idle=9 waiting=0
+2024-11-14T09:32:50.000Z INFO  db     host=pgdb-01 op=checkpoint buffers_written=634 sync_ms=55
+2024-11-14T09:32:53.288Z ERROR db     host=pgdb-01 req=req-3867703d op=acquire_connection msg=pool_exhausted pool=primary in_use=20 waiting=22
+2024-11-14T09:32:55.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000AB8 bytes_written=746787 sync_ms=22
+2024-11-14T09:32:57.982Z ERROR db     host=pgdb-01 req=req-082af5e9 op=acquire_connection msg=pool_exhausted pool=primary in_use=20 waiting=23
+2024-11-14T09:33:00.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A9D bytes_written=364923 sync_ms=6
+2024-11-14T09:33:00.000Z WARN  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=20 idle=0 waiting=14
+2024-11-14T09:33:00.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=4 idle=8 waiting=0
+2024-11-14T09:33:00.000Z INFO  db     host=pgdb-01 op=bgwriter buffers_clean=2184 maxwritten_clean=4
+2024-11-14T09:33:02.494Z ERROR db     host=pgdb-01 req=req-7831243f op=acquire_connection msg=pool_exhausted pool=primary in_use=20 waiting=24
+2024-11-14T09:33:05.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A85 bytes_written=770684 sync_ms=38
+2024-11-14T09:33:07.380Z ERROR db     host=pgdb-01 req=req-25f4d6b7 op=acquire_connection msg=pool_exhausted pool=primary in_use=20 waiting=25
+2024-11-14T09:33:10.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000ACE bytes_written=526962 sync_ms=33
+2024-11-14T09:33:10.000Z WARN  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=20 idle=0 waiting=12
+2024-11-14T09:33:10.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=3 idle=9 waiting=0
+2024-11-14T09:33:11.574Z ERROR db     host=pgdb-01 req=req-9494edfb op=acquire_connection msg=pool_exhausted pool=primary in_use=20 waiting=26
+2024-11-14T09:33:12.976Z INFO  db     host=pgdb-01 req=req-a258f646 op=execute stmt=orders_insert rows=34 elapsed_ms=239
+2024-11-14T09:33:15.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A37 bytes_written=1047325 sync_ms=28
+2024-11-14T09:33:16.698Z ERROR db     host=pgdb-01 req=req-4e9a7a1d op=acquire_connection msg=pool_exhausted pool=primary in_use=20 waiting=27
+2024-11-14T09:33:20.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000ADB bytes_written=543175 sync_ms=22
+2024-11-14T09:33:20.000Z WARN  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=20 idle=0 waiting=20
+2024-11-14T09:33:20.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=5 idle=7 waiting=0
+2024-11-14T09:33:20.000Z INFO  db     host=pgdb-01 op=checkpoint buffers_written=2856 sync_ms=46
+2024-11-14T09:33:20.000Z INFO  db     host=pgdb-01 op=autovacuum table=orders tuples_removed=2418
+2024-11-14T09:33:20.000Z INFO  db     host=pgdb-01 op=autovacuum table=cart_items tuples_removed=1652
+2024-11-14T09:33:20.000Z INFO  db     host=pgdb-01 op=autovacuum table=payment_intents tuples_removed=1475
+2024-11-14T09:33:20.000Z INFO  db     host=pgdb-01 op=bgwriter buffers_clean=2115 maxwritten_clean=12
+2024-11-14T09:33:21.516Z ERROR db     host=pgdb-01 req=req-2123c40c op=acquire_connection msg=pool_exhausted pool=primary in_use=20 waiting=28
+2024-11-14T09:33:25.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000AF0 bytes_written=355008 sync_ms=1
+2024-11-14T09:33:26.120Z ERROR db     host=pgdb-01 req=req-eefd0389 op=acquire_connection msg=pool_exhausted pool=primary in_use=20 waiting=29
+2024-11-14T09:33:30.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A50 bytes_written=611273 sync_ms=8
+2024-11-14T09:33:30.000Z WARN  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=20 idle=0 waiting=23
+2024-11-14T09:33:30.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=5 idle=7 waiting=0
+2024-11-14T09:33:30.898Z ERROR db     host=pgdb-01 req=req-3759aa8b op=acquire_connection msg=pool_exhausted pool=primary in_use=20 waiting=30
+2024-11-14T09:33:35.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A34 bytes_written=700856 sync_ms=34
+2024-11-14T09:33:35.110Z ERROR db     host=pgdb-01 req=req-fd648579 op=acquire_connection msg=pool_exhausted pool=primary in_use=20 waiting=31
+2024-11-14T09:33:40.000Z ERROR db     host=pgdb-01 req=req-fd829015 op=acquire_connection msg=pool_exhausted pool=primary in_use=20 waiting=32
+2024-11-14T09:33:40.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000AED bytes_written=392729 sync_ms=32
+2024-11-14T09:33:40.000Z WARN  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=20 idle=0 waiting=11
+2024-11-14T09:33:40.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=3 idle=9 waiting=0
+2024-11-14T09:33:40.000Z INFO  db     host=pgdb-01 op=bgwriter buffers_clean=2654 maxwritten_clean=12
+2024-11-14T09:33:44.692Z ERROR db     host=pgdb-01 req=req-0ca2d8f5 op=acquire_connection msg=pool_exhausted pool=primary in_use=20 waiting=33
+2024-11-14T09:33:45.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A60 bytes_written=885531 sync_ms=40
+2024-11-14T09:33:46.584Z INFO  db     host=pgdb-01 req=req-23cc6200 op=execute stmt=cart_select rows=3 elapsed_ms=122
+2024-11-14T09:33:49.376Z ERROR db     host=pgdb-01 req=req-56191b42 op=acquire_connection msg=pool_exhausted pool=primary in_use=20 waiting=34
+2024-11-14T09:33:50.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A4F bytes_written=228202 sync_ms=7
+2024-11-14T09:33:50.000Z WARN  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=20 idle=0 waiting=23
+2024-11-14T09:33:50.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=5 idle=7 waiting=0
+2024-11-14T09:33:50.000Z INFO  db     host=pgdb-01 op=checkpoint buffers_written=4256 sync_ms=65
+2024-11-14T09:33:53.878Z ERROR db     host=pgdb-01 req=req-b278fd6e op=acquire_connection msg=pool_exhausted pool=primary in_use=20 waiting=35
+2024-11-14T09:33:55.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A91 bytes_written=534561 sync_ms=18
+2024-11-14T09:33:59.078Z ERROR db     host=pgdb-01 req=req-9abd778b op=acquire_connection msg=pool_exhausted pool=primary in_use=20 waiting=36
+2024-11-14T09:34:00.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A3C bytes_written=788442 sync_ms=6
+2024-11-14T09:34:00.000Z WARN  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=20 idle=0 waiting=17
+2024-11-14T09:34:00.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=3 idle=9 waiting=0
+2024-11-14T09:34:00.000Z INFO  db     host=pgdb-01 op=bgwriter buffers_clean=1048 maxwritten_clean=9
+2024-11-14T09:34:03.706Z ERROR db     host=pgdb-01 req=req-899177cc op=acquire_connection msg=pool_exhausted pool=primary in_use=20 waiting=37
+2024-11-14T09:34:05.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000ADA bytes_written=561459 sync_ms=3
+2024-11-14T09:34:08.490Z ERROR db     host=pgdb-01 req=req-38425b96 op=acquire_connection msg=pool_exhausted pool=primary in_use=20 waiting=38
+2024-11-14T09:34:10.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A84 bytes_written=206845 sync_ms=32
+2024-11-14T09:34:10.000Z WARN  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=20 idle=0 waiting=12
+2024-11-14T09:34:10.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=4 idle=8 waiting=0
+2024-11-14T09:34:15.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A0C bytes_written=181507 sync_ms=11
+2024-11-14T09:34:20.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A43 bytes_written=618726 sync_ms=29
+2024-11-14T09:34:20.000Z WARN  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=20 idle=0 waiting=13
+2024-11-14T09:34:20.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=3 idle=9 waiting=0
+2024-11-14T09:34:20.000Z INFO  db     host=pgdb-01 op=checkpoint buffers_written=4041 sync_ms=59
+2024-11-14T09:34:20.000Z INFO  db     host=pgdb-01 op=autovacuum table=orders tuples_removed=322
+2024-11-14T09:34:20.000Z INFO  db     host=pgdb-01 op=autovacuum table=cart_items tuples_removed=261
+2024-11-14T09:34:20.000Z INFO  db     host=pgdb-01 op=autovacuum table=payment_intents tuples_removed=8107
+2024-11-14T09:34:20.000Z INFO  db     host=pgdb-01 op=bgwriter buffers_clean=208 maxwritten_clean=7
+2024-11-14T09:34:23.054Z INFO  db     host=pgdb-01 req=req-9984c00b op=execute stmt=payment_intent_insert rows=23 elapsed_ms=41
+2024-11-14T09:34:25.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A37 bytes_written=67966 sync_ms=27
+2024-11-14T09:34:30.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A0E bytes_written=416345 sync_ms=33
+2024-11-14T09:34:30.000Z WARN  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=20 idle=0 waiting=11
+2024-11-14T09:34:30.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=6 idle=6 waiting=0
+2024-11-14T09:34:30.000Z INFO  db     host=pgdb-01 op=pool_recovered pool=primary available=20 waited_total_ms=210400
+2024-11-14T09:34:35.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A80 bytes_written=290618 sync_ms=15
+2024-11-14T09:34:40.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000ACB bytes_written=681208 sync_ms=18
+2024-11-14T09:34:40.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=7 idle=13 waiting=0
+2024-11-14T09:34:40.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=5 idle=7 waiting=0
+2024-11-14T09:34:40.000Z INFO  db     host=pgdb-01 op=bgwriter buffers_clean=2888 maxwritten_clean=6
+2024-11-14T09:34:45.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A70 bytes_written=588581 sync_ms=6
+2024-11-14T09:34:50.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000AD0 bytes_written=177280 sync_ms=34
+2024-11-14T09:34:50.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=6 idle=14 waiting=0
+2024-11-14T09:34:50.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=3 idle=9 waiting=0
+2024-11-14T09:34:50.000Z INFO  db     host=pgdb-01 op=checkpoint buffers_written=2402 sync_ms=89
+2024-11-14T09:34:55.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A50 bytes_written=746329 sync_ms=12
+2024-11-14T09:34:59.225Z INFO  db     host=pgdb-01 req=req-fa691b70 op=execute stmt=cart_select rows=6 elapsed_ms=202
+2024-11-14T09:35:00.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A7B bytes_written=486037 sync_ms=6
+2024-11-14T09:35:00.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=7 idle=13 waiting=0
+2024-11-14T09:35:00.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=3 idle=9 waiting=0
+2024-11-14T09:35:00.000Z INFO  db     host=pgdb-01 op=bgwriter buffers_clean=1780 maxwritten_clean=9
+2024-11-14T09:35:05.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A00 bytes_written=827784 sync_ms=12
+2024-11-14T09:35:10.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000AF1 bytes_written=659579 sync_ms=1
+2024-11-14T09:35:10.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=13 idle=7 waiting=0
+2024-11-14T09:35:10.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=3 idle=9 waiting=0
+2024-11-14T09:35:15.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A2B bytes_written=225400 sync_ms=34
+2024-11-14T09:35:20.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A40 bytes_written=272541 sync_ms=35
+2024-11-14T09:35:20.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=9 idle=11 waiting=0
+2024-11-14T09:35:20.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=4 idle=8 waiting=0
+2024-11-14T09:35:20.000Z INFO  db     host=pgdb-01 op=checkpoint buffers_written=4151 sync_ms=68
+2024-11-14T09:35:20.000Z INFO  db     host=pgdb-01 op=autovacuum table=orders tuples_removed=2744
+2024-11-14T09:35:20.000Z INFO  db     host=pgdb-01 op=autovacuum table=cart_items tuples_removed=422
+2024-11-14T09:35:20.000Z INFO  db     host=pgdb-01 op=autovacuum table=payment_intents tuples_removed=6871
+2024-11-14T09:35:20.000Z INFO  db     host=pgdb-01 op=bgwriter buffers_clean=1851 maxwritten_clean=5
+2024-11-14T09:35:25.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000ACE bytes_written=100147 sync_ms=25
+2024-11-14T09:35:30.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000AFA bytes_written=391996 sync_ms=24
+2024-11-14T09:35:30.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=5 idle=15 waiting=0
+2024-11-14T09:35:30.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=5 idle=7 waiting=0
+2024-11-14T09:35:33.325Z INFO  db     host=pgdb-01 req=req-eca659d0 op=execute stmt=cart_upsert rows=2 elapsed_ms=238
+2024-11-14T09:35:35.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A93 bytes_written=500062 sync_ms=9
+2024-11-14T09:35:40.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000AC7 bytes_written=216313 sync_ms=15
+2024-11-14T09:35:40.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=8 idle=12 waiting=0
+2024-11-14T09:35:40.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=5 idle=7 waiting=0
+2024-11-14T09:35:40.000Z INFO  db     host=pgdb-01 op=bgwriter buffers_clean=2079 maxwritten_clean=3
+2024-11-14T09:35:45.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A18 bytes_written=847367 sync_ms=24
+2024-11-14T09:35:50.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000AA1 bytes_written=84649 sync_ms=26
+2024-11-14T09:35:50.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=5 idle=15 waiting=0
+2024-11-14T09:35:50.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=5 idle=7 waiting=0
+2024-11-14T09:35:50.000Z INFO  db     host=pgdb-01 op=checkpoint buffers_written=4861 sync_ms=60
+2024-11-14T09:35:55.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000AF4 bytes_written=908022 sync_ms=12
+2024-11-14T09:36:00.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000AF1 bytes_written=201005 sync_ms=8
+2024-11-14T09:36:00.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=6 idle=14 waiting=0
+2024-11-14T09:36:00.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=3 idle=9 waiting=0
+2024-11-14T09:36:00.000Z INFO  db     host=pgdb-01 op=bgwriter buffers_clean=621 maxwritten_clean=8
+2024-11-14T09:36:05.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000ABE bytes_written=672948 sync_ms=32
+2024-11-14T09:36:05.424Z INFO  db     host=pgdb-01 req=req-779d1f56 op=execute stmt=cart_upsert rows=28 elapsed_ms=232
+2024-11-14T09:36:10.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A45 bytes_written=744294 sync_ms=38
+2024-11-14T09:36:10.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=4 idle=16 waiting=0
+2024-11-14T09:36:10.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=4 idle=8 waiting=0
+2024-11-14T09:36:15.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000AC1 bytes_written=1023426 sync_ms=40
+2024-11-14T09:36:20.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000AF4 bytes_written=145811 sync_ms=17
+2024-11-14T09:36:20.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=6 idle=14 waiting=0
+2024-11-14T09:36:20.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=3 idle=9 waiting=0
+2024-11-14T09:36:20.000Z INFO  db     host=pgdb-01 op=checkpoint buffers_written=1379 sync_ms=72
+2024-11-14T09:36:20.000Z INFO  db     host=pgdb-01 op=autovacuum table=orders tuples_removed=864
+2024-11-14T09:36:20.000Z INFO  db     host=pgdb-01 op=autovacuum table=cart_items tuples_removed=9000
+2024-11-14T09:36:20.000Z INFO  db     host=pgdb-01 op=autovacuum table=payment_intents tuples_removed=3883
+2024-11-14T09:36:20.000Z INFO  db     host=pgdb-01 op=bgwriter buffers_clean=2927 maxwritten_clean=2
+2024-11-14T09:36:25.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A0D bytes_written=208194 sync_ms=12
+2024-11-14T09:36:30.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A91 bytes_written=178402 sync_ms=7
+2024-11-14T09:36:30.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=6 idle=14 waiting=0
+2024-11-14T09:36:30.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=4 idle=8 waiting=0
+2024-11-14T09:36:35.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A58 bytes_written=1015891 sync_ms=6
+2024-11-14T09:36:40.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A3F bytes_written=1001918 sync_ms=27
+2024-11-14T09:36:40.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=10 idle=10 waiting=0
+2024-11-14T09:36:40.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=6 idle=6 waiting=0
+2024-11-14T09:36:40.000Z INFO  db     host=pgdb-01 op=bgwriter buffers_clean=1073 maxwritten_clean=10
+2024-11-14T09:36:40.609Z INFO  db     host=pgdb-01 req=req-21b8f5ce op=execute stmt=payment_intent_insert rows=1 elapsed_ms=72
+2024-11-14T09:36:45.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000AE4 bytes_written=865391 sync_ms=5
+2024-11-14T09:36:50.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000AC2 bytes_written=507130 sync_ms=31
+2024-11-14T09:36:50.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=13 idle=7 waiting=0
+2024-11-14T09:36:50.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=6 idle=6 waiting=0
+2024-11-14T09:36:50.000Z INFO  db     host=pgdb-01 op=checkpoint buffers_written=523 sync_ms=24
+2024-11-14T09:36:55.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000AE4 bytes_written=1034187 sync_ms=10
+2024-11-14T09:37:00.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A49 bytes_written=991558 sync_ms=17
+2024-11-14T09:37:00.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=14 idle=6 waiting=0
+2024-11-14T09:37:00.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=5 idle=7 waiting=0
+2024-11-14T09:37:00.000Z INFO  db     host=pgdb-01 op=bgwriter buffers_clean=329 maxwritten_clean=4
+2024-11-14T09:37:05.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A6D bytes_written=508487 sync_ms=15
+2024-11-14T09:37:10.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A8B bytes_written=197506 sync_ms=7
+2024-11-14T09:37:10.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=3 idle=17 waiting=0
+2024-11-14T09:37:10.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=3 idle=9 waiting=0
+2024-11-14T09:37:15.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000AA2 bytes_written=227699 sync_ms=15
+2024-11-14T09:37:19.289Z INFO  db     host=pgdb-01 req=req-f87c6d2c op=execute stmt=cart_select rows=17 elapsed_ms=58
+2024-11-14T09:37:20.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A18 bytes_written=553432 sync_ms=38
+2024-11-14T09:37:20.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=10 idle=10 waiting=0
+2024-11-14T09:37:20.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=5 idle=7 waiting=0
+2024-11-14T09:37:20.000Z INFO  db     host=pgdb-01 op=checkpoint buffers_written=4940 sync_ms=19
+2024-11-14T09:37:20.000Z INFO  db     host=pgdb-01 op=autovacuum table=orders tuples_removed=4794
+2024-11-14T09:37:20.000Z INFO  db     host=pgdb-01 op=autovacuum table=cart_items tuples_removed=3283
+2024-11-14T09:37:20.000Z INFO  db     host=pgdb-01 op=autovacuum table=payment_intents tuples_removed=5283
+2024-11-14T09:37:20.000Z INFO  db     host=pgdb-01 op=bgwriter buffers_clean=1506 maxwritten_clean=8
+2024-11-14T09:37:25.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000AA5 bytes_written=551479 sync_ms=15
+2024-11-14T09:37:30.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000AD6 bytes_written=790000 sync_ms=15
+2024-11-14T09:37:30.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=8 idle=12 waiting=0
+2024-11-14T09:37:30.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=3 idle=9 waiting=0
+2024-11-14T09:37:35.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A61 bytes_written=98907 sync_ms=40
+2024-11-14T09:37:40.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000AF6 bytes_written=494581 sync_ms=18
+2024-11-14T09:37:40.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=14 idle=6 waiting=0
+2024-11-14T09:37:40.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=4 idle=8 waiting=0
+2024-11-14T09:37:40.000Z INFO  db     host=pgdb-01 op=bgwriter buffers_clean=1961 maxwritten_clean=8
+2024-11-14T09:37:45.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A7C bytes_written=64662 sync_ms=30
+2024-11-14T09:37:50.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A5B bytes_written=12455 sync_ms=14
+2024-11-14T09:37:50.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=12 idle=8 waiting=0
+2024-11-14T09:37:50.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=4 idle=8 waiting=0
+2024-11-14T09:37:50.000Z INFO  db     host=pgdb-01 op=checkpoint buffers_written=3039 sync_ms=59
+2024-11-14T09:37:53.804Z INFO  db     host=pgdb-01 req=req-e30258d1 op=execute stmt=order_lines_insert rows=20 elapsed_ms=41
+2024-11-14T09:37:55.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A8E bytes_written=747137 sync_ms=31
+2024-11-14T09:38:00.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000AAE bytes_written=134402 sync_ms=35
+2024-11-14T09:38:00.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=3 idle=17 waiting=0
+2024-11-14T09:38:00.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=6 idle=6 waiting=0
+2024-11-14T09:38:00.000Z INFO  db     host=pgdb-01 op=bgwriter buffers_clean=1763 maxwritten_clean=1
+2024-11-14T09:38:05.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000AB0 bytes_written=395028 sync_ms=29
+2024-11-14T09:38:10.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A39 bytes_written=93517 sync_ms=24
+2024-11-14T09:38:10.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=3 idle=17 waiting=0
+2024-11-14T09:38:10.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=4 idle=8 waiting=0
+2024-11-14T09:38:15.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A8B bytes_written=470796 sync_ms=35
+2024-11-14T09:38:20.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A9A bytes_written=74817 sync_ms=33
+2024-11-14T09:38:20.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=5 idle=15 waiting=0
+2024-11-14T09:38:20.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=4 idle=8 waiting=0
+2024-11-14T09:38:20.000Z INFO  db     host=pgdb-01 op=checkpoint buffers_written=2744 sync_ms=81
+2024-11-14T09:38:20.000Z INFO  db     host=pgdb-01 op=autovacuum table=orders tuples_removed=2221
+2024-11-14T09:38:20.000Z INFO  db     host=pgdb-01 op=autovacuum table=cart_items tuples_removed=8322
+2024-11-14T09:38:20.000Z INFO  db     host=pgdb-01 op=autovacuum table=payment_intents tuples_removed=5033
+2024-11-14T09:38:20.000Z INFO  db     host=pgdb-01 op=bgwriter buffers_clean=2518 maxwritten_clean=10
+2024-11-14T09:38:25.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A5A bytes_written=559610 sync_ms=14
+2024-11-14T09:38:26.648Z INFO  db     host=pgdb-01 req=req-56aecfdb op=execute stmt=order_lines_insert rows=7 elapsed_ms=57
+2024-11-14T09:38:30.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A92 bytes_written=862235 sync_ms=23
+2024-11-14T09:38:30.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=7 idle=13 waiting=0
+2024-11-14T09:38:30.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=5 idle=7 waiting=0
+2024-11-14T09:38:35.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A73 bytes_written=490758 sync_ms=1
+2024-11-14T09:38:40.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000AAA bytes_written=817889 sync_ms=11
+2024-11-14T09:38:40.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=3 idle=17 waiting=0
+2024-11-14T09:38:40.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=4 idle=8 waiting=0
+2024-11-14T09:38:40.000Z INFO  db     host=pgdb-01 op=bgwriter buffers_clean=2757 maxwritten_clean=3
+2024-11-14T09:38:45.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000AD5 bytes_written=675500 sync_ms=38
+2024-11-14T09:38:50.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A3D bytes_written=861846 sync_ms=10
+2024-11-14T09:38:50.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=9 idle=11 waiting=0
+2024-11-14T09:38:50.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=3 idle=9 waiting=0
+2024-11-14T09:38:50.000Z INFO  db     host=pgdb-01 op=checkpoint buffers_written=1293 sync_ms=20
+2024-11-14T09:38:55.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A34 bytes_written=218179 sync_ms=29
+2024-11-14T09:39:00.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000AF1 bytes_written=43675 sync_ms=28
+2024-11-14T09:39:00.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=14 idle=6 waiting=0
+2024-11-14T09:39:00.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=3 idle=9 waiting=0
+2024-11-14T09:39:00.000Z INFO  db     host=pgdb-01 op=bgwriter buffers_clean=633 maxwritten_clean=6
+2024-11-14T09:39:02.892Z INFO  db     host=pgdb-01 req=req-4f9244da op=execute stmt=orders_insert rows=25 elapsed_ms=290
+2024-11-14T09:39:05.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000AA7 bytes_written=622807 sync_ms=35
+2024-11-14T09:39:10.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A4B bytes_written=729930 sync_ms=3
+2024-11-14T09:39:10.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=13 idle=7 waiting=0
+2024-11-14T09:39:10.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=5 idle=7 waiting=0
+2024-11-14T09:39:15.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A6B bytes_written=912822 sync_ms=9
+2024-11-14T09:39:20.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A2E bytes_written=861074 sync_ms=21
+2024-11-14T09:39:20.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=3 idle=17 waiting=0
+2024-11-14T09:39:20.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=6 idle=6 waiting=0
+2024-11-14T09:39:20.000Z INFO  db     host=pgdb-01 op=checkpoint buffers_written=3470 sync_ms=89
+2024-11-14T09:39:20.000Z INFO  db     host=pgdb-01 op=autovacuum table=orders tuples_removed=8237
+2024-11-14T09:39:20.000Z INFO  db     host=pgdb-01 op=autovacuum table=cart_items tuples_removed=1304
+2024-11-14T09:39:20.000Z INFO  db     host=pgdb-01 op=autovacuum table=payment_intents tuples_removed=5342
+2024-11-14T09:39:20.000Z INFO  db     host=pgdb-01 op=bgwriter buffers_clean=2132 maxwritten_clean=2
+2024-11-14T09:39:25.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A52 bytes_written=468087 sync_ms=13
+2024-11-14T09:39:30.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A2C bytes_written=1027413 sync_ms=11
+2024-11-14T09:39:30.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=3 idle=17 waiting=0
+2024-11-14T09:39:30.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=3 idle=9 waiting=0
+2024-11-14T09:39:35.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A0B bytes_written=662213 sync_ms=8
+2024-11-14T09:39:40.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A88 bytes_written=519212 sync_ms=30
+2024-11-14T09:39:40.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=14 idle=6 waiting=0
+2024-11-14T09:39:40.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=4 idle=8 waiting=0
+2024-11-14T09:39:40.000Z INFO  db     host=pgdb-01 op=bgwriter buffers_clean=2981 maxwritten_clean=4
+2024-11-14T09:39:45.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000AA3 bytes_written=407045 sync_ms=34
+2024-11-14T09:39:50.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A3C bytes_written=563415 sync_ms=18
+2024-11-14T09:39:50.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=10 idle=10 waiting=0
+2024-11-14T09:39:50.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=4 idle=8 waiting=0
+2024-11-14T09:39:50.000Z INFO  db     host=pgdb-01 op=checkpoint buffers_written=1977 sync_ms=38
+2024-11-14T09:39:55.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A0B bytes_written=328277 sync_ms=10
+2024-11-14T09:40:00.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A64 bytes_written=960094 sync_ms=4
+2024-11-14T09:40:00.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=10 idle=10 waiting=0
+2024-11-14T09:40:00.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=3 idle=9 waiting=0
+2024-11-14T09:40:00.000Z INFO  db     host=pgdb-01 op=bgwriter buffers_clean=2739 maxwritten_clean=9
+2024-11-14T09:40:05.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A26 bytes_written=43423 sync_ms=37
+2024-11-14T09:40:10.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000AD7 bytes_written=337623 sync_ms=3
+2024-11-14T09:40:10.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=9 idle=11 waiting=0
+2024-11-14T09:40:10.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=6 idle=6 waiting=0
+2024-11-14T09:40:15.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000AC7 bytes_written=947147 sync_ms=10
+2024-11-14T09:40:20.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A23 bytes_written=443557 sync_ms=22
+2024-11-14T09:40:20.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=8 idle=12 waiting=0
+2024-11-14T09:40:20.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=4 idle=8 waiting=0
+2024-11-14T09:40:20.000Z INFO  db     host=pgdb-01 op=checkpoint buffers_written=1798 sync_ms=40
+2024-11-14T09:40:20.000Z INFO  db     host=pgdb-01 op=autovacuum table=orders tuples_removed=396
+2024-11-14T09:40:20.000Z INFO  db     host=pgdb-01 op=autovacuum table=cart_items tuples_removed=4915
+2024-11-14T09:40:20.000Z INFO  db     host=pgdb-01 op=autovacuum table=payment_intents tuples_removed=444
+2024-11-14T09:40:20.000Z INFO  db     host=pgdb-01 op=bgwriter buffers_clean=1643 maxwritten_clean=12
+2024-11-14T09:40:25.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A07 bytes_written=878976 sync_ms=16
+2024-11-14T09:40:30.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A2E bytes_written=745612 sync_ms=35
+2024-11-14T09:40:30.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=3 idle=17 waiting=0
+2024-11-14T09:40:30.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=6 idle=6 waiting=0
+2024-11-14T09:40:35.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000AB1 bytes_written=297119 sync_ms=3
+2024-11-14T09:40:40.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000AEE bytes_written=267093 sync_ms=14
+2024-11-14T09:40:40.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=6 idle=14 waiting=0
+2024-11-14T09:40:40.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=3 idle=9 waiting=0
+2024-11-14T09:40:40.000Z INFO  db     host=pgdb-01 op=bgwriter buffers_clean=1422 maxwritten_clean=12
+2024-11-14T09:40:45.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000AE4 bytes_written=776055 sync_ms=35
+2024-11-14T09:40:50.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A56 bytes_written=817878 sync_ms=8
+2024-11-14T09:40:50.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=6 idle=14 waiting=0
+2024-11-14T09:40:50.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=3 idle=9 waiting=0
+2024-11-14T09:40:50.000Z INFO  db     host=pgdb-01 op=checkpoint buffers_written=3328 sync_ms=53
+2024-11-14T09:40:55.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A0B bytes_written=651900 sync_ms=5
+2024-11-14T09:41:00.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A8B bytes_written=428871 sync_ms=30
+2024-11-14T09:41:00.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=4 idle=16 waiting=0
+2024-11-14T09:41:00.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=4 idle=8 waiting=0
+2024-11-14T09:41:00.000Z INFO  db     host=pgdb-01 op=bgwriter buffers_clean=1078 maxwritten_clean=8
+2024-11-14T09:41:05.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A18 bytes_written=997151 sync_ms=28
+2024-11-14T09:41:10.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000AC3 bytes_written=624934 sync_ms=3
+2024-11-14T09:41:10.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=3 idle=17 waiting=0
+2024-11-14T09:41:10.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=5 idle=7 waiting=0
+2024-11-14T09:41:15.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A71 bytes_written=405106 sync_ms=23
+2024-11-14T09:41:20.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A82 bytes_written=1014364 sync_ms=12
+2024-11-14T09:41:20.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=4 idle=16 waiting=0
+2024-11-14T09:41:20.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=6 idle=6 waiting=0
+2024-11-14T09:41:20.000Z INFO  db     host=pgdb-01 op=checkpoint buffers_written=3457 sync_ms=74
+2024-11-14T09:41:20.000Z INFO  db     host=pgdb-01 op=autovacuum table=orders tuples_removed=3614
+2024-11-14T09:41:20.000Z INFO  db     host=pgdb-01 op=autovacuum table=cart_items tuples_removed=1916
+2024-11-14T09:41:20.000Z INFO  db     host=pgdb-01 op=autovacuum table=payment_intents tuples_removed=6232
+2024-11-14T09:41:20.000Z INFO  db     host=pgdb-01 op=bgwriter buffers_clean=1950 maxwritten_clean=8
+2024-11-14T09:41:25.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000AAB bytes_written=219978 sync_ms=22
+2024-11-14T09:41:30.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A68 bytes_written=565354 sync_ms=11
+2024-11-14T09:41:30.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=14 idle=6 waiting=0
+2024-11-14T09:41:30.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=6 idle=6 waiting=0
+2024-11-14T09:41:35.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000AAD bytes_written=268553 sync_ms=37
+2024-11-14T09:41:40.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A6B bytes_written=509197 sync_ms=24
+2024-11-14T09:41:40.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=12 idle=8 waiting=0
+2024-11-14T09:41:40.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=5 idle=7 waiting=0
+2024-11-14T09:41:40.000Z INFO  db     host=pgdb-01 op=bgwriter buffers_clean=1187 maxwritten_clean=0
+2024-11-14T09:41:45.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A7B bytes_written=330458 sync_ms=18
+2024-11-14T09:41:50.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000AB3 bytes_written=360241 sync_ms=34
+2024-11-14T09:41:50.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=7 idle=13 waiting=0
+2024-11-14T09:41:50.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=6 idle=6 waiting=0
+2024-11-14T09:41:50.000Z INFO  db     host=pgdb-01 op=checkpoint buffers_written=481 sync_ms=28
+2024-11-14T09:41:55.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000AD5 bytes_written=308533 sync_ms=3
+2024-11-14T09:42:00.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A4F bytes_written=772665 sync_ms=40
+2024-11-14T09:42:00.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=11 idle=9 waiting=0
+2024-11-14T09:42:00.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=4 idle=8 waiting=0
+2024-11-14T09:42:00.000Z INFO  db     host=pgdb-01 op=bgwriter buffers_clean=139 maxwritten_clean=0
+2024-11-14T09:42:05.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000ACC bytes_written=640473 sync_ms=6
+2024-11-14T09:42:10.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000AB8 bytes_written=313512 sync_ms=34
+2024-11-14T09:42:10.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=9 idle=11 waiting=0
+2024-11-14T09:42:10.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=4 idle=8 waiting=0
+2024-11-14T09:42:15.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A35 bytes_written=1013895 sync_ms=17
+2024-11-14T09:42:20.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A1B bytes_written=440127 sync_ms=39
+2024-11-14T09:42:20.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=3 idle=17 waiting=0
+2024-11-14T09:42:20.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=4 idle=8 waiting=0
+2024-11-14T09:42:20.000Z INFO  db     host=pgdb-01 op=checkpoint buffers_written=1803 sync_ms=62
+2024-11-14T09:42:20.000Z INFO  db     host=pgdb-01 op=autovacuum table=orders tuples_removed=1560
+2024-11-14T09:42:20.000Z INFO  db     host=pgdb-01 op=autovacuum table=cart_items tuples_removed=5979
+2024-11-14T09:42:20.000Z INFO  db     host=pgdb-01 op=autovacuum table=payment_intents tuples_removed=4262
+2024-11-14T09:42:20.000Z INFO  db     host=pgdb-01 op=bgwriter buffers_clean=2602 maxwritten_clean=7
+2024-11-14T09:42:25.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A52 bytes_written=377965 sync_ms=4
+2024-11-14T09:42:30.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A6E bytes_written=557772 sync_ms=28
+2024-11-14T09:42:30.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=6 idle=14 waiting=0
+2024-11-14T09:42:30.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=5 idle=7 waiting=0
+2024-11-14T09:42:35.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A49 bytes_written=40155 sync_ms=16
+2024-11-14T09:42:40.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A25 bytes_written=523232 sync_ms=14
+2024-11-14T09:42:40.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=5 idle=15 waiting=0
+2024-11-14T09:42:40.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=4 idle=8 waiting=0
+2024-11-14T09:42:40.000Z INFO  db     host=pgdb-01 op=bgwriter buffers_clean=245 maxwritten_clean=6
+2024-11-14T09:42:45.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000AAC bytes_written=398068 sync_ms=3
+2024-11-14T09:42:50.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000AF0 bytes_written=241143 sync_ms=33
+2024-11-14T09:42:50.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=10 idle=10 waiting=0
+2024-11-14T09:42:50.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=5 idle=7 waiting=0
+2024-11-14T09:42:50.000Z INFO  db     host=pgdb-01 op=checkpoint buffers_written=4107 sync_ms=78
+2024-11-14T09:42:55.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000AA5 bytes_written=161992 sync_ms=8
+2024-11-14T09:43:00.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A9F bytes_written=524730 sync_ms=16
+2024-11-14T09:43:00.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=6 idle=14 waiting=0
+2024-11-14T09:43:00.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=6 idle=6 waiting=0
+2024-11-14T09:43:00.000Z INFO  db     host=pgdb-01 op=bgwriter buffers_clean=1456 maxwritten_clean=4
+2024-11-14T09:43:05.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A02 bytes_written=236999 sync_ms=12
+2024-11-14T09:43:10.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000AF6 bytes_written=651157 sync_ms=7
+2024-11-14T09:43:10.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=12 idle=8 waiting=0
+2024-11-14T09:43:10.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=5 idle=7 waiting=0
+2024-11-14T09:43:15.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000A4E bytes_written=220342 sync_ms=1
+2024-11-14T09:43:20.000Z INFO  db     host=pgdb-01 op=wal_write segment=0000000100000AC0 bytes_written=1015886 sync_ms=6
+2024-11-14T09:43:20.000Z INFO  db     host=pgdb-01 op=pool_stats pool=primary size=20 in_use=8 idle=12 waiting=0
+2024-11-14T09:43:20.000Z INFO  db     host=pgdb-01 op=pool_stats pool=readonly size=12 in_use=3 idle=9 waiting=0
+2024-11-14T09:43:20.000Z INFO  db     host=pgdb-01 op=checkpoint buffers_written=1274 sync_ms=44
+2024-11-14T09:43:20.000Z INFO  db     host=pgdb-01 op=autovacuum table=orders tuples_removed=1631
+2024-11-14T09:43:20.000Z INFO  db     host=pgdb-01 op=autovacuum table=cart_items tuples_removed=3448
+2024-11-14T09:43:20.000Z INFO  db     host=pgdb-01 op=autovacuum table=payment_intents tuples_removed=3085
+2024-11-14T09:43:20.000Z INFO  db     host=pgdb-01 op=bgwriter buffers_clean=1751 maxwritten_clean=8

@@ -1,0 +1,438 @@
+{
+  "agent_facing_tree_sha256": "c4decd716383331dc159c743bca228e248cb1ce518654a943b753b3f03450480",
+  "aliases": {
+    "reporting.background_export": "reporting.async_export"
+  },
+  "baseline_restoring_prod_entries": [
+    {
+      "default": false,
+      "flag": "billing.legacy_invoice_pdf",
+      "prod": false,
+      "removal_changes_behaviour": false,
+      "removal_changes_resolved_value": true,
+      "shipping_live": false,
+      "staging": true
+    },
+    {
+      "default": true,
+      "flag": "identity.session_pinning",
+      "prod": true,
+      "removal_changes_behaviour": true,
+      "removal_changes_resolved_value": true,
+      "shipping_live": true,
+      "staging": false
+    },
+    {
+      "default": true,
+      "flag": "notifications.push_quiet_hours",
+      "prod": true,
+      "removal_changes_behaviour": true,
+      "removal_changes_resolved_value": true,
+      "shipping_live": true,
+      "staging": false
+    },
+    {
+      "default": false,
+      "flag": "platform.request_shadowing",
+      "prod": false,
+      "removal_changes_behaviour": true,
+      "removal_changes_resolved_value": true,
+      "shipping_live": true,
+      "staging": true
+    },
+    {
+      "default": false,
+      "flag": "web.new_nav",
+      "prod": false,
+      "removal_changes_behaviour": true,
+      "removal_changes_resolved_value": true,
+      "shipping_live": true,
+      "staging": true
+    }
+  ],
+  "canonical_reference_files": {
+    "billing.proration_v3": [
+      "app/services/billing/proration.py"
+    ],
+    "checkout.express_lane": [
+      "app/services/checkout/express.py",
+      "app/web/src/checkout/expressLane.ts"
+    ],
+    "checkout.retry_budget": [
+      "app/services/checkout/cart.py",
+      "app/services/checkout/session.py"
+    ],
+    "identity.mfa_grace_hours": [
+      "app/services/identity/mfa.py"
+    ],
+    "identity.passkey_enrolment": [
+      "app/services/identity/passkeys.py",
+      "app/web/src/app.ts"
+    ],
+    "identity.session_pinning": [
+      "app/platform/shadow.py",
+      "app/services/identity/session.py",
+      "app/web/src/app.ts"
+    ],
+    "ingest.dead_letter_replay": [
+      "app/services/ingest/dead_letter.py"
+    ],
+    "ingest.max_batch_rows": [
+      "app/services/ingest/batcher.py"
+    ],
+    "notifications.digest_window_minutes": [
+      "app/services/notifications/digest.py"
+    ],
+    "notifications.push_quiet_hours": [
+      "app/services/notifications/push.py",
+      "app/services/notifications/templates.py"
+    ],
+    "payments.card_tokenization_v2": [
+      "app/services/payments/gateway.py",
+      "app/services/payments/tokenization.py"
+    ],
+    "payments.dual_write_ledger": [
+      "app/services/payments/ledger.py"
+    ],
+    "payments.settlement_batch_size": [
+      "app/services/payments/settlement.py"
+    ],
+    "platform.circuit_breaker_ms": [
+      "app/platform/breaker.py"
+    ],
+    "platform.request_shadowing": [
+      "app/platform/shadow.py",
+      "app/services/checkout/pricing.py"
+    ],
+    "reporting.async_export": [
+      "app/platform/constants.py"
+    ],
+    "reporting.warehouse_direct_read": [
+      "app/services/reporting/warehouse.py"
+    ],
+    "search.semantic_rerank": [
+      "app/services/search/ranker.py",
+      "app/web/src/search/resultsPanel.ts"
+    ],
+    "search.typo_tolerance": [
+      "app/services/search/query_parser.py"
+    ],
+    "web.new_nav": [
+      "app/web/src/app.ts",
+      "app/web/src/nav.ts"
+    ],
+    "web.skeleton_loaders": [
+      "app/web/src/shared/loaders.ts"
+    ]
+  },
+  "cohort_layer_counts": {
+    "canary": {
+      "default.json": 2,
+      "prod.json": 13,
+      "runtime:ovr-canary-ledger-20260821": 1,
+      "staging.json": 5
+    },
+    "stable": {
+      "default.json": 2,
+      "prod.json": 13,
+      "staging.json": 6
+    }
+  },
+  "cohort_staging_inheritances": {
+    "canary": [
+      "billing.proration_v3",
+      "checkout.express_lane",
+      "identity.passkey_enrolment",
+      "reporting.async_export",
+      "search.typo_tolerance"
+    ],
+    "stable": [
+      "billing.proration_v3",
+      "checkout.express_lane",
+      "identity.passkey_enrolment",
+      "payments.dual_write_ledger",
+      "reporting.async_export",
+      "search.typo_tolerance"
+    ]
+  },
+  "cohort_values": {
+    "canary": {
+      "billing.legacy_invoice_pdf": false,
+      "billing.proration_v3": true,
+      "checkout.express_lane": true,
+      "checkout.retry_budget": 3,
+      "identity.mfa_grace_hours": 0,
+      "identity.passkey_enrolment": true,
+      "identity.session_pinning": true,
+      "ingest.dead_letter_replay": true,
+      "ingest.max_batch_rows": 2000,
+      "notifications.digest_window_minutes": 30,
+      "notifications.push_quiet_hours": true,
+      "payments.card_tokenization_v2": true,
+      "payments.dual_write_ledger": false,
+      "payments.settlement_batch_size": 500,
+      "platform.circuit_breaker_ms": 600,
+      "platform.request_shadowing": false,
+      "reporting.async_export": true,
+      "reporting.warehouse_direct_read": true,
+      "search.typo_tolerance": false,
+      "web.new_nav": false,
+      "web.skeleton_loaders": true
+    },
+    "stable": {
+      "billing.legacy_invoice_pdf": false,
+      "billing.proration_v3": true,
+      "checkout.express_lane": true,
+      "checkout.retry_budget": 3,
+      "identity.mfa_grace_hours": 0,
+      "identity.passkey_enrolment": true,
+      "identity.session_pinning": true,
+      "ingest.dead_letter_replay": true,
+      "ingest.max_batch_rows": 2000,
+      "notifications.digest_window_minutes": 30,
+      "notifications.push_quiet_hours": true,
+      "payments.card_tokenization_v2": true,
+      "payments.dual_write_ledger": true,
+      "payments.settlement_batch_size": 500,
+      "platform.circuit_breaker_ms": 600,
+      "platform.request_shadowing": false,
+      "reporting.async_export": true,
+      "reporting.warehouse_direct_read": true,
+      "search.typo_tolerance": false,
+      "web.new_nav": false,
+      "web.skeleton_loaders": true
+    }
+  },
+  "cohort_winners": {
+    "canary": {
+      "billing.legacy_invoice_pdf": "prod.json",
+      "billing.proration_v3": "staging.json",
+      "checkout.express_lane": "staging.json",
+      "checkout.retry_budget": "prod.json",
+      "identity.mfa_grace_hours": "prod.json",
+      "identity.passkey_enrolment": "staging.json",
+      "identity.session_pinning": "prod.json",
+      "ingest.dead_letter_replay": "prod.json",
+      "ingest.max_batch_rows": "prod.json",
+      "notifications.digest_window_minutes": "prod.json",
+      "notifications.push_quiet_hours": "prod.json",
+      "payments.card_tokenization_v2": "default.json",
+      "payments.dual_write_ledger": "runtime:ovr-canary-ledger-20260821",
+      "payments.settlement_batch_size": "prod.json",
+      "platform.circuit_breaker_ms": "prod.json",
+      "platform.request_shadowing": "prod.json",
+      "reporting.async_export": "staging.json",
+      "reporting.warehouse_direct_read": "prod.json",
+      "search.typo_tolerance": "staging.json",
+      "web.new_nav": "prod.json",
+      "web.skeleton_loaders": "default.json"
+    },
+    "stable": {
+      "billing.legacy_invoice_pdf": "prod.json",
+      "billing.proration_v3": "staging.json",
+      "checkout.express_lane": "staging.json",
+      "checkout.retry_budget": "prod.json",
+      "identity.mfa_grace_hours": "prod.json",
+      "identity.passkey_enrolment": "staging.json",
+      "identity.session_pinning": "prod.json",
+      "ingest.dead_letter_replay": "prod.json",
+      "ingest.max_batch_rows": "prod.json",
+      "notifications.digest_window_minutes": "prod.json",
+      "notifications.push_quiet_hours": "prod.json",
+      "payments.card_tokenization_v2": "default.json",
+      "payments.dual_write_ledger": "staging.json",
+      "payments.settlement_batch_size": "prod.json",
+      "platform.circuit_breaker_ms": "prod.json",
+      "platform.request_shadowing": "prod.json",
+      "reporting.async_export": "staging.json",
+      "reporting.warehouse_direct_read": "prod.json",
+      "search.typo_tolerance": "staging.json",
+      "web.new_nav": "prod.json",
+      "web.skeleton_loaders": "default.json"
+    }
+  },
+  "dead_configured_gates": [
+    "billing.legacy_invoice_pdf"
+  ],
+  "defined_gate_count": 21,
+  "effective_report_matches_derived_resolution": true,
+  "excluded_roots": [
+    "tests",
+    "docs",
+    "examples"
+  ],
+  "layer_key_counts": {
+    "default.json": 21,
+    "prod.json": 13,
+    "staging.json": 15
+  },
+  "provenance": {
+    "current_readme_names_release": true,
+    "draft_marked_unapproved": true,
+    "draft_targets_other_release": true,
+    "snapshot_as_of": "2026-08-21T18:00:00Z",
+    "snapshot_release_id": "prod-2026.08.21.4"
+  },
+  "raw_reference_files": {
+    "billing.proration_v3": [
+      "app/services/billing/proration.py"
+    ],
+    "checkout.express_lane": [
+      "app/services/checkout/express.py",
+      "app/web/src/checkout/expressLane.ts"
+    ],
+    "checkout.retry_budget": [
+      "app/services/checkout/cart.py",
+      "app/services/checkout/session.py"
+    ],
+    "identity.mfa_grace_hours": [
+      "app/services/identity/mfa.py"
+    ],
+    "identity.passkey_enrolment": [
+      "app/services/identity/passkeys.py",
+      "app/web/src/app.ts"
+    ],
+    "identity.session_pinning": [
+      "app/platform/shadow.py",
+      "app/services/identity/session.py",
+      "app/web/src/app.ts"
+    ],
+    "ingest.dead_letter_replay": [
+      "app/services/ingest/dead_letter.py"
+    ],
+    "ingest.max_batch_rows": [
+      "app/services/ingest/batcher.py"
+    ],
+    "notifications.digest_window_minutes": [
+      "app/services/notifications/digest.py"
+    ],
+    "notifications.push_quiet_hours": [
+      "app/services/notifications/push.py",
+      "app/services/notifications/templates.py"
+    ],
+    "payments.card_tokenization_v2": [
+      "app/services/payments/gateway.py",
+      "app/services/payments/tokenization.py"
+    ],
+    "payments.dual_write_ledger": [
+      "app/services/payments/ledger.py"
+    ],
+    "payments.settlement_batch_size": [
+      "app/services/payments/settlement.py"
+    ],
+    "platform.circuit_breaker_ms": [
+      "app/platform/breaker.py"
+    ],
+    "platform.request_shadowing": [
+      "app/platform/shadow.py",
+      "app/services/checkout/pricing.py"
+    ],
+    "reporting.background_export": [
+      "app/platform/constants.py"
+    ],
+    "reporting.warehouse_direct_read": [
+      "app/services/reporting/warehouse.py"
+    ],
+    "search.semantic_rerank": [
+      "app/services/search/ranker.py",
+      "app/web/src/search/resultsPanel.ts"
+    ],
+    "search.typo_tolerance": [
+      "app/services/search/query_parser.py"
+    ],
+    "web.new_nav": [
+      "app/web/src/app.ts",
+      "app/web/src/nav.ts"
+    ],
+    "web.skeleton_loaders": [
+      "app/web/src/shared/loaders.ts"
+    ]
+  },
+  "redundant_override": {
+    "default": 30,
+    "flag": "notifications.digest_window_minutes",
+    "prod": 30,
+    "removing_staging_and_prod_changes_behaviour": false,
+    "removing_staging_and_prod_changes_resolved_value": false,
+    "shipping_live": true,
+    "staging": 30
+  },
+  "requirements": [
+    {
+      "flag": "identity.mfa_grace_hours",
+      "path": "app/services/identity/mfa.py",
+      "required": 0
+    },
+    {
+      "flag": "payments.dual_write_ledger",
+      "path": "app/services/payments/ledger.py",
+      "required": false
+    },
+    {
+      "flag": "reporting.warehouse_direct_read",
+      "path": "app/services/reporting/warehouse.py",
+      "required": true
+    },
+    {
+      "flag": "search.typo_tolerance",
+      "path": "app/services/search/query_parser.py",
+      "required": false
+    }
+  ],
+  "shipping_file_count": 79,
+  "shipping_roots": [
+    "platform",
+    "services",
+    "web/src"
+  ],
+  "snapshot": {
+    "application_build_id": "app-2026.08.21.4",
+    "as_of": "2026-08-21T18:00:00Z",
+    "cohorts": [
+      {
+        "active_override_ids": [],
+        "name": "stable",
+        "traffic_percent": 80
+      },
+      {
+        "active_override_ids": [
+          "ovr-canary-ledger-20260821"
+        ],
+        "name": "canary",
+        "traffic_percent": 20
+      }
+    ],
+    "config_bundle_id": "flags-2026.08.21.3",
+    "release_id": "prod-2026.08.21.4"
+  },
+  "undefined_canonical_gates": [
+    "search.semantic_rerank"
+  ],
+  "undefined_fallback_evidence": [
+    {
+      "line": "if flags.get_bool(\"search.semantic_rerank\", default=False):",
+      "path": "app/services/search/ranker.py"
+    },
+    {
+      "line": "const reranked = isEnabled(\"search.semantic_rerank\", true);",
+      "path": "app/web/src/search/resultsPanel.ts"
+    }
+  ],
+  "violating_gate_names": [
+    "payments.dual_write_ledger"
+  ],
+  "violation_traffic_exposure_percent": {
+    "payments.dual_write_ledger": 80
+  },
+  "violations_by_cohort": {
+    "canary": [],
+    "stable": [
+      {
+        "actual": true,
+        "flag": "payments.dual_write_ledger",
+        "path": "app/services/payments/ledger.py",
+        "required": false
+      }
+    ]
+  }
+}

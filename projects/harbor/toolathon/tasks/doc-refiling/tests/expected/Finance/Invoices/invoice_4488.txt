@@ -1,0 +1,6 @@
+Document-Type: Invoice
+Reference: BOREALIS-4488
+
+Amount due: 3200.00
+Payment terms: net 30
+Raised by accounts payable.

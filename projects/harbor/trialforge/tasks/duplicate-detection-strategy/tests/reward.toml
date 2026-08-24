@@ -1,0 +1,123 @@
+# rewardkit reward definition.
+# Each claim is scored independently against the agent's final answer; scores are averaged.
+
+[judge]
+judge = "openrouter/openai/gpt-5.6-luna"
+mode = "individual"        # judge each claim on its own, not all at once
+reasoning_effort = "medium"
+timeout = 300
+files = ["/logs/artifacts/final_answer.txt"]   # separate verifier: /logs/agent is not visible
+
+[scoring]
+aggregation = "weighted_mean"   # graded partial credit
+
+# Mixed granularity: the discriminating findings (dup census, the reasoning verdicts,
+# and the six hospital means) are atomic; the very-connected basic inventories (clean
+# tables, has-key, keyless) are compounded into graded claims with explicit count
+# thresholds so the 3-point scale maps cleanly. Every value is recomputed from the
+# eight baked CSVs at /data and /data/db/turing.db (see NOTES.md).
+#     likert points = 3:  1 -> 0.0 | 2 -> 0.5 | 3 -> 1.0
+
+# ── Phase 1: the duplicate census, one table per claim ────────────────────────
+
+[[criterion]]
+description = "The hospital impact records contain exact duplicate rows: 34 rows reduce to 23 distinct, so 11 rows are dropped by keeping one copy of each. Stating 11 dropped, or 34 rows against 23 distinct, or 23 distinct with 11 dropped in any layout, counts in full."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "The trade ledger contains exactly one exact duplicate row: 111 rows reduce to 110 distinct, so one row is dropped. Calling it a single duplicate pair, or 110 distinct with 1 dropped in any layout, counts in full."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "The barber shop records contain two exact duplicate rows: 31 rows reduce to 29 distinct, so two rows are dropped. Calling it two duplicate pairs, or 29 distinct with 2 dropped in any layout, counts. Reporting the barber shop records as duplicate-free does not satisfy this."
+type = "likert"
+points = 3
+
+# Compounded: the five clean tables are one connected census-complement fact,
+# graded across the 3-point scale.
+[[criterion]]
+description = "The other five tables carry no exact duplicate rows: the food and beverage records, the crime records, the pet-care financials, the fantasy sports roster and the film list. Naming all five as duplicate-free scores 1.0; naming three or four scores 0.5; naming two or fewer, reporting them only as 'the others', or padding with near-duplicate or fuzzy-match findings, scores 0.0."
+type = "likert"
+points = 3
+
+# ── Phase 2: candidate keys, compounded by has-key / keyless ──────────────────
+
+# Compounded: which tables carry a usable record identifier.
+[[criterion]]
+description = "Identifies the tables that carry a column uniquely identifying each record: the crime records (a case reference distinct across 71 rows), the fantasy sports roster (an identifier distinct across 51) and the film list (a title distinct across 50). Naming all three scores 1.0; naming two scores 0.5; naming one or none scores 0.0. The pet-care week label and the food-and-beverage date are unique columns too; counting either as a key does not reduce the credit."
+type = "likert"
+points = 3
+
+# Compounded: which tables carry no record identifier.
+[[criterion]]
+description = "Identifies the three keyless tables, where no column uniquely identifies a record: the hospital impact records, the barber shop records and the trade ledger. Naming all three as keyless scores 1.0; naming two scores 0.5; naming one or none scores 0.0. Whether the answer treats the pet-care week label or the food-and-beverage date as a key does not affect this."
+type = "likert"
+points = 3
+
+# ── Phase 3: can a repeat be proved an error? ─────────────────────────────────
+
+[[criterion]]
+description = "The barber shop's two identical row pairs cannot be shown to be errors: with no identifier, each pair is indistinguishable from a returning customer's second visit. Classifying them as errors, or deduplicating them, without flagging the missing identifier does not satisfy this."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "The hospital impact records' duplicates can be treated as artefacts and safely removed, grounded on the values: six continuous measures agreeing to the last digit across two rows is not a plausible coincidence between two separate observations. Hedged phrasing such as 'almost certainly artefacts' counts in full."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "The trade ledger's repeated row cannot be shown to be an error and may be a genuine second event, so it should be held for review rather than deleted."
+type = "likert"
+points = 3
+
+# ── Phase 4: the rule, refused, and the meta-answers ──────────────────────────
+
+[[criterion]]
+description = "Declines a single warehouse-wide deduplication rule, such as a blanket SELECT DISTINCT over every table, and gives the reason: applied uniformly it silently deletes rows in the keyless tables that cannot prove a repeat is an error, so the handling must vary by table. A global rule given without qualifying it against the keyless tables does not satisfy this. The 14-of-480 figure is not required."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Recommends minting a record identifier for the keyless tables before adopting a deduplication policy. Naming the barber shop records alone earns full credit; also naming the food and beverage records, the trade ledger, or the hospital records counts too, and naming none of them scores 0.0."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "States that a false delete is worse than a false keep: deleting a row that was a genuine observation is irrecoverable, while a duplicate left in place biases an aggregate but is recoverable because the row is still there. Any equivalent framing of that direction and reason counts in full."
+type = "likert"
+points = 3
+
+# ── Phase 5: the worked example, one metric per claim ─────────────────────────
+
+[[criterion]]
+description = "Deduplicating the hospital impact records moves mean deaths per 100,000 down, from about 19.59 to about 18.04. Not reporting this mean scores 0.0, even if the deduplication or other means are discussed; a stated sum and row count it follows from also satisfies this."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Deduplicating the hospital impact records moves mean COVID cases per 10,000 down, from about 905.88 to about 856.52. Not reporting this mean scores 0.0, even if the deduplication or other means are discussed; a stated sum and row count it follows from also satisfies this."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Deduplicating the hospital impact records moves mean ICU capacity up, from about 67.21 to about 67.83. Not reporting this mean scores 0.0, even if the deduplication or other means are discussed; a stated sum and row count it follows from also satisfies this."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Deduplicating the hospital impact records moves mean hospital beds per 1000 up, from about 4.44 to about 4.91. Not reporting this mean scores 0.0, even if the deduplication or other means are discussed; a stated sum and row count it follows from also satisfies this."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Deduplicating the hospital impact records moves mean doctors per 1000 up, from about 2.53 to about 2.62. Not reporting this mean scores 0.0, even if the deduplication or other means are discussed; a stated sum and row count it follows from also satisfies this."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Deduplicating the hospital impact records moves mean GDP growth up, from about -3.73 to about -3.68. Not reporting this mean scores 0.0, even if the deduplication or other means are discussed; a stated sum and row count it follows from also satisfies this."
+type = "likert"
+points = 3

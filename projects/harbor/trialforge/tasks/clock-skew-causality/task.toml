@@ -1,0 +1,131 @@
+# Harbor task config. Schema is validated by harbor 0.21.0.
+schema_version = "1.4"
+
+[task]
+name = "turing/clock-skew-causality"
+version = "1.0.0"
+description = "Three service logs of one outage, one of them clock-skewed by a fixed offset recoverable only from shared request ids: correct the offset, show that the causal order inverts, and name which of two root causes survives"
+
+[metadata]
+persona   = "Site Reliability Engineer"
+domain    = "software-engineering"
+# Walked, not aspired to: 2 discovery + 12 slice reads + 8-14 parser + 6-10
+# cross-checks = 27-37. Re-measure from run_summary.json after a live rollout.
+target_tool_calls = 34
+target_claims = 14                 # aim for 8-15
+
+# One tool result, capped.
+tool_output_cap = 60000
+
+# Provider payload fields; inline table so it stays one key.
+extra_llm_params = { reasoning = { effort = "medium" } }
+
+
+# Tool allowlist handed to the vendored harness as `enabledTools`.
+enabled_tools = [
+  # needed
+  "filesystem_list_directory",
+  "filesystem_search_files",
+  "filesystem_read_text_file",
+  "filesystem_read_multiple_files",
+  "mcp-code-executor_execute_code",
+  "mcp-code-executor_initialize_code_file",   # execute_code is stateless per call;
+  "mcp-code-executor_execute_code_file",      # a 12-file join wants a persisted parser
+  "calculator_calculate",
+  # same-server distractors
+  "filesystem_directory_tree",
+  "filesystem_get_file_info",
+  "filesystem_list_directory_with_sizes",
+  "mcp-code-executor_install_dependencies",   # dead end: pandas is present, no egress
+  "mcp-code-executor_check_installed_packages",
+  "mcp-code-executor_configure_environment",
+  # off-server distractors
+  "time_convert_time",                # sharpest distractor: skew reads as a timezone problem
+  "time_get_current_time",            # near-miss: "now" is not the incident
+  "sqlite_list_tables",               # wrong index: the warehouse is unrelated
+  "sqlite_query",
+  "desktop-commander_read_file",      # redundant read path
+  "desktop-commander_list_directory",
+  "desktop-commander_get_file_info",
+  "cli-mcp-server_run_command",       # no pipes, /data only: no `grep req= | sort`
+  "cli-mcp-server_show_security_rules",
+  "mcp-server-code-runner_run-code",  # one-shot, no state between calls
+  "whois_whois_ip",                   # far-field: the logs carry client addresses
+]
+
+[agent]
+timeout_sec = 3600.0               # long-horizon tasks need room
+
+[verifier]
+timeout_sec = 600.0
+
+# "separate" scores recorded artifacts in a fresh container; `harbor job regrade` needs it.
+environment_mode = "separate"
+
+[verifier.environment]
+network_mode = "public"            # the judge needs to reach OpenRouter
+
+[verifier.env]                     # litellm reads OPENROUTER_API_KEY; ${VAR} pulls from the host
+OPENROUTER_API_KEY = "${OPENROUTER_API_KEY}"
+
+[environment]
+# NO docker_image KEY ON PURPOSE — see environment/Dockerfile.
+cpus = 4                           # CPU is the binding constraint, not memory
+memory_mb = 4096                   # measured: 19 servers idle at ~2.1 GB
+storage_mb = 10240
+
+# ── MCP servers ───────────────────────────────────────────────────────────────
+
+[[environment.mcp_servers]]
+name = "filesystem"
+transport = "stdio"
+command = "npx"
+args = ["@modelcontextprotocol/server-filesystem@2026.7.10", "/data"]
+
+[[environment.mcp_servers]]
+name = "mcp-code-executor"
+transport = "stdio"
+command = "npx"
+args = ["@geobio/code_execution_server@0.2.1"]
+
+[[environment.mcp_servers]]
+name = "calculator"
+transport = "stdio"
+command = "uvx"
+args = ["--with", "mcp<2", "mcp-server-calculator==0.2.1"]
+
+[[environment.mcp_servers]]
+name = "time"
+transport = "stdio"
+command = "uvx"
+args = ["--with", "mcp<2", "mcp-server-time==2026.7.10"]
+
+[[environment.mcp_servers]]
+name = "sqlite"
+transport = "stdio"
+command = "npx"
+args = ["mcp-sqlite@1.0.9", "/data/db/turing.db"]
+
+[[environment.mcp_servers]]
+name = "desktop-commander"
+transport = "stdio"
+command = "npx"
+args = ["@wonderwhy-er/desktop-commander@0.2.47"]
+
+[[environment.mcp_servers]]
+name = "cli-mcp-server"
+transport = "stdio"
+command = "uvx"
+args = ["--with", "mcp<2", "cli-mcp-server==0.2.5"]
+
+[[environment.mcp_servers]]
+name = "mcp-server-code-runner"
+transport = "stdio"
+command = "npx"
+args = ["mcp-server-code-runner@0.1.8"]
+
+[[environment.mcp_servers]]
+name = "whois"
+transport = "stdio"
+command = "npx"
+args = ["@bharathvaj/whois-mcp@1.0.1"]

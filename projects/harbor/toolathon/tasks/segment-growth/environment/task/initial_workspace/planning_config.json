@@ -1,0 +1,13 @@
+{
+  "as_of_date": "2026-02-15",
+  "growth_years": [
+    2022,
+    2023,
+    2024,
+    2025,
+    2026
+  ],
+  "output_file": "growth.xlsx",
+  "output_sheet": "Growth",
+  "policy_version": "FY26-P1"
+}

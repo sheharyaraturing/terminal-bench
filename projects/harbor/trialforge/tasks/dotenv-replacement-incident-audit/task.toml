@@ -1,0 +1,121 @@
+# Harbor task config. Schema is validated by harbor 0.21.0.
+schema_version = "1.4"
+
+[task]
+name = "turing/dotenv-replacement-incident-audit"
+version = "1.0.0"
+description = "Reconcile a fictional internal dotenv replacement rollout across implementation history, deployments, attempts, and receipts to make a release security decision"
+
+[metadata]
+persona = "Platform Security Engineer"
+domain = "software-engineering"
+target_tool_calls = 50
+target_claims = 17
+tool_output_cap = 60000
+extra_llm_params = { reasoning = { effort = "medium" } }
+
+# Exact 24-tool read-only surface: nine needed evidence tools, five nearby
+# siblings, and ten off-server distractors. Names are copied from ci/tool_inventory.txt.
+enabled_tools = [
+  # needed
+  "filesystem_list_directory",
+  "filesystem_search_files",
+  "filesystem_read_text_file",
+  "git_git_log",
+  "git_git_show",
+  "git_git_diff",
+  "sqlite_list_tables",
+  "sqlite_get_table_schema",
+  "sqlite_query",
+  # same-server distractors
+  "filesystem_directory_tree",
+  "filesystem_get_file_info",
+  "git_git_status",
+  "sqlite_db_info",
+  "sqlite_read_records",
+  # off-server distractors
+  "calculator_calculate",
+  "time_get_current_time",
+  "time_convert_time",
+  "context7_resolve-library-id",
+  "context7_query-docs",
+  "ddg-search_search",
+  "ddg-search_fetch_content",
+  "whois_whois_domain",
+  "whois_whois_ip",
+  "fetch_fetch",
+]
+
+[agent]
+timeout_sec = 3600.0
+
+[verifier]
+timeout_sec = 600.0
+environment_mode = "separate"
+
+[verifier.environment]
+network_mode = "public"
+
+[verifier.env]
+OPENROUTER_API_KEY = "${OPENROUTER_API_KEY}"
+
+[environment]
+# NO docker_image KEY: Harbor must build environment/Dockerfile so the task-local
+# repositories and incident evidence exist in the runtime.
+cpus = 4
+memory_mb = 4096
+storage_mb = 10240
+
+[[environment.mcp_servers]]
+name = "filesystem"
+transport = "stdio"
+command = "npx"
+args = ["@modelcontextprotocol/server-filesystem@2026.7.10", "/data"]
+
+[[environment.mcp_servers]]
+name = "git"
+transport = "stdio"
+command = "uvx"
+args = ["--with", "mcp<2", "mcp-server-git==2026.7.10"]
+
+[[environment.mcp_servers]]
+name = "sqlite"
+transport = "stdio"
+command = "npx"
+args = ["mcp-sqlite@1.0.9", "/data/incidents/dotenv-replacement/incident.db"]
+
+[[environment.mcp_servers]]
+name = "calculator"
+transport = "stdio"
+command = "uvx"
+args = ["--with", "mcp<2", "mcp-server-calculator==0.2.1"]
+
+[[environment.mcp_servers]]
+name = "time"
+transport = "stdio"
+command = "uvx"
+args = ["--with", "mcp<2", "mcp-server-time==2026.7.10"]
+
+[[environment.mcp_servers]]
+name = "context7"
+transport = "stdio"
+command = "npx"
+args = ["@upstash/context7-mcp@4.0.2"]
+
+[[environment.mcp_servers]]
+name = "ddg-search"
+transport = "stdio"
+command = "uvx"
+args = ["--with", "mcp<2", "duckduckgo-mcp-server==0.6.1"]
+
+[[environment.mcp_servers]]
+name = "whois"
+transport = "stdio"
+command = "npx"
+args = ["@bharathvaj/whois-mcp@1.0.1"]
+
+[[environment.mcp_servers]]
+name = "fetch"
+transport = "stdio"
+command = "uvx"
+args = ["--with", "mcp<2", "mcp-server-fetch==2026.7.10"]

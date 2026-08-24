@@ -1,0 +1,23 @@
+{
+  "billing.legacy_invoice_pdf": false,
+  "billing.proration_v3": false,
+  "checkout.express_lane": false,
+  "checkout.retry_budget": 2,
+  "identity.mfa_grace_hours": 24,
+  "identity.passkey_enrolment": false,
+  "identity.session_pinning": true,
+  "ingest.dead_letter_replay": false,
+  "ingest.max_batch_rows": 1000,
+  "notifications.digest_window_minutes": 30,
+  "notifications.push_quiet_hours": true,
+  "payments.card_tokenization_v2": true,
+  "payments.dual_write_ledger": false,
+  "payments.settlement_batch_size": 200,
+  "platform.circuit_breaker_ms": 1500,
+  "platform.request_shadowing": false,
+  "reporting.async_export": false,
+  "reporting.warehouse_direct_read": false,
+  "search.typo_tolerance": true,
+  "web.new_nav": false,
+  "web.skeleton_loaders": true
+}

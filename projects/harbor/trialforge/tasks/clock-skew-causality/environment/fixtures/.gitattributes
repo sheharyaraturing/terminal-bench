@@ -1,0 +1,4 @@
+# The root .gitattributes does not cover these, and core.autocrlf=true on
+# Windows would break the byte hashes. `*.log` does not match `api.log.1`.
+*.log	text eol=lf
+*.log.*	text eol=lf

@@ -1,0 +1,131 @@
+# rewardkit reward definition.
+
+[judge]
+# openrouter/ prefix routes litellm to OpenRouter. rewardkit reads [judge].judge, never [judge].model.
+judge = "openrouter/openai/gpt-5.6-luna"
+mode = "individual"        # judge each claim on its own, not all at once
+reasoning_effort = "medium"
+timeout = 300
+
+# The judge grades the agent's FINAL ANSWER, so it must be given it.
+files = ["/logs/artifacts/final_answer.txt"]   # a separate verifier sees only artifacts, never /logs/agent
+
+[scoring]
+aggregation = "weighted_mean"   # graded partial credit; no weight keys, so every claim weighs 1.0
+
+# ── Claims ────────────────────────────────────────────────────────────────────
+# ONE CLAIM, ONE ASSERTION, scored independently. No weights. Every claim is a
+# single short guard, binary in effect, so the judge grades identical answers the
+# same way; the only graded (0.5) claim is the nine-name list, a single dimension
+# (how many named). The name-plus-fact findings are split into two atomic claims
+# each rather than compounded, so one wrong call costs one claim, not two, and the
+# judge is not asked to split a two-part answer. Values read back from GROUND_TRUTH.md.
+
+# ── Phase 1: the frozen assessment instant ───────────────────────────────────
+
+[[criterion]]
+description = "States that expiry is assessed as of 2026-08-17. Either the bare date or the full instant 2026-08-17T00:00:00Z counts in full."
+type = "likert"
+points = 3
+
+# ── Phase 2: the at-risk hosts ───────────────────────────────────────────────
+
+[[criterion]]
+description = "Names all nine at-risk hosts: admin-console-03.prod, catalog-api-01.dr, fraud-scorer-01.prod, identity-idp-04.prod, notify-worker-01.stage, partner-gw-04.prod, search-api-01.corp, status-page-03.prod, webhook-relay-03.corp. All nine scores 1.0; seven or eight, 0.5; six or fewer, 0.0. The hbl.example.com suffix is optional."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "States that the flagged hosts were found by matching each ticket's serials to the host's current certificate: an un-landed host still presents the old serial the ticket meant to replace, not the new serial it named. That the new serial appears on no host also satisfies this."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "States that 48 of the 58 closed tickets are genuine renewals that deployed (48, or 48 of 58). An answer giving a different genuine total, such as 51 from double-counting the three rotated hosts, does not satisfy this."
+type = "likert"
+points = 3
+
+# ── Phase 3: the two 'looks-unrenewed but genuine' cases, atomic ─────────────
+
+[[criterion]]
+description = "Identifies the three hosts a serial-only check wrongly flags but which are genuine renewals rotated again after wave one: admin-console-01.prod, partner-gw-01.stage and session-store-03.dr. Naming or counting the three satisfies this."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "States that those three are cleared through the rotation log, which ties each host's current serial back to its ticket's target through a later out-of-band rotation."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "States that 16 of the closed tickets were closed on the requester's attestation rather than on a verified rescan of the host."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "States that the 16 attested tickets exceed the real failures: 6 to 7 are genuine renewals, not failures, so the marker over-flags (it does not under-flag). A bare 'it over-flags' with no non-failure count does not satisfy this."
+type = "likert"
+points = 3
+
+# ── Phase 4: the exposure split ──────────────────────────────────────────────
+
+[[criterion]]
+description = "States that 5 of the nine flagged hosts hold a certificate whose not-after is already past at the assessment instant."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "States that 4 of the flagged hosts lapse inside the reporting window, on or before 2026-09-16 (equivalently, 30 days from the assessment instant). An answer stating that none lapse inside the window, or giving an in-window count other than four, does not satisfy this."
+type = "likert"
+points = 3
+
+# ── Phase 5: the tenth un-landed host that is NOT at risk (two atomic) ────────
+
+[[criterion]]
+description = "Identifies identity-idp-01.prod as a tenth host whose renewal was closed but never landed: it still presents the replaced serial and the ticket's target was never issued."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "States that identity-idp-01.prod is not at risk because the certificate it presents stays valid past the reporting window into 2027, so the count of at-risk failed renewals is nine, not ten (a separate tally of ten total exposures, the nine at-risk plus the uncovered host, still counts in full)."
+type = "likert"
+points = 3
+
+# ── Phase 6: expired-but-not-exposed, and the coverage gap ───────────────────
+
+[[criterion]]
+description = "Identifies media-cdn-02.prod as a host whose certificate is expired at the assessment instant but which is not an exposure because it has been withdrawn from service. Naming it with or without the hbl.example.com suffix counts in full."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Cites the evidence that media-cdn-02.prod is out of service: either its completed decommission register entry dated 2026-06-30, within one day, or the host's own recorded service state in the inventory. Either one alone counts in full."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "States that the real count of already-lapsed exposures is 6, fewer than a plain expiry-date filter returns, because a record already withdrawn from service (media-cdn-02.prod) is expired but not an exposure. The plain filter count may be given as 7, or as 8 if the un-deduplicated re-scan row is also counted; either satisfies this so long as the count of genuine expired exposures is 6."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Names notify-worker-02.dr as an expired live exposure that no renewal ticket covers, so it is invisible from the ticket log and only an estate-wide sweep finds it."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "States that notify-worker-02.dr's only decommission register entry is scheduled, dated 2026-09-30, so it does not clear the exposure: the host is still in service at the instant."
+type = "likert"
+points = 3
+
+# ── Phase 7: the open queue ──────────────────────────────────────────────────
+
+[[criterion]]
+description = "States that the 12 open tickets are not an exposure, because every host they target holds a certificate that stays valid past the reporting window. The count of 12, within one ticket, counts in full."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "States that the earliest not-after anywhere in the open queue is 2026-11-03, within one day."
+type = "likert"
+points = 3

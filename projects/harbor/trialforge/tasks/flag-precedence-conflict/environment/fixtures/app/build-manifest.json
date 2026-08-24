@@ -1,0 +1,13 @@
+{
+  "application_build_id": "app-2026.08.21.4",
+  "excluded_roots": [
+    "tests",
+    "docs",
+    "examples"
+  ],
+  "production_source_roots": [
+    "platform",
+    "services",
+    "web/src"
+  ]
+}

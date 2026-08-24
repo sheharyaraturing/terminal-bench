@@ -1,0 +1,23 @@
+[project]
+name = "toolathon"
+type = "harbor"
+description = "Toolathlon long-horizon document/tool-use tasks"
+
+[paths]
+tasks = "tasks"
+checks = "checks"
+rubrics = "rubrics/rubrics.toml"
+extra_references = "extra_references"
+
+[checks]
+# Run the repo-root checks/ common set in addition to this project's checks/.
+# Incompatible common checks (canary, separate-verifier, task-fields,
+# instruction-suffix, task-package-name) are shadowed by same-named override
+# checks in checks/ — see core/deterministic.py's name-shadow rule.
+include_common = true
+
+[validation]
+mode = "oracle_nop"
+
+[trajectory_analysis]
+include_task = true

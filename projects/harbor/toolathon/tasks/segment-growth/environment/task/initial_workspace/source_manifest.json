@@ -1,0 +1,12 @@
+{
+  "policy_version": "FY26-P1",
+  "status": "ACTIVE",
+  "authoritative_inputs": {
+    "segment_master": "segment_master.csv",
+    "revenue_book": "segments.xlsx",
+    "methodology_sheet": "Methodology",
+    "restatements": "restatements.csv",
+    "planning_config": "planning_config.json"
+  },
+  "archive_policy": "Files under archive/ and notes/ are non-authoritative historical material and must not drive the output."
+}

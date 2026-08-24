@@ -1,0 +1,163 @@
+# rewardkit reward definition.
+
+[judge]
+judge = "openrouter/openai/gpt-5.6-luna"
+mode = "individual"
+reasoning_effort = "medium"
+timeout = 300
+files = ["/logs/artifacts/final_answer.txt"]
+
+[scoring]
+aggregation = "weighted_mean"
+
+# Category reconciliation. Each criterion covers one requested per-category reconciliation.
+
+[[criterion]]
+description = "For txn_log, reports 58 past-window records and 53 genuinely eligible records. One correct value earns partial credit."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "For support_corr, reports 31 past-window records and 28 genuinely eligible records. One correct value earns partial credit."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "For marketing_contact, reports 24 past-window records and 20 genuinely eligible records. One correct value earns partial credit."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "For audit_trail, reports 0 past-window records and 0 genuinely eligible records. Candidate or deletion counts do not satisfy this criterion."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "For hr_applicant, reports 19 past-window records and 17 genuinely eligible records. One correct value earns partial credit."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "For session_replay, reports 37 past-window records and 31 genuinely eligible records. One correct value earns partial credit."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Names the 20 past-window records held by an active legal hold: REC-00004, REC-00017, REC-00041, REC-00065, REC-00067, REC-00087, REC-00116, REC-00122, REC-00127, REC-00144, REC-00158, REC-00164, REC-00195, REC-00220, REC-00263, REC-00289, REC-00293, REC-00297, REC-00353 and REC-00383. All 20 in any order scores 1.0, whether given as one list or in parts. Some but not all of the 20, with no additions to that list, scores 0.5. A withheld-records list padded out to all 36 active holds, or one that adds records which are not past-window, scores 0.0. Naming an active hold that is not past-window elsewhere in the answer, for some other purpose, is not an addition to the list and does not affect this criterion."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "States that the identified past-window records are withheld because their legal holds were active at 2026-04-01T00:00:00Z."
+type = "likert"
+points = 3
+
+# Cutoff-sensitive classifications.
+
+[[criterion]]
+description = "Classifies exactly REC-00024, REC-00183, REC-00288, REC-00352 and REC-00362 as past-window and eligible after UTC normalisation. A correctly classified subset earns partial credit; extra misclassified IDs prevent full credit."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Classifies exactly REC-00026, REC-00032, REC-00035, REC-00133, REC-00176, REC-00228, REC-00241, REC-00338 and REC-00363 as inside-window and ineligible after UTC normalisation. A correctly classified subset earns partial credit; extra misclassified IDs prevent full credit."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Identifies REC-00165 and REC-00277 as the exact-cutoff records. One correct identifier earns partial credit."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Keeps both exact-cutoff records off the destruction list because RS-2026.1 requires age to exceed the retention window."
+type = "likert"
+points = 3
+
+# Purge evidence.
+
+[[criterion]]
+description = "Reports that PURGE-2026-04-01-A selected 153 distinct candidates."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Reports 146 unique valid final deletion receipts after voided and replayed receipt events are resolved."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Identifies exactly these seven divergent purge candidates: REC-00005, REC-00012, REC-00013, REC-00028, REC-00040, REC-00046 and REC-00108. A correct subset earns partial credit; extra IDs prevent full credit."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "States that all seven divergent candidates were skipped as object_locked and had no valid final receipt. One correct treatment fact earns partial credit."
+type = "likert"
+points = 3
+
+# Deployment and selector cause.
+
+[[criterion]]
+description = "Deployed selector: identifies the selector the run actually used as selector-v2.4.0, tied to the run's deployment record rather than to recency. Naming it by tag (selector-v2.4.0) or by its commit (51c066d) both satisfy this. Choosing a selector because it is the newest in the repository does not."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Deployed adapter: identifies the lock adapter the run actually used as lock-adapter-v1.8.1, tied to the run's deployment record rather than to recency. Naming it by tag (lock-adapter-v1.8.1) or by its commit (a51506a) both satisfy this. Choosing v1.8.2 because it is the newer adapter does not."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Selector defect: explains that production discarded timezone offsets by interpreting local wall-clock text as UTC."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Selector control: explains that correct logic preserves the complete offset-bearing timestamp before normalising it to UTC."
+type = "likert"
+points = 3
+
+# Pinned upstream and adapter cause.
+
+[[criterion]]
+description = "Pinned upstream purpose: explains that recent_locks suppresses repeat lock processing."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Pinned upstream age rule: explains that each recent_locks entry's age is compared with its cooldown before repeat processing is suppressed."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Adapter defect A: explains that production treated membership in recent_locks as current lock state."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Adapter defect B: explains that production made no age or expiry comparison for cached lock observations. A generic stale-cache label or fix name without this mechanism earns zero."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Adapter control: explains that correct behavior rejects cached lock observations older than the caller-provided age limit. A fix name without this behavior earns zero."
+type = "likert"
+points = 3
+
+# Actual treatment and final exposure.
+
+[[criterion]]
+description = "Negative-offset treatment: all nine inside-window records received valid final deletion receipts."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Positive-offset treatment: all five eligible records were absent from the purge candidate set."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Final under-destruction: reports that 12 eligible records were missed."
+type = "likert"
+points = 3

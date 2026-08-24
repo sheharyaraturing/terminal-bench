@@ -1,0 +1,14 @@
+Execution fee schedule — negotiated rate card
+
+Effective for the whole period under review, the desk's agreed Advance Trade
+terms are:
+
+  - All-in trading fee and spread: not to exceed 0.65% of the fill subtotal,
+    on either the buy or the sell side.
+  - Minimum charge: USD 0.01 per fill.
+  - USD wire withdrawals: USD 25.00 per wire (billed separately on the monthly
+    account activity statement, not in the trade export).
+
+Any fill charged above the 0.65% cap is an overcharge to be recovered from the
+venue. The minimum charge applies to very small fills where 0.65% would round
+below a cent.

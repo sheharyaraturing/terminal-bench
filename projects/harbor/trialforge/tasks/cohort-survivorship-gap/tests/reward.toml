@@ -1,0 +1,91 @@
+# rewardkit reward definition.
+
+[judge]
+# One judge model, named by bare model id and passed to litellm as written.
+judge = "openrouter/openai/gpt-5.6-luna"
+mode = "individual"        # judge each claim on its own, not all at once
+reasoning_effort = "medium"
+timeout = 300
+
+# The judge grades the agent's FINAL ANSWER, so it must be given it.
+files = ["/logs/artifacts/final_answer.txt"]   # a separate verifier sees only collected artifacts, never /logs/agent
+
+[scoring]
+aggregation = "weighted_mean"   # graded partial credit; no weight keys, so every claim weighs 1.0
+
+
+# ── Claims ────────────────────────────────────────────────────────────────────
+# 12 claims, each weight 1.0, likert points=3 -> 0.0 / 0.5 / 1.0. Not binary.
+
+
+# ── Phase 1: the join that hides the attrition ────────────────────────────────
+
+[[criterion]]
+description = "States the two numbers the retention question turns on and the rate they give: 180 subjects were enrolled, only 133 have a recorded final score, and that is 73.9% within rounding. Giving the enrolment split of 90 per arm, the 45 per site across four sites, or the 720 visit records is also credited, and omitting them is not a deduction."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "States that restricting to subjects who have a final score sets aside the 47 enrolled subjects without one, so retention measured on that reduced set is necessarily complete and tells you nothing. Any wording for that reduced set counts in full, whether it is described as a matched join, an inner join, the finishers, or simply the 133 with scores; likewise any wording for the result, whether 100%, 133/133, or complete by construction. What must be present is the count of 47 set aside and the point that the resulting figure is guaranteed rather than measured."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Gives the per-arm coverage of the final scores: 56 of 90 in the intervention arm (62.2%) against 77 of 90 in the control arm (85.6%), within rounding."
+type = "likert"
+points = 3
+
+
+# ── Phase 2: the attrition is not missing at random ───────────────────────────
+
+[[criterion]]
+description = "Splits the 46 non-completers by arm: 34 in the intervention arm and 12 in the control arm, giving dropout rates of 37.8% against 13.3%. Reporting the gap between the two arms as either 24.4 or 24.5 percentage points counts in full, since both follow from those rates depending on whether the rates are rounded before subtracting, and omitting the gap entirely is not a deduction provided both rates are given."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Reports that the people who left were scoring materially lower than the people who stayed, and draws the consequence that dropping them therefore pushes the arm means upward. Either route to the comparison counts in full: pooled, about 45.5 at their last recorded measurement against about 62.5 for those with a final score, roughly 17 points lower; or arm by arm, about 43.2 against 64.7 in the intervention arm and about 52.0 against 60.9 in the control arm. Reporting only one arm's pair still counts provided the lower-scoring conclusion is drawn. One decimal place or two both count in full."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Reports the completers-only comparison: the intervention arm averages 64.72 on 56 subjects against the control arm's 60.94 on 77 subjects, an intervention lead of 3.78 points, within rounding."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Reports the comparison over all 180 enrolled subjects with each dropout carried in at their last recorded measurement: the intervention arm averages 56.59 and the control arm 59.6, a control lead of 3.01 points, within rounding."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "States that the sign of the between-arm difference reverses between the two analyses, so the intervention advantage does not survive: it goes from 3.78 points in the intervention arm's favour to 3.01 points in the control arm's favour. Quantifying the gap between the two as a swing of about 6.8 points is also credited, and omitting that figure is not a deduction."
+type = "likert"
+points = 3
+
+
+# ── Phase 3: the decoy ────────────────────────────────────────────────────────
+
+[[criterion]]
+description = "Identifies SUBJ-015 as the one subject with no final score whose visit records show all four scheduled visits attended, including the end-of-study visit, so the absent score is a missing assessment rather than a withdrawal."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "States the corrected attrition arithmetic: 46 dropouts, 134 completers and a true completion rate of 74.4%."
+type = "likert"
+points = 3
+
+
+# ── Phase 4: the competing explanation and the completion definition ──────────
+
+[[criterion]]
+description = "Reports attrition site by site with the numbers behind it: 12, 12, 11 and 11 of the 45 enrolled at each of the four sites, which is 26.7%, 26.7%, 24.4% and 24.4%. Concludes that the spread is flat, so the loss tracks the arm rather than the site, and says so explicitly rather than leaving the site question unmentioned. Percentages or raw counts alone both count in full provided all four sites are covered and the flat conclusion is stated."
+type = "likert"
+points = 3
+
+[[criterion]]
+description = "Reports that requiring attendance at all four visits rather than at the end-of-study visit alone undercounts retention, giving 128 subjects and 71.1% instead, because 6 subjects missed an intermediate visit and still finished. Stating separately that completion is properly decided by the end-of-study visit is also credited, and omitting that framing is not a deduction."
+type = "likert"
+points = 3
+

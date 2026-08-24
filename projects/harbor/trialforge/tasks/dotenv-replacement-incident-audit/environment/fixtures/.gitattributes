@@ -1,0 +1,18 @@
+# Fixture line endings.
+#
+# The repository-root .gitattributes pins .sh/.toml/.py/.md/.sql and Dockerfile to
+# LF and marks .bundle/.db/.zip/.parquet/.xlsx binary. It does not cover the
+# extensions below, and core.autocrlf=true on a Windows checkout hands out CRLF
+# for anything git detects as text.
+#
+# That matters here because environment/Dockerfile COPYs fixtures/logs and
+# fixtures/receipts straight into the image, so the container is built from the
+# working copy rather than from the committed blob. A CRLF fixture no longer
+# matches a byte hash taken over it, and every line-based field extraction gains
+# a stray carriage return on its last field -- which is exactly the work this
+# task asks an agent to do across 180 worker log lines and 174 receipts.
+*.jsonl         text eol=lf
+*.log           text eol=lf
+*.refs          text eol=lf
+*.txt           text eol=lf
+.gitattributes  text eol=lf

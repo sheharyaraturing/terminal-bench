@@ -1,0 +1,6 @@
+Document-Type: Policy
+Reference: POL-015
+
+Applies to: all staff.
+Review cycle: annual.
+Supersedes any prior guidance on this subject.

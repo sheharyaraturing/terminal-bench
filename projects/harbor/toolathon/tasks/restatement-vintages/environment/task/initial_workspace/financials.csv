@@ -1,0 +1,34 @@
+record_id,reported_for_period,as_of_date,basis,vintage_type,net_revenue_usd,filing_note
+FIL-001,FY23-Q3,2023-10-18,statutory,final,5900000,Q3 FY23 statutory filing
+FIL-002,FY23-Q3,2024-02-09,management,final,5880000,"management pack, FY23 close"
+FIL-003,FY24-Q1,2024-04-12,statutory,preliminary,7940000,"flash estimate, unaudited"
+FIL-004,FY24-Q1,2024-05-09,statutory,final,8000000,audited filing
+FIL-005,FY24-Q1,2024-05-09,management,final,8065000,management pack
+FIL-006,FY24-Q2,2024-07-15,statutory,preliminary,6300000,"flash estimate, unaudited"
+FIL-007,FY24-Q2,2024-08-08,statutory,final,6420000,audited filing
+FIL-008,FY24-Q2,2024-08-08,management,final,6505000,management pack
+FIL-009,FY24-Q3,2024-10-10,statutory,final,9150000,audited filing
+FIL-010,FY24-Q3,2024-10-10,management,final,9205000,management pack
+FIL-011,FY24-Q4,2025-01-22,statutory,preliminary,11050000,"flash estimate, unaudited"
+FIL-012,FY24-Q4,2025-02-14,statutory,final,11120000,audited filing
+FIL-013,FY24-Q4,2025-02-14,management,final,11240000,management pack
+FIL-014,FY24-Q1,2025-02-20,statutory,restated,8180000,restated: freight rebate accrual released
+FIL-015,FY24-Q2,2025-03-11,statutory,restated,6150000,restated: agency revenue reclassified to net
+FIL-016,FY25-Q1,2025-04-14,statutory,preliminary,7610000,"flash estimate, unaudited"
+FIL-017,FY25-Q1,2025-05-06,statutory,preliminary,7655000,"flash estimate revised, still unaudited"
+FIL-018,FY25-Q1,2025-05-06,management,final,7700000,management pack
+FIL-019,FY23-Q3,2025-05-22,statutory,restated,5410000,restated: contract dispute provision
+FIL-020,FY24-Q4,2025-06-05,statutory,restated,10890000,restated: agency revenue reclassified to net
+FIL-021,FY25-Q2,2025-07-11,statutory,final,12300000,audited filing
+FIL-022,FY25-Q2,2025-08-20,management,restated,12780000,"management pack, rebased to new segment tree"
+FIL-023,FY24-Q4,2025-09-18,statutory,restated,,filing registered; figure withheld pending counsel
+FIL-024,FY25-Q2,2025-09-30,management,restated,12455000,management pack
+FIL-025,FY25-Q3,2025-10-09,statutory,preliminary,13400000,"flash estimate, unaudited"
+FIL-026,FY25-Q3,2025-10-31,management,final,13450000,management pack
+FIL-027,FY24-Q3,2025-11-14,statutory,restated,9402000,restated: intercompany freight eliminated
+FIL-028,FY24-Q3,2025-11-20,management,restated,9390000,management pack
+FIL-029,FY25-Q3,2025-11-28,statutory,final,13512000,audited filing
+FIL-030,FY24-Q2,2025-12-02,statutory,restated,5880000,restated: rebate clawback settled
+FIL-031,FY25-Q3,2025-12-19,statutory,restated,13480000,restated: cutoff error corrected
+FIL-032,FY25-Q4,2026-01-16,statutory,preliminary,14050000,"flash estimate, unaudited"
+FIL-033,FY25-Q4,2026-02-10,statutory,final,14180000,audited filing
