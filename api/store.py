@@ -52,23 +52,29 @@ def create_run(
     project_type: str = "",
     project_id: str | None = None,
     reviewer_email: str | None = None,
+    kind: str = "review",
 ) -> dict[str, Any]:
     run_id = str(uuid.uuid4())
+    if kind == "trajectory":
+        legs: dict[str, Any] = {"trajectory": {"state": "pending", "summary": ""}}
+    else:
+        legs = {
+            "deterministic": {"state": "pending", "summary": ""},
+            "rubric": {"state": "pending", "summary": ""},
+            "validation": {"state": "pending", "summary": ""},
+        }
     status = {
         "run_id": run_id,
         "project": project,
         "project_id": project_id,
         "project_type": project_type,
+        "kind": kind,
         "task_id": task_id,
         "reviewer_email": reviewer_email,
         "state": "queued",
         "passed": None,
         "error": None,
-        "legs": {
-            "deterministic": {"state": "pending", "summary": ""},
-            "rubric": {"state": "pending", "summary": ""},
-            "validation": {"state": "pending", "summary": ""},
-        },
+        "legs": legs,
         "created_at": now_iso(),
         "started_at": None,
         "finished_at": None,
@@ -157,3 +163,72 @@ def list_runs(limit: int = 50, project: str | None = None) -> list[dict[str, Any
         runs.append(status)
     runs.sort(key=lambda s: s.get("created_at") or "", reverse=True)
     return runs[:limit]
+
+
+# ── project jobs (trajectories) ─────────────────────────────────────────────
+# Uploaded trajectories zips are extracted into the project's own jobs/ dir
+# (projects/<type>/<name>/jobs/) as a Harbor jobs tree, so the frontend can
+# list existing folders/runs and rerun analysis on them directly.
+
+def _ignored_seg(seg: str) -> bool:
+    return seg in ("__MACOSX", ".DS_Store") or seg.startswith("._")
+
+
+def project_jobs_dir(project) -> Path:
+    return project.root / "jobs"
+
+
+def inspect_jobs_tree(jobs_dir: Path) -> dict[str, Any]:
+    """Walk a Harbor jobs directory and return its folder/run tree.
+
+    Shape: {"folders": [{"name": <job dir>, "runs": [{"name": <trial dir>, "path": <rel>}]}]}.
+    A "run" is a directory containing agent/trajectory.json. A top-level dir
+    that is itself a trial dir surfaces as a single folder with one run.
+    """
+    folders: dict[str, list[dict[str, str]]] = {}
+    if not jobs_dir.is_dir():
+        return {"folders": []}
+    for traj in sorted(jobs_dir.rglob("agent/trajectory.json")):
+        trial_dir = traj.parent.parent  # .../<trial>/agent/trajectory.json
+        rel = trial_dir.relative_to(jobs_dir).as_posix()
+        segs = rel.split("/")
+        folder = segs[0] if len(segs) > 1 else segs[0]
+        run = segs[-1]
+        folders.setdefault(folder, []).append({"name": run, "path": rel})
+    return {
+        "folders": [
+            {"name": name, "runs": runs} for name, runs in sorted(folders.items())
+        ]
+    }
+
+
+def list_project_jobs(project) -> dict[str, Any]:
+    """The folder/run tree currently in the project's jobs dir (rerun view)."""
+    return {"tree": inspect_jobs_tree(project_jobs_dir(project))}
+
+
+def extract_trajectory_zip(project, zip_bytes: bytes) -> dict[str, Any]:
+    """Extract a trajectories zip into the project's jobs dir and return the
+    resulting tree plus the folder names that were added/merged."""
+    import io
+    import zipfile
+
+    jobs_dir = project_jobs_dir(project)
+    jobs_dir.mkdir(parents=True, exist_ok=True)
+    added: set[str] = set()
+    with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zf:
+        for info in zf.infolist():
+            if info.is_dir():
+                continue
+            parts = [p for p in info.filename.replace("\\", "/").split("/") if p]
+            if not parts or any(_ignored_seg(p) for p in parts):
+                continue
+            if any(p == ".." for p in parts):
+                continue
+            added.add(parts[0])
+            target = jobs_dir.joinpath(*parts)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            with zf.open(info) as src, target.open("wb") as out:
+                import shutil as _sh
+                _sh.copyfileobj(src, out, length=1024 * 1024)
+    return {"tree": inspect_jobs_tree(jobs_dir), "added": sorted(added)}

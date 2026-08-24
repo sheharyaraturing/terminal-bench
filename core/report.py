@@ -7,6 +7,7 @@ from pathlib import Path
 
 from .deterministic import DeterministicResult
 from .rubric import RubricResult
+from .trajectory import TrajectoryResult
 from .validation import ValidationResult
 
 
@@ -72,4 +73,55 @@ def compile_report(
         deterministic=det,
         rubric=rub,
         validation=val,
+    )
+
+
+@dataclass
+class TrajectoryReport:
+    project: str
+    task_id: str
+    kind: str
+    passed: bool
+    trajectory: dict
+
+    def to_json(self) -> str:
+        return json.dumps(asdict(self), indent=2)
+
+    def write(self, path: Path) -> None:
+        path.write_text(self.to_json() + "\n")
+
+
+def compile_trajectory_report(
+    project_name: str,
+    task_id: str,
+    result: TrajectoryResult,
+) -> TrajectoryReport:
+    traj = {
+        "skipped": result.skipped,
+        "skip_reason": result.skip_reason,
+        "job_summary": result.job_summary,
+        # The cross-trial overall verdict produced by the second pass (the
+        # trajectory-analysis-prompt.txt). Same text as job_summary when pass 2
+        # ran; empty when the analysis stayed single-pass.
+        "job_verdict": result.job_summary if result.job_verdict_path else "",
+        "trials": [
+            {
+                "name": t.name,
+                "summary": t.summary,
+                "checks": [
+                    {"name": c.name, "verdict": c.verdict, "reason": c.reason}
+                    for c in t.checks
+                ],
+            }
+            for t in result.trials
+        ],
+    }
+    # passed here means the analysis completed and produced verdicts; it is not a
+    # task pass/fail gate. A skipped/failed analysis is reported but not "fail".
+    return TrajectoryReport(
+        project=project_name,
+        task_id=task_id,
+        kind="trajectory",
+        passed=result.passed,
+        trajectory=traj,
     )

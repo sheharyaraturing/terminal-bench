@@ -1,12 +1,20 @@
 """Review execution and run inspection."""
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, Query
+import json
+
+from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile
+
+from core.registry import load_project
 
 from . import jobs, store
 from .models import ExecuteRequest, LogChunk, RunAccepted
 
 router = APIRouter(prefix="/api", tags=["runs"])
+
+# Trajectories zips are whole Harbor jobs trees (tens of MB), so they get a
+# larger budget than a single uploaded file.
+TRAJECTORY_MAX_BYTES = 500 * 1024 * 1024
 
 
 @router.post("/execute", response_model=RunAccepted, status_code=202)
@@ -29,6 +37,84 @@ def post_execute(req: ExecuteRequest) -> RunAccepted:
             task_id=req.data.task_id,
             project_id=req.project_id,
             reviewer_email=req.reviewer_email,
+        )
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    return RunAccepted(
+        run_id=status["run_id"],
+        state=status["state"],
+        project=status["project"],
+        task_id=status["task_id"],
+    )
+
+
+@router.get("/projects/{name}/jobs")
+def get_project_jobs(name: str) -> dict:
+    """The folder/run tree currently in the project's jobs dir (rerun view)."""
+    try:
+        project = load_project(name)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return store.list_project_jobs(project)
+
+
+@router.post("/projects/{name}/jobs", status_code=200)
+async def post_project_jobs(name: str, file: UploadFile = File(...)) -> dict:
+    """Extract an uploaded trajectories zip into the project's jobs dir and
+    return the resulting folder/run tree plus the folders that were added."""
+    try:
+        project = load_project(name)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    chunks: list[bytes] = []
+    total = 0
+    while True:
+        chunk = await file.read(1024 * 1024)
+        if not chunk:
+            break
+        total += len(chunk)
+        if total > TRAJECTORY_MAX_BYTES:
+            raise HTTPException(
+                status_code=413,
+                detail=f"trajectories zip is over the {TRAJECTORY_MAX_BYTES}-byte limit",
+            )
+        chunks.append(chunk)
+    return store.extract_trajectory_zip(project, b"".join(chunks))
+
+
+@router.post("/execute-trajectory", response_model=RunAccepted, status_code=202)
+def post_execute_trajectory(
+    project_name: str = Form(...),
+    task_id: str | None = Form(None),
+    reviewer_email: str | None = Form(None),
+    selected: str | None = Form(None),
+) -> RunAccepted:
+    """Queue a trajectory-analysis run over the project's jobs dir.
+
+    ``selected`` is an optional JSON array of trial-directory paths (relative to
+    the project jobs dir) to analyze; omit it to analyze every trial. Returns
+    immediately; poll /api/runs/{run_id} for state.
+    """
+    selected_paths: list[str] | None = None
+    if selected:
+        try:
+            parsed = json.loads(selected)
+        except json.JSONDecodeError as exc:
+            raise HTTPException(status_code=400, detail=f"invalid selected JSON: {exc}") from exc
+        if not isinstance(parsed, list) or not all(isinstance(p, str) for p in parsed):
+            raise HTTPException(status_code=400, detail="selected must be a JSON array of paths")
+        selected_paths = parsed or None
+
+    try:
+        status = jobs.submit_trajectory_run(
+            project_name=project_name,
+            task_id=task_id,
+            selected=selected_paths,
+            reviewer_email=reviewer_email,
         )
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc

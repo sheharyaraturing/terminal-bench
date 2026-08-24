@@ -15,8 +15,9 @@ from pathlib import Path
 from core.deterministic import run_deterministic
 from core.progress import RunCancelled, RunControl
 from core.registry import REPO_ROOT, load_project, resolve_task
-from core.report import compile_report
+from core.report import compile_report, compile_trajectory_report
 from core.rubric import run_rubric
+from core.trajectory import run_trajectory_analysis
 from core.validation import run_validation
 
 from . import store
@@ -190,3 +191,136 @@ def _finish_cancelled(run_id: str, log) -> None:
         error="cancelled by user",
         finished_at=store.now_iso(),
     )
+
+
+def submit_trajectory_run(
+    project_name: str,
+    task_id: str | None,
+    selected: list[str] | None = None,
+    reviewer_email: str | None = None,
+) -> dict:
+    """Validate inputs, resolve the project's jobs dir, create the run, and
+    queue the trajectory-analysis executor. Raises on bad input."""
+    project = load_project(project_name)
+    task_path = None
+    if task_id:
+        task_path = resolve_task(project, task_id)  # FileNotFoundError if unknown
+
+    jobs_dir = store.project_jobs_dir(project)
+    if not jobs_dir.is_dir():
+        raise ValueError(
+            f"project has no jobs dir yet: {jobs_dir} — upload a trajectories zip first"
+        )
+
+    status = store.create_run(
+        project=project.name,
+        task_id=task_id or "",
+        project_type=project.type,
+        reviewer_email=reviewer_email,
+        kind="trajectory",
+    )
+    run_id = status["run_id"]
+
+    with _controls_lock:
+        _controls[run_id] = RunControl(
+            on_progress=lambda msg, rid=run_id: store.append_log(rid, msg)
+        )
+    _executor.submit(
+        _execute_trajectory, run_id, project.name, task_id or "", jobs_dir, selected
+    )
+    return status
+
+
+def _execute_trajectory(
+    run_id: str,
+    project_name: str,
+    task_id: str,
+    jobs_dir: Path,
+    selected: list[str] | None,
+) -> None:
+    log = lambda msg: store.append_log(run_id, msg)
+    with _controls_lock:
+        control = _controls.get(run_id)
+    if control is None or control.cancelled.is_set():
+        _finish_cancelled(run_id, log)
+        return
+    try:
+        store.update_status(run_id, state="running", started_at=store.now_iso())
+        project = load_project(project_name)
+        task_path = resolve_task(project, task_id) if task_id else None
+        log(f"project: {project.name} ({project.type})")
+        if task_path:
+            log(f"task:    {task_id} -> {task_path}")
+        else:
+            log("task:    (none — trajectories-only analysis)")
+        log(f"trajectories: {jobs_dir}")
+        if selected:
+            log(f"selected: {len(selected)} trial dir(s)")
+        else:
+            log("selected: (all trials)")
+
+        harbor_dir = store.run_dir(run_id) / "harbor"
+        harbor_dir.mkdir(parents=True, exist_ok=True)
+        store.update_status(run_id, harbor_jobs=str(harbor_dir))
+
+        store.set_leg(run_id, "trajectory", "running")
+        log("[1/1] trajectory analysis")
+        result = run_trajectory_analysis(
+            project,
+            jobs_dir,
+            task_path=task_path,
+            control=control,
+            jobs_dir=harbor_dir,
+            selected_paths=selected,
+        )
+        if result.skipped:
+            log(f"  skipped: {result.skip_reason}")
+            store.set_leg(run_id, "trajectory", "skipped", result.skip_reason)
+        else:
+            log(f"  {len(result.trials)} trial(s) analyzed")
+            for t in result.trials:
+                fails = [c for c in t.checks if c.verdict == "fail"]
+                log(f"  {t.name}: {len(t.checks) - len(fails)}/{len(t.checks)} criteria ok")
+            if result.job_verdict_path:
+                log(f"  job-level verdict: {result.job_verdict_path}")
+            store.set_leg(
+                run_id,
+                "trajectory",
+                "passed" if result.passed else "failed",
+                f"{len(result.trials)} trial(s)",
+            )
+
+        log(f"harbor jobs: {harbor_dir}")
+        log(f"view with: harbor view --jobs {harbor_dir}")
+
+        report = compile_trajectory_report(project.name, task_id, result)
+        store.write_report(run_id, report.to_json() + "\n")
+
+        REPORTS_DIR.mkdir(exist_ok=True)
+        label = task_id or "trajectories"
+        mirror = REPORTS_DIR / f"{label}_{run_id[:8]}.json"
+        report.write(mirror)
+        log(f"report written to {mirror}")
+
+        log(f"overall: {'PASS' if report.passed else 'FAIL'}")
+        store.update_status(
+            run_id,
+            state="passed" if report.passed else "failed",
+            passed=report.passed,
+            finished_at=store.now_iso(),
+        )
+    except RunCancelled:
+        _finish_cancelled(run_id, log)
+    except Exception as exc:
+        store.append_log(run_id, f"ERROR: {exc}")
+        store.append_log(run_id, traceback.format_exc())
+        store.update_status(
+            run_id,
+            state="error",
+            passed=False,
+            error=str(exc),
+            finished_at=store.now_iso(),
+        )
+    finally:
+        with _controls_lock:
+            _controls.pop(run_id, None)
