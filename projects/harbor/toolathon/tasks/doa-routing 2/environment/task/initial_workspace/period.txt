@@ -1,0 +1,7 @@
+Routing cycle
+=============
+Period      : 2026 Cycle 1
+Period start: 2026-01-01
+Period end  : 2026-03-31
+
+Both dates are within the period. See section 7.1 of the Finance Manual.
