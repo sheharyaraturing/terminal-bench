@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""task.toml: valid TOML, no docker_image (it skips the Dockerfile), secrets as ${VAR} templates."""
+"""task.toml: valid TOML, docker_image only when it would not skip fixtures, secrets as ${VAR} templates."""
 from __future__ import annotations
 
 import re
@@ -20,16 +20,28 @@ def main() -> int:
     if image is not None:
         # Setting docker_image makes Harbor's should_use_prebuilt_docker_image()
         # return True, which pulls the image and SILENTLY SKIPS
-        # environment/Dockerfile - so no fixtures are applied and claims about
-        # them become unattainable. The base image is named in the Dockerfile's
-        # FROM line instead (see tasks/TEMPLATE/task.toml).
-        err(f"{task}/task.toml: [environment].docker_image is set to {image!r}. "
-            "Harbor pulls a prebuilt image the moment this key exists and silently "
-            "skips environment/Dockerfile, so fixtures never apply. Remove the key "
-            "and name the base image in the Dockerfile FROM line.")
-        if isinstance(image, str) and image.endswith(":latest"):
-            notes.append("docker_image is also pinned to :latest - an immutable tag "
-                         "would be required if the key were allowed at all.")
+        # environment/Dockerfile. That only *loses work* when the Dockerfile
+        # applies fixtures: if environment/fixtures/ carries files that the
+        # Dockerfile copies into /data, skipping it makes claims about them
+        # unattainable. A task with no fixtures folder has nothing to lose, so
+        # naming a prebuilt image is fine there.
+        fixtures_dir = task / "environment" / "fixtures"
+        has_fixtures = fixtures_dir.is_dir() and any(
+            p.is_file() and not p.name.startswith(".")
+            for p in fixtures_dir.rglob("*")
+        )
+        if has_fixtures:
+            err(f"{task}/task.toml: [environment].docker_image is set to {image!r} while "
+                "environment/fixtures/ carries fixture files. Harbor pulls the prebuilt "
+                "image the moment this key exists and silently skips environment/Dockerfile, "
+                "so those fixtures never apply. Remove the key and name the base image in the "
+                "Dockerfile FROM line.")
+            if isinstance(image, str) and image.endswith(":latest"):
+                notes.append("docker_image is also pinned to :latest - an immutable tag "
+                             "would be required if the key were allowed at all.")
+        elif isinstance(image, str) and image.endswith(":latest"):
+            notes.append("docker_image is pinned to :latest - use an immutable tag so the "
+                         "environment stays reproducible.")
 
     # Secrets must arrive as ${VAR} templates that Harbor resolves from the
     # runner's process env. A literal value here is a credential committed to git.

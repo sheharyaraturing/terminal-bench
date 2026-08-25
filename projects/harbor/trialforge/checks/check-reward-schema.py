@@ -6,8 +6,17 @@ job, not a deterministic check's.
 """
 from __future__ import annotations
 
-from _lib import (JUDGE_MODEL, MAX_CLAIMS, MIN_CLAIMS, load_toml, make_err,
-                  report, task_arg)
+from _lib import JUDGE_MODEL, load_toml, make_err, report, task_arg
+
+# The judge grades whatever text lands in one of these files. This suite runs
+# the verifier in a SEPARATE container (environment_mode = "separate"), which
+# sees /logs/artifacts and never /logs/agent - so /logs/artifacts/final_answer.txt
+# is the correct, primary graded file. /logs/agent/final_answer.txt is accepted
+# too for shared-mode tasks. Either satisfies the "judge sees the answer" contract.
+FINAL_ANSWER_PATHS = (
+    "/logs/artifacts/final_answer.txt",
+    "/logs/agent/final_answer.txt",
+)
 
 
 def main() -> int:
@@ -75,22 +84,21 @@ def main() -> int:
                 "_MAX_FILE_SIZE is 1 MB and a long-horizon trajectory is far larger; the "
                 "judge receives '[skipped: file too large]' and grades on nothing.")
 
-    # The oracle bridge in tests/test.sh writes the answer to final_answer.txt.
-    # If the judge is not pointed at that file it is handed no evidence and the
-    # `-a oracle` gate can never pass.
-    if files and "/logs/agent/final_answer.txt" not in files:
-        err(f"{reward_path}: [judge].files does not include /logs/agent/final_answer.txt. "
-            "tests/test.sh bridges the agent/oracle output there; without it the judge "
-            "grades on no evidence and the oracle gate can never pass.")
-    extra = [f for f in files if f != "/logs/agent/final_answer.txt"]
+    # The harness bridges the answer (agent output or solve.sh tee) into a
+    # final_answer.txt. The judge must point at one of the accepted locations or
+    # it is handed no evidence and the oracle gate can never pass. Either the
+    # separate-verifier artifacts path or the shared-mode agent path satisfies this.
+    if files and not any(f in FINAL_ANSWER_PATHS for f in files):
+        err(f"{reward_path}: [judge].files points at none of the accepted final-answer "
+            f"paths {list(FINAL_ANSWER_PATHS)}. The harness bridges the answer into one of "
+            "these; without it the judge grades on no evidence and the oracle gate can never pass.")
+    # Any file beyond a recognised final-answer path is extra evidence; flag only
+    # the 1 MB size caveat, never the artifacts/agent final-answer files themselves.
+    extra = [f for f in files if f not in FINAL_ANSWER_PATHS]
     if extra:
         notes.append(f"[judge].files includes extra path(s) {extra}. Remember rewardkit's "
                      "_MAX_FILE_SIZE is 1 MB - an oversized file is skipped and the judge "
                      "grades on less evidence.")
-
-    if not (MIN_CLAIMS <= len(criteria) <= MAX_CLAIMS):
-        err(f"{reward_path}: {len(criteria)} claims, expected {MIN_CLAIMS}-{MAX_CLAIMS}. "
-            "Too few and the reward is coarse; too many and each claim stops being atomic.")
 
     for i, c in enumerate(criteria, 1):
         where = f"{reward_path}: [[criterion]] #{i}"

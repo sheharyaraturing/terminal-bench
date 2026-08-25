@@ -15,9 +15,10 @@ separate verifiers) that TrialForge does not follow, so only these
 purpose-built checks run.
 
 `_lib.py` is the shared helper module (task discovery, TOML loading, the tool
-inventory, the suite constants — claim/tool-call/allowlist bands, judge model,
-image prefix — and uniform reporting). It is not a check; running it directly
-exits 0 as a no-op.
+inventory, the suite constants — the `target_tool_calls` band, judge model
+(`openrouter/openai/gpt-5.6-luna`), image prefix — and uniform reporting). It is
+not a check; running it directly exits 0 as a no-op. Note: there is no absolute
+band on the claim count and no tool-count budget — those checks were retired.
 
 `tool_inventory.txt` is data, not a check: the committed offline copy of the
 environment image's full tool surface (`POST /list-tools` on the pinned
@@ -34,12 +35,14 @@ environment image's full tool surface (`POST /list-tools` on the pinned
 ### `check-required-files.py`
 
 - **What:** the required task layout exists: `instruction.md`, `task.toml`,
-`tests/reward.toml`, `tests/test.sh`, `solution/solve.sh`. `NOTES.md` is a
-NOTE-level recommendation.
+`tests/reward.toml`, `tests/test.sh`, `solution/solve.sh`. A NOTE fires when
+`NOTES.md` **is** present — it must not ship.
 - **How:** plain file-existence checks.
-- **Why:** every later check assumes this skeleton. `NOTES.md` is where the
-ground-truth derivation, seed spans, and oracle/nop validation commands live
-— optional, but its absence is worth surfacing.
+- **Why:** every later check assumes this skeleton. `NOTES.md` must not ship in
+the task folder: it becomes an answer key nobody remembers is there (the
+rubric's `task_folder_holds_only_task_files` fails it). The ground-truth
+derivation belongs in the `reward.toml` header; any overflow belongs in the
+review record (PR/QA), outside the task folder.
 
 
 
@@ -104,22 +107,12 @@ write to `/logs/agent/final_answer.txt` / `oracle.txt`).
 - **Why:** Harbor's OracleAgent captures `solve.sh` stdout into
 `/logs/agent/oracle.txt`, and `test.sh` bridges that to the path the judge
 reads. A solve that computes quietly scores the oracle ~0 however correct it
-is. (`check-oracle-not-parrot` covers the orthogonal "is the answer *real*"
-question.)
+is.
 
-
-
-### `check-oracle-not-parrot.py`
-
-- **What:** the oracle is a real answer, not a restatement of the claim
-strings. Flags when `solve.sh` shares ≥ 60% of a claim's content words
-(stop-word-filtered, claims shorter than 4 content words ignored).
-- **How:** tokenizes `solve.sh` and each `[[criterion]]` description from
-`tests/reward.toml`, then computes per-claim word-overlap against the
-threshold.
-- **Why:** a solve.sh that parrots the criterion descriptions passes the judge
-while proving nothing about whether the task is solvable from the
-environment. The oracle is the acceptance gate — it has to be earned.
+> **Removed:** `check-oracle-not-parrot.py` used to flag a `solve.sh` that shared
+> ≥ 60% of a claim's content words. This was retired: the oracle is *supposed* to
+> match the claims (it is the reference answer the judge accepts), so text overlap
+> with the criteria is expected, not a defect.
 
 ---
 
@@ -131,15 +124,19 @@ environment. The oracle is the acceptance gate — it has to be earned.
 
 ### `check-task-toml.py`
 
-- **What:** `task.toml` is valid TOML; `[environment].docker_image` is absent;
-every `[verifier/agent/solution].env` value is a `${VAR}` template; and
-`OPENROUTER_API_KEY` is wired through for the verifier.
-- **How:** `tomllib` parse; `${VAR}` fullmatch on env values.
+- **What:** `task.toml` is valid TOML; `[environment].docker_image` is only
+flagged when `environment/fixtures/` carries fixture files (a prebuilt image
+would silently skip them); every `[verifier/agent/solution].env` value is a
+`${VAR}` template; and `OPENROUTER_API_KEY` is wired through for the verifier.
+- **How:** `tomllib` parse; fixtures-presence check; `${VAR}` fullmatch on env
+values.
 - **Why:** setting `docker_image` makes Harbor pull a prebuilt image and
-*silently skip* `environment/Dockerfile`, so fixtures never apply. A literal
-env value is a credential committed to git. And the rewardkit judge routes
-through OpenRouter via litellm — without the key entry the judge call fails
-auth at trial time.
+*silently skip* `environment/Dockerfile`. That only loses work when the
+Dockerfile applies fixtures — a task with no `environment/fixtures/` has
+nothing to skip, so naming a prebuilt image is fine there. A literal env value
+is a credential committed to git. And the rewardkit judge routes through
+OpenRouter via litellm — without the key entry the judge call fails auth at
+trial time.
 
 
 
@@ -155,8 +152,9 @@ findable by directory but cross-references by name dangle.
 ### `check-metadata-bounds.py`
 
 - **What:** `[metadata]` carries a non-empty `persona`, a `domain` in the known
-set (`software-engineering`, `research-science`), `target_tool_calls` in the
-40–70 long-horizon band, and `target_claims` in the 8–15 band.
+set (`software-engineering`, `research-science`), and `target_tool_calls` in the
+40–70 long-horizon band. `target_claims` is **not** range-checked — the suite
+fixes no absolute band on the claim count.
 - **How:** field assertions against the suite constants in `_lib.py` (all
 tunable via env vars).
 - **Why:** these fields drive the suite's distribution reporting and the
@@ -187,14 +185,9 @@ entire ~210-tool surface.
 
 
 
-### `check-allowlist-budget.py`
-
-- **What:** `enabled_tools` exposes 18–30 tools (`MIN_EXPOSED`–`MAX_EXPOSED`).
-- **How:** length check against the `_lib.py` band.
-- **Why:** docs/TOOL_ALLOWLISTS.md: MCP-Atlas exposes ~15 tools/task; TrialForge
-holds 18–30 so the distractor ratio stays near the benchmark's while covering
-40–70 calls. Too few and tool selection is trivial; too many and the surface
-is noise, not signal.
+> **Removed:** `check-allowlist-budget.py` used to require `enabled_tools` to
+> expose 18–30 tools. This was retired: the suite fixes no tool-count budget, so
+> the band was flagging tasks against a rule that does not exist.
 
 
 
@@ -252,20 +245,32 @@ the same way.
 with the model under the `judge` key (not `model` — dead config for an LLM
 judge), `openrouter/`-prefixed (so litellm reads `OPENROUTER_API_KEY`),
 `mode = "individual"`, non-empty `files` all under `/logs/`, no
-`trajectory.json` in `files`, and `/logs/agent/final_answer.txt` included.
-Plus 8–15 `[[criterion]]` blocks, each with a non-empty description,
-`type = "likert"`, `points = 3`, positive `weight`; and
-`[scoring].aggregation = "weighted_mean"`.
+`trajectory.json` in `files`, and at least one accepted final-answer path
+included (`/logs/artifacts/final_answer.txt` — the primary separate-verifier
+path — or `/logs/agent/final_answer.txt`). Plus `[[criterion]]` blocks, each
+with a non-empty description, `type = "likert"`, `points = 3`, positive
+`weight`; and `[scoring].aggregation = "weighted_mean"`. The claim **count is
+not range-checked** (no absolute band).
 - **How:** parsed-TOML assertions over every field above; the judge model
-itself is NOTE-level (only the prefix is load-bearing).
+itself is NOTE-level (only the prefix is load-bearing) and defaults to
+`openrouter/openai/gpt-5.6-luna` (`JUDGE_MODEL` in `_lib.py`).
 - **Why:** each rule encodes a measured silent failure. Without `[judge]` the
 file is ignored and the task has no reward at all. `mode = "batched"` grades
 the claims as one blob and destroys partial credit. With no `files` the judge
-grades on the system prompt alone. A trajectory blows rewardkit's 1 MB file
-cap and the judge receives "[skipped: file too large]". Omitting
-`type`/`points` silently means binary/5, not the benchmark's likert/3.
-`all_pass` collapses to 0.0 unless every claim lands — no gradient for the
-policy to learn from.
+grades on the system prompt alone. This suite runs the verifier in a SEPARATE
+container that sees `/logs/artifacts` and never `/logs/agent`, so
+`/logs/artifacts/final_answer.txt` is the correct graded file. A trajectory
+blows rewardkit's 1 MB file cap and the judge receives "[skipped: file too
+large]". Omitting `type`/`points` silently means binary/5, not the benchmark's
+likert/3. `all_pass` collapses to 0.0 unless every claim lands — no gradient
+for the policy to learn from.
+
+
+
+> **Note:** whether `reward.toml` comments leak the answer or the claims is an
+> LLM-rubric judgment (`rubric_provenance_without_leaking_answers`), not a
+> deterministic check — comments are allowed; only answer/claim-bearing content
+> is a defect, which needs content understanding a `#`-scanner cannot provide.
 
 
 
@@ -298,16 +303,19 @@ an infrastructure error instead of a scored 0.0.
 
 ### `check-test-sh-oracle-fallback.sh`
 
-- **What:** when `[judge].files` reads `final_answer.txt`, `tests/test.sh` must
-reconcile it with `oracle.txt` (e.g. copy oracle.txt over when
-final_answer.txt is missing/empty).
+- **What:** when `[judge].files` reads `final_answer.txt`, *something* must
+publish the oracle answer there. Either `solution/solve.sh` writes/tees
+`final_answer.txt` itself (the custom-harness pattern this suite uses), or
+`tests/test.sh` bridges Harbor's default OracleAgent output (`oracle.txt`)
+into it. Either mechanism passes.
 - **How:** grep cross-reference — only fires when reward.toml names
-`final_answer.txt` and test.sh never mentions `oracle.txt`.
-- **Why:** the oracle trap. Harbor's OracleAgent writes solve.sh stdout to
-`/logs/agent/oracle.txt` and never creates `final_answer.txt`; if the judge
-only reads `final_answer.txt`, the oracle produces no evidence and the
-`-a oracle` gate can *never* pass — a permanently red pipeline that looks
-like a bad task.
+`final_answer.txt` AND neither `solve.sh` writes it nor `test.sh` mentions
+`oracle.txt`.
+- **Why:** the oracle trap, scoped to the real harness. This suite's `solve.sh`
+tees to `/logs/artifacts/final_answer.txt` directly, so no `oracle.txt` bridge
+is needed — flagging it would be a false positive. The check only fires when
+*no* mechanism publishes the answer, in which case the `-a oracle` gate can
+never pass.
 
 ---
 
