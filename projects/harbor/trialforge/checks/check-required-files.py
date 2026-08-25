@@ -23,11 +23,14 @@ def main() -> int:
         if not (task / rel).is_file():
             err(f"{task / rel}: missing (required by the Harbor task layout)")
 
-    # NOTES.md is optional but recommended: it is where the ground-truth
-    # derivation, seed spans, and validation commands live (see TASK_FORMAT.md).
-    if not (task / "NOTES.md").is_file():
-        notes.append("no NOTES.md - optional, but it is the canonical place to record "
-                     "the ground-truth derivation and the oracle/nop validation commands.")
+    # NOTES.md must NOT ship in the task folder. It becomes an answer key nobody
+    # remembers is there (see the rubric's task_folder_holds_only_task_files).
+    # The ground-truth derivation belongs in the reward.toml header; any overflow
+    # belongs in the review record (PR / QA report), outside the task folder.
+    if (task / "NOTES.md").is_file():
+        notes.append("NOTES.md is present at the task root - it must not ship. Move the "
+                     "ground-truth derivation into the reward.toml header and any overflow "
+                     "into the review record (PR/QA), then delete NOTES.md.")
 
     return report("check-required-files", task, errors, notes)
 

@@ -237,7 +237,7 @@ PASS if every claim traces to something the prompt asks for, at the precision th
 
 [[criteria]]
 name = "metadata_matches_the_task"
-description = "task.toml [task] and [metadata] describe this task accurately — name, description, persona, domain, annotator"
+description = "task.toml [task] and [metadata] describe this task accurately — name, description, persona, domain (and no stray annotator)"
 guidance = """
 The metadata drives suite-level distribution reporting, so a wrong field silently misreports the whole benchmark's composition.
 
@@ -248,10 +248,12 @@ Check each:
 - **`[task].version`** and **`schema_version`** — present; schema is the Harbor schema the file conforms to (`1.4` for this suite).
 - **`[metadata].persona`** — the same person whose voice `instruction.md` is written in, AND a person who would plausibly make this request. Two tests, both required: the voice test (does the prompt read as this role talking) and the alignment test (is this task type within this role's responsibilities, and is the deliverable shaped by their job). "Small-Business Finance Analyst" against a prompt about closing the books passes both. A research-engineer persona asked to reconcile an accounts payable ledger fails the second even if the voice is right — and a persona nobody in the prompt resembles is a copy-paste from a sibling task. Adjacent work is fine (an analyst reading a handover note, a research engineer checking a row count); a task squarely in someone else's job is not.
 - **`[metadata].domain`** — exactly one of `software-engineering` or `research-science`, and it must match the work the task actually requires, not the incidental tooling. A reconciliation that happens to use Python is still software-engineering; a statistics task that happens to read a CSV is still research-science. The domain should also be coherent with the tool surface: a research-science task with no code execution or literature surface, or a software-engineering task whose only tools are paper search, is mislabelled somewhere.
-- **`[metadata].annotator`** — present and a real name. The template leaves it out; a task that never added it has an unowned rubric.
+- **`[metadata].annotator`** — this field must NOT be shipped in the task. It carries an identifying name that does not belong in a benchmark task, so its ABSENCE is correct and expected. Do not fault a task for omitting it. Flag it only when it IS present (an annotator string that survived into task.toml), and treat that presence — not its absence — as the defect.
 - **No placeholder survivors** — `CHANGE-ME` anywhere in `task.toml`, `instruction.md`, `solve.sh` or `reward.toml` is an automatic fail.
 
-PASS if every field describes this task and nothing is a leftover placeholder. FAIL on a wrong domain, a persona that does not match the prompt's voice, a name/description that belongs to another task, a missing annotator, or any `CHANGE-ME`."""
+Do NOT judge the claim count here (neither an absolute band nor target_claims vs the criterion count). Claim-count concerns belong to `target_claims_matches_criterion_count`; this criterion is only about whether the descriptive metadata matches the task.
+
+PASS if every descriptive field matches this task, `annotator` is absent, and nothing is a leftover placeholder. FAIL on a wrong domain, a persona that does not match the prompt's voice, a name/description that belongs to another task, an `annotator` field that is present, or any `CHANGE-ME`."""
 
 [[criteria]]
 name = "target_claims_matches_criterion_count"
@@ -263,9 +265,9 @@ Count the `[[criterion]]` blocks yourself. Do not trust a header comment that st
 
 When they disagree, say which is right and what else the drift implies: if claims were added, does the oracle still satisfy all of them and does the prompt still cue them; if removed, is `solve.sh` now asserting things nothing grades.
 
-Also check the count is in the intended band (8-15 per TASK_FORMAT.md). Far below suggests the deliverable is under-graded; far above usually means claims are not atomic or the rubric is grading trivia.
+Do NOT enforce any absolute band on the claim count. The suite fixes no minimum or maximum number of claims, so a count of 8, 15, 18 or more is not itself a defect — judge only the equality between `target_claims` and the actual `[[criterion]]` count. A stale header comment that states a different number is worth a note but is not the criterion.
 
-PASS if `target_claims` equals the actual `[[criterion]]` count and the count is in the 8-15 band. FAIL on any mismatch, or a count so far outside the band that the rubric's shape is wrong."""
+PASS if `target_claims` equals the actual `[[criterion]]` count. FAIL only when the two disagree."""
 
 [[criteria]]
 name = "task_is_long_horizon"
@@ -923,11 +925,11 @@ guidance = """
 Every item here is a silent failure mode: the file parses, the run completes, and the score is wrong or zero.
 
 - **`[judge].judge`, NOT `[judge].model`.** rewardkit's `_build_judge_from_toml` reads `judge_config.get("judge", <default>)`. A `model =` key is SILENTLY IGNORED and the judge falls back to a default model this project holds no credential for. Verified against rewardkit source and recorded in the TEMPLATE.
-- **The judge string is routed through the provider whose key is forwarded.** `openrouter/<vendor>/<model>` requires `OPENROUTER_API_KEY`, which must appear in `[verifier.env]` in `task.toml` AND be exported in `test.sh`. A judge string naming a provider whose key is not forwarded produces a 401, rewardkit raises, and — without a fallback — Harbor reports `RewardFileNotFoundError`, an error that says nothing about credentials.
+- **The judge string is routed through the provider whose key is forwarded.** `openrouter/<vendor>/<model>` requires `OPENROUTER_API_KEY`, which must appear in `[verifier.env]` in `task.toml` AND be exported in `test.sh`. A judge string naming a provider whose key is not forwarded produces a 401, rewardkit raises, and — without a fallback — Harbor reports `RewardFileNotFoundError`, an error that says nothing about credentials. The `<vendor>/<model>` itself must exist on OpenRouter; verify it against `extra_references/openrouter-models.json` (the live catalogue snapshot) rather than from memory — e.g. `openrouter/openai/gpt-5.6-luna` is present there and is valid.
 - **`mode = "individual"`.** Each claim is judged on its own. Batch judging changes the scores.
 - **`[scoring].aggregation = "weighted_mean"`.** NOT `all_pass`: an all-or-nothing reward is near-zero for every early rollout on a long-horizon task, which leaves RL no gradient. This is a deliberate design decision for the suite, not a preference.
 - **`type = "likert"` with `points = 3`** on every criterion. NOT `binary` — binary collapses the middle outcome and throws away the partial-credit signal the whole scoring shape exists to preserve.
-- **`files` is present and points at `/logs/agent/final_answer.txt`.** Without `files` the judge sees no evidence and scores everything 0, which looks exactly like a failing task. Any other path must be one `test.sh` guarantees exists.
+- **`files` is present and points at the graded final-answer file.** The accepted locations are `/logs/artifacts/final_answer.txt` (the primary path for this suite, whose verifier runs in a SEPARATE container that sees `/logs/artifacts` and never `/logs/agent`) or `/logs/agent/final_answer.txt` (shared-mode). Either is correct — do NOT fault a task for using the `/logs/artifacts` path. Without `files` the judge sees no evidence and scores everything 0, which looks exactly like a failing task. Any other path must be one `test.sh` guarantees exists.
 - **`timeout` and `reasoning_effort` are set** to sane values (300 / `medium` in both reference tasks). A judge timeout shorter than a many-claim individual run will truncate scoring.
 - **`atif_trajectory` is NOT in use.** Trajectory grading is out of scope for now (see the preamble); a task pointing the judge at a trajectory is grading something this pipeline does not yet review, and it under-trains answer completeness.
 
@@ -941,34 +943,35 @@ The judge is part of the verifier. A rubric whose score changes with the model g
 
 Check:
 
-- **The model is pinned and current.** A judge string naming a model that has been deprecated, renamed, or is unavailable on the routed provider produces a hard failure at verify time. The judge is named in `reward.toml` and the credential is forwarded from `task.toml`; both must point at something that exists today.
+- **The model is pinned and current.** A judge string naming a model that has been deprecated, renamed, or is unavailable on the routed provider produces a hard failure at verify time. The judge is named in `reward.toml` and the credential is forwarded from `task.toml`; both must point at something that exists today. To decide availability, DO NOT rely on your training-cutoff knowledge of which models exist — consult `extra_references/openrouter-models.json`, the authoritative live snapshot of the OpenRouter catalogue. A judge id `openrouter/<vendor>/<model>` is available iff `<vendor>/<model>` appears in that file's `models` list. For example `openrouter/openai/gpt-5.6-luna` is present there and is a valid, current judge — do not fail it as "unrecognised" merely because it postdates your training data. Only fail this bullet when the model id is genuinely absent from `openrouter-models.json`.
 - **The verdict does not hinge on the judge.** The claims should be objective enough that a different competent judge returns the same score. Look for claims whose resolution depends on judge disposition rather than content: qualitative readings with no stated threshold, "adequately explains", anything where a strict and a lenient reader would legitimately differ by a full likert step. Those are the claims to tighten — see `claims_are_decidable_by_reading`.
 - **Consistency across the suite is deliberate.** Tasks in this suite use different judges (`openrouter/openai/…` on one, `openrouter/anthropic/…` on another). Either is defensible, but the choice should be a choice: if this task's judge differs from its siblings', there should be a reason, and the rubric should have been sanity-checked under the judge it names. Different judges across tasks with no rationale means the suite's scores are not comparable across tasks.
 - **`reasoning_effort` fits the work.** `medium` is the suite default. A rubric with claims requiring careful reading of a long answer, or fine numeric discrimination, may need more; a change from the default should be intentional either way.
 - **The middle outcome is reachable.** `points = 3` gives the judge a "partially fulfilled" verdict. Claims should be written so that 0.5 means something specific — usually "the value without the mechanism" or "one of two required parts". A claim where partial is meaningless collapses to binary in practice, which feeds `reward_is_graded_in_practice`.
 
-PASS if the judge is pinned and available, the claims are objective enough to survive a change of judge, and the judge choice and effort are deliberate. FAIL on an unresolvable or unstated model, claims whose verdict turns on judge disposition, or an unexplained divergence from the suite's judge."""
+PASS if the judge is pinned and present in `extra_references/openrouter-models.json`, the claims are objective enough to survive a change of judge, and the judge choice and effort are deliberate. FAIL on a model id genuinely absent from that catalogue snapshot, claims whose verdict turns on judge disposition, or an unexplained divergence from the suite's judge. Do NOT fail solely because a model id is unfamiliar to you — verify against the snapshot first."""
 
 [[criteria]]
 name = "rubric_provenance_without_leaking_answers"
-description = "The ground truth is reproducible from documented method — and no comment anywhere states the answer"
+description = "No task file leaks the answer or the claims, and every claim grades only the final answer"
 guidance = """
-Two requirements that pull against each other, and both are mandatory.
+A comment never reaches the judge — it grades `final_answer.txt` against each claim `description`. Comments are ALLOWED and can be useful (explaining a config choice, a non-obvious field). The rule is not "no comments"; it is that no comment — and no other task file — may state the answer or the claims. Judge the CONTENT of a comment, not its mere presence.
 
-**1. The derivation must be reproducible.** A rubric of exact numbers is unreviewable unless a reader can re-derive them. Record the METHOD: which seed database and table, which source file, the metric definition, the library versions the digits depend on, how a tolerance was measured (how many seeds, what span), and what was considered and deliberately not claimed. "Derived from `pet_care_2023_weekly_financials` in `trialforge/seed/turing.db`, weekly net margin as `100 * weekly_profits / total_weekly_revenue_week`, scipy 1.16.0, tolerance from the seed-to-seed span over 120 seeds" is a method a stranger can re-run. "Computed from the data" is not.
+**Comments must not state the answer or the claims.** FAIL on:
+- a worked answer in the `reward.toml` header or inline — the final figures, an expected-value table, the ground truth restated, a defect list with amounts, the oracle's conclusion;
+- comments that enumerate or narrate the claims — a header listing what each claim expects, or walking the intended answer claim by claim;
+- a derivation that spells out the RESULTING values — the method (source, metric definition, versions, how a tolerance was measured) is not itself a leak, but the numbers it produces are.
+A comment that explains a config choice ("judge each claim on its own") or otherwise carries no answer/claim content is fine.
 
-**2. No document may state the answer.** A comment is not part of grading — the judge is handed `final_answer.txt` and the claim `description`, and TOML comments never reach it. So an answer-bearing comment has exactly one effect: it is an answer key sitting inside the task, readable by anything that can read the file. FAIL on:
+**No answer-bearing content in any other task file either.** Setup SQL comments naming the injected defects and their amounts, a Dockerfile comment stating the expected result, a fixture header explaining what to conclude, an `instruction.md` HTML comment — all are answer keys (setup scripts are the worst case; they must also be removed from the image, see `environment_does_not_leak_the_answer`). And no benchmark vocabulary (claim, rubric, criterion, oracle, grader, reward, verifier) in anything the agent can see: those words tell the model it is being graded.
 
-- **A worked answer in the `reward.toml` header** — the final figures, a table of expected values, the ground truth restated, the defect list with amounts, the oracle's conclusion. The claims themselves necessarily carry their expected values; the header must not duplicate, extend, or explain them into a solution.
-- **Comments that enumerate the claims** — a header that lists what each claim expects, or narrates the intended answer claim by claim. The claims are the specification; a comment restating them adds no review value and doubles the leak surface.
-- **Answer-bearing comments in any other task file** — setup SQL whose comments state the injected defects and their dollar amounts, a Dockerfile comment naming the expected result, a fixture header explaining what the agent is supposed to conclude, an `instruction.md` HTML comment carrying notes. Setup scripts are the worst case: they must be removed from the image (see `environment_does_not_leak_the_answer`), and their comments should not be an answer key even so.
-- **Benchmark vocabulary in anything the agent can see** — claim, rubric, criterion, oracle, grader, reward, verifier. Seeing those words tells the model it is being graded and changes how it answers.
+**Provenance belongs in the review record.** The derivation write-up belongs in the PR/QA record OUTSIDE the task folder — not in a `NOTES.md` (which must not ship; see `task_folder_holds_only_task_files`). Do NOT read or credit a NOTES.md when judging this criterion.
 
-**How to satisfy both.** Provenance says HOW, not WHAT: the source, the method, the versions, the measurement procedure. The `reward.toml` header is the only place it lives, and there is no notes file to hold the overflow — a notes file in the task folder is itself a defect (`task_folder_holds_only_task_files`), precisely because it becomes the answer key nobody remembers is there. Where a derivation genuinely needs its values written out to be reviewable, they belong in the review record — the PR, the QA report — outside the task folder entirely.
+**Every claim grades ONLY the final answer.** Each `[[criterion]].description` must be decidable from `final_answer.txt` alone. The rubric grades the answer and nothing else: a claim that grades task setup, the environment, a fixture, the config, or anything the final answer does not itself contain is out of scope and is a defect here.
 
-The judging rule this protects: **a claim is satisfied only by what `final_answer.txt` says.** Nothing in a comment can help an agent legitimately, so anything in a comment that could help it is a defect.
+The judging rule this protects: **a claim is satisfied only by what `final_answer.txt` says.** A comment that could help an agent produce the answer is a defect; a comment that cannot is fine.
 
-PASS if the method is documented well enough to re-derive the numbers, and no comment in any task file states the answer, enumerates the claims, or uses benchmark vocabulary. FAIL if the derivation cannot be reproduced, or if any comment functions as an answer key — quote it and say which file ships it."""
+PASS if no comment or task file states the answer, enumerates or narrates the claims, or uses benchmark vocabulary, and every claim is decidable from `final_answer.txt` alone. FAIL if any comment or file functions as an answer key or claim narration, or if a claim grades anything other than the final answer — quote it and name the file."""
 
 # ---------------------------------------------------------------------------
 # BLOCK F — the wiring, and the task as a whole

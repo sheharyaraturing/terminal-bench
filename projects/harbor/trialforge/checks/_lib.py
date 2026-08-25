@@ -32,7 +32,7 @@ IMAGE_PREFIX = os.environ.get(
     "IMAGE_PREFIX",
     "us-central1-docker.pkg.dev/turing-delivery-rl-gym/daytona/turing-mcpatlas:",
 )
-JUDGE_MODEL = os.environ.get("JUDGE_MODEL", "openrouter/anthropic/claude-sonnet-5")
+JUDGE_MODEL = os.environ.get("JUDGE_MODEL", "openrouter/openai/gpt-5.6-luna")
 MIN_CLAIMS = int(os.environ.get("MIN_CLAIMS", "8"))
 MAX_CLAIMS = int(os.environ.get("MAX_CLAIMS", "15"))
 MIN_EXPOSED = int(os.environ.get("MIN_EXPOSED", "18"))

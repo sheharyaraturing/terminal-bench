@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
-"""[metadata] bounds: persona, domain, target_tool_calls, target_claims.
+"""[metadata] bounds: persona, domain, target_tool_calls.
 
 These drive the suite's distribution reporting and the quality bar in
-CONTRIBUTING.md. This check enforces the ABSOLUTE ranges only. The RELATIVE
-contract that target_claims must equal the [[criterion]] count is owned by
-check-claims-consistency - the two complement rather than duplicate each other.
+CONTRIBUTING.md. This check enforces the ABSOLUTE ranges only.
+
+target_claims is intentionally NOT range-checked: the suite fixes no min/max on
+the claim count. Its only contract is target_claims == the [[criterion]] count,
+which check-claims-consistency owns - the two complement rather than duplicate
+each other.
 """
 from __future__ import annotations
 
-from _lib import (DOMAINS, MAX_CLAIMS, MAX_TOOL_CALLS, MIN_CLAIMS,
-                  MIN_TOOL_CALLS, load_toml, make_err, report, task_arg)
+from _lib import (DOMAINS, MAX_TOOL_CALLS, MIN_TOOL_CALLS, load_toml,
+                  make_err, report, task_arg)
 
 
 def main() -> int:
@@ -35,11 +38,10 @@ def main() -> int:
         err(f"{task}/task.toml: [metadata].target_tool_calls = {calls!r}, expected "
             f"{MIN_TOOL_CALLS}-{MAX_TOOL_CALLS} (the long-horizon band).")
 
-    target_claims = meta.get("target_claims")
-    if isinstance(target_claims, (int, float)):
-        if not (MIN_CLAIMS <= target_claims <= MAX_CLAIMS):
-            err(f"{task}/task.toml: [metadata].target_claims = {target_claims!r}, expected "
-                f"{MIN_CLAIMS}-{MAX_CLAIMS}.")
+    # target_claims has no absolute band: the suite fixes no min/max on the
+    # number of atomic claims. Its only contract is target_claims == the
+    # [[criterion]] count, which check-claims-consistency owns. We deliberately
+    # do not range-check the value here.
 
     return report("check-metadata-bounds", task, errors, [])
 

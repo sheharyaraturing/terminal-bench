@@ -11,8 +11,8 @@ This check is intentionally shallow - it does not run the script. It requires:
   2. at least one output-producing construct (cat / tee / echo / printf / heredoc),
      so something reaches stdout or /logs/agent/.
 
-check-oracle-not-parrot covers the orthogonal "is the answer a real answer"
-question; this covers "does an answer reach the judge at all".
+This covers "does an answer reach the judge at all" - whether that answer is a
+real analyst's answer is left to the rubric review, not a deterministic check.
 """
 from __future__ import annotations
 
@@ -35,7 +35,7 @@ def main() -> int:
     solve = task / "solution" / "solve.sh"
     text = read_text(solve)
     if not text.strip():
-        # check-required-files / check-oracle-not-parrot report the empty file.
+        # check-required-files reports the empty file.
         return report("check-solve-output", task, errors,
                       ["solve.sh empty; see check-required-files"])
 

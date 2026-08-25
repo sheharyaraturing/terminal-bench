@@ -43,6 +43,10 @@ class RubricResult:
 MAX_EXTRA_REFERENCE_BYTES = 200_000
 MAX_TASK_SNAPSHOT_CHARS = 200_000
 
+# Outer cap on a single `harbor check` invocation (container build + agent setup
+# + evaluator run). 50 min leaves room for slow in-container installs.
+HARBOR_CHECK_TIMEOUT_SEC = 3000
+
 
 def _strip_nulls(text: str) -> str:
     """NUL is valid UTF-8, so errors='replace' leaves it in place — but it is
@@ -291,6 +295,15 @@ def _run_harbor_check(
             harbor_jobs = Path(tmp) / "jobs"
             harbor_jobs.mkdir(parents=True, exist_ok=True)
 
+        # Installing the claude-code agent inside a slim container (apt-get
+        # nodejs/npm + downloading claude-code) can exceed Harbor's default
+        # 360s agent-setup timeout on slow networks, so raise it.
+        setup_multiplier = os.environ.get("HARBOR_AGENT_SETUP_TIMEOUT_MULTIPLIER", "3.0")
+        config_path = Path(tmp) / "harbor-check-config.yaml"
+        config_path.write_text(
+            f"agent_setup_timeout_multiplier: {setup_multiplier}\n"
+        )
+
         cmd = [
             "harbor",
             "check",
@@ -299,8 +312,20 @@ def _run_harbor_check(
             str(rubric_path),
             "-o",
             str(harbor_jobs),
+            "-c",
+            str(config_path),
+            "--model",
+            os.environ.get("HARBOR_CHECK_MODEL", "claude-opus-5"),
             *cmd_extra,
         ]
+        # Select the Harbor environment backend (docker | modal | daytona | e2b |
+        # runloop | gke | apple-container). Unset = Harbor's default (docker), so
+        # existing local-docker runs are unchanged. Set HARBOR_ENV_BACKEND=daytona
+        # (etc.) to run the rubric evaluator in a remote backend instead of local
+        # Docker. Requires the matching harbor extra, e.g. harbor[daytona].
+        env_backend = os.environ.get("HARBOR_ENV_BACKEND", "").strip()
+        if env_backend:
+            cmd += ["--env", env_backend]
         # The evaluator agent runs inside the container and has no credentials
         # of its own; without this it fails with "Not logged in".
         api_key = os.environ.get("ANTHROPIC_API_KEY")
@@ -333,11 +358,16 @@ def _run_streamed(
     """
     if control is None:
         proc = subprocess.run(
-            cmd, cwd=REPO_ROOT, capture_output=True, text=True, timeout=1800
+            cmd, cwd=REPO_ROOT, capture_output=True, text=True,
+            timeout=HARBOR_CHECK_TIMEOUT_SEC,
         )
         return (proc.stdout or "") + (proc.stderr or "")
 
-    control.emit(f"launching harbor check for {task_name} (this builds a container)")
+    env_backend = os.environ.get("HARBOR_ENV_BACKEND", "").strip() or "default (unset → harbor chooses)"
+    control.emit(
+        f"launching harbor check for {task_name} (this builds a container) "
+        f"[env: {env_backend}]"
+    )
     stop = threading.Event()
     watchers = [
         threading.Thread(
@@ -371,7 +401,7 @@ def _run_streamed(
                 text = text.split("\r")[-1].strip()
             if text:
                 control.emit(f"  harbor: {text[:200]}")
-        proc.wait(timeout=1800)
+        proc.wait(timeout=HARBOR_CHECK_TIMEOUT_SEC)
         control.raise_if_cancelled()
     finally:
         stop.set()
@@ -471,7 +501,7 @@ def _run_anthropic_check(
     client = anthropic.Anthropic(api_key=api_key)
     try:
         resp = client.messages.create(
-            model="claude-opus-4-8",
+            model="claude-opus-5",
             max_tokens=4096,
             system=system,
             messages=[{"role": "user", "content": user}],

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import tempfile
 from dataclasses import dataclass
@@ -45,7 +46,8 @@ def run_validation(
 
     if control:
         control.raise_if_cancelled()
-        control.emit("  running oracle agent (expects reward 1.0)")
+        env_backend = os.environ.get("HARBOR_ENV_BACKEND", "").strip() or "default (unset → harbor chooses)"
+        control.emit(f"  running oracle agent (expects reward 1.0) [env: {env_backend}]")
     oracle = _harbor_run(task_path, agent="oracle", jobs_dir=jobs_dir)
     if control:
         control.raise_if_cancelled()
@@ -98,7 +100,16 @@ def _harbor_run(
             str(out),
             "--job-name",
             agent,
+            "--agent-setup-timeout-multiplier",
+            os.environ.get("HARBOR_AGENT_SETUP_TIMEOUT_MULTIPLIER", "3.0"),
         ]
+        # Select the Harbor environment backend (docker | modal | daytona | e2b |
+        # runloop | gke | apple-container). Unset = Harbor's default (docker), so
+        # existing local-docker runs are unchanged. Set HARBOR_ENV_BACKEND=daytona
+        # (etc.) to run oracle/nop in a remote backend instead of local Docker.
+        env_backend = os.environ.get("HARBOR_ENV_BACKEND", "").strip()
+        if env_backend:
+            cmd += ["--env", env_backend]
         proc = subprocess.run(
             cmd,
             cwd=REPO_ROOT,
