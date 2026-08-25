@@ -17,8 +17,11 @@ import zipfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .progress import RunControl, tail_trial_logs, watch_containers
+from .progress import RunControl, get_harbor_env, tail_trial_logs, watch_containers
 from .registry import REPO_ROOT, Project
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # The instruction template the analysis agent runs. Shared across projects so a
 # rubric change is the only per-project knob.
@@ -27,6 +30,10 @@ DOCKERFILE_PATH = REPO_ROOT / "tools" / "trajectory-analysis" / "templates" / "D
 JOB_NAME = "trajectory-analysis"
 JOB_VERDICT_JOB_NAME = "trajectory-job-verdict"
 DEFAULT_IMAGE = os.environ.get("TRAJECTORY_ANALYSIS_IMAGE", "ubuntu:24.04")
+
+# Model used for per-trial trajectory analysis and the job-level verdict.
+# Override with TRAJECTORY_ANALYSIS_MODEL.
+TRAJECTORY_ANALYSIS_MODEL = os.environ.get("TRAJECTORY_ANALYSIS_MODEL", "claude-sonnet-4-6")
 
 # Placeholder in the job-level prompt where the per-trial results JSON goes.
 TRIAL_RESULTS_PLACEHOLDER = "{trial_results}"
@@ -103,11 +110,14 @@ def run_trajectory_analysis(
             skipped=True,
             skip_reason=f"analysis instruction template not found: {INSTRUCTION_PATH}",
         )
-    if not _harbor_available() or not _docker_available():
+    if not _harbor_available() or not _runtime_ready():
         return TrajectoryResult(
             passed=False,
             skipped=True,
-            skip_reason="harbor CLI or Docker not available",
+            skip_reason=(
+                f"harbor CLI or runtime not available "
+                f"(HARBOR_ENV={get_harbor_env()})"
+            ),
         )
 
     include_task = project.include_task_in_trajectory_analysis and task_path is not None
@@ -151,7 +161,8 @@ def run_trajectory_analysis(
             "-f", "/app/verdicts.json",
             "--image", image,
             "-a", "claude-code",
-            "-m", os.environ.get("TRAJECTORY_ANALYSIS_MODEL", "sonnet"),
+            "-m", TRAJECTORY_ANALYSIS_MODEL,
+            "-e", get_harbor_env(),
             "--job-name", JOB_NAME,
         ]
         if harbor_jobs is not None:
@@ -247,7 +258,8 @@ def _run_job_verdict(
             "-f", "/app/job_verdict.md",
             "--image", image,
             "-a", "claude-code",
-            "-m", os.environ.get("TRAJECTORY_VERDICT_MODEL", "sonnet"),
+            "-m", TRAJECTORY_ANALYSIS_MODEL,
+            "-e", get_harbor_env(),
             "--job-name", JOB_VERDICT_JOB_NAME,
         ]
         if jobs_dir is not None:
@@ -399,22 +411,42 @@ def _docker_available() -> bool:
         return False
 
 
+def _runtime_ready() -> bool:
+    """True when the configured Harbor backend can actually start a sandbox."""
+    env = get_harbor_env()
+    if env == "docker":
+        return _docker_available()
+    if env == "daytona":
+        return bool(
+            os.environ.get("DAYTONA_API_KEY")
+            or (
+                os.environ.get("DAYTONA_JWT_TOKEN")
+                and os.environ.get("DAYTONA_ORGANIZATION_ID")
+            )
+        )
+    return True
+
+
 def _run_streamed(cmd: list[str], jobs_dir: Path | None, control: RunControl | None) -> str:
     """Run harbor exec, forwarding its output and the agent's actions live."""
     if control is None:
         proc = subprocess.run(cmd, cwd=REPO_ROOT, capture_output=True, text=True, timeout=3600)
         return (proc.stdout or "") + (proc.stderr or "")
 
-    control.emit("launching harbor exec for trajectory analysis (this builds a container)")
+    control.emit(
+        f"launching harbor exec for trajectory analysis "
+        f"(env={get_harbor_env()})"
+    )
     stop = threading.Event()
     watchers = []
     if jobs_dir is not None:
         watchers.append(threading.Thread(
             target=tail_trial_logs, args=(jobs_dir, control, stop), daemon=True
         ))
-    watchers.append(threading.Thread(
-        target=watch_containers, args=(JOB_NAME, control, stop), daemon=True
-    ))
+    if get_harbor_env() == "docker":
+        watchers.append(threading.Thread(
+            target=watch_containers, args=(JOB_NAME, control, stop), daemon=True
+        ))
     for w in watchers:
         w.start()
 

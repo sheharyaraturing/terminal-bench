@@ -13,10 +13,14 @@ from pathlib import Path
 
 from .progress import (
     RunControl,
+    get_harbor_env,
     tail_trial_logs,
     watch_containers,
 )
 from .registry import Project, REPO_ROOT
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 @dataclass
@@ -131,6 +135,10 @@ CONTAINER_REFERENCES_PATH = f"{CONTAINER_TASK_PATH}/{EXTRA_REFERENCES_DIRNAME}"
 
 CHECK_PROMPT_PATH = REPO_ROOT / "prompts" / "check-with-references.txt"
 
+# The model used for LLM rubric review. Applies to both the harbor check path
+# (passed as -m) and the direct Anthropic API fallback. Override with the
+# RUBRIC_REVIEW_MODEL env var.
+RUBRIC_REVIEW_MODEL = os.environ.get("RUBRIC_REVIEW_MODEL", "claude-sonnet-4-6")
 
 def has_extra_references(project: Project) -> bool:
     """True when the project ships at least one real reference file."""
@@ -206,8 +214,9 @@ def run_rubric(
 
     extra_refs = _collect_extra_references(project)
 
-    # harbor check only supports Harbor-format task directories and needs Docker
-    if project.type == "harbor" and _harbor_available() and _docker_available():
+    # harbor check only supports Harbor-format task directories; local Docker is
+    # required only when HARBOR_ENV=docker (default).
+    if project.type == "harbor" and _harbor_available() and _runtime_ready():
         result = _run_harbor_check(
             project, task_path, rubric_path, extra_refs, control, jobs_dir=jobs_dir
         )
@@ -249,6 +258,22 @@ def _docker_available() -> bool:
         return True
     except Exception:
         return False
+
+
+def _runtime_ready() -> bool:
+    """True when the configured Harbor backend can actually start a sandbox."""
+    env = get_harbor_env()
+    if env == "docker":
+        return _docker_available()
+    if env == "daytona":
+        return bool(
+            os.environ.get("DAYTONA_API_KEY")
+            or (
+                os.environ.get("DAYTONA_JWT_TOKEN")
+                and os.environ.get("DAYTONA_ORGANIZATION_ID")
+            )
+        )
+    return True
 
 
 def _run_harbor_check(
@@ -297,6 +322,10 @@ def _run_harbor_check(
             str(review_path),
             "-r",
             str(rubric_path),
+            "-m",
+            RUBRIC_REVIEW_MODEL,
+            "-e",
+            get_harbor_env(),
             "-o",
             str(harbor_jobs),
             *cmd_extra,
@@ -337,16 +366,24 @@ def _run_streamed(
         )
         return (proc.stdout or "") + (proc.stderr or "")
 
-    control.emit(f"launching harbor check for {task_name} (this builds a container)")
+    control.emit(
+        f"launching harbor check for {task_name} "
+        f"(env={get_harbor_env()})"
+    )
     stop = threading.Event()
     watchers = [
         threading.Thread(
             target=tail_trial_logs, args=(jobs_dir, control, stop), daemon=True
         ),
-        threading.Thread(
-            target=watch_containers, args=(f"check-{task_name}", control, stop), daemon=True
-        ),
     ]
+    if get_harbor_env() == "docker":
+        watchers.append(
+            threading.Thread(
+                target=watch_containers,
+                args=(f"check-{task_name}", control, stop),
+                daemon=True,
+            )
+        )
     for w in watchers:
         w.start()
 
@@ -471,7 +508,7 @@ def _run_anthropic_check(
     client = anthropic.Anthropic(api_key=api_key)
     try:
         resp = client.messages.create(
-            model="claude-opus-4-8",
+            model=RUBRIC_REVIEW_MODEL,
             max_tokens=4096,
             system=system,
             messages=[{"role": "user", "content": user}],

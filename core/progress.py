@@ -6,11 +6,21 @@ are doing while they do it, and so a long review can be stopped from outside.
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import threading
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable
+
+
+def get_harbor_env() -> str:
+    """Harbor execution backend: docker (default), daytona, modal, e2b, …
+
+    Override with HARBOR_ENV. Read at call time so .env loading order does not
+    matter.
+    """
+    return (os.environ.get("HARBOR_ENV") or "docker").strip().lower() or "docker"
 
 
 class RunCancelled(Exception):
