@@ -1,0 +1,102 @@
+{
+  "steps": [
+    {
+      "do": "call",
+      "tool": "filesystem-read_file",
+      "args": {
+        "path": "$ws/period.txt"
+      },
+      "name": "period" # this is like alias if we want to refer to the result of this step later we can use this alias
+    },
+    {
+      "do": "call",
+      "tool": "word-get_document_text",
+      "args": {
+        "filename": "$ws/policy/Finance_Manual.docx"
+      },
+      "name": "manual"
+    },
+    {
+      "do": "call", # its a tool call to mcp
+      "tool": "excel-get_workbook_metadata",
+      "args": {
+        "filepath": "$ws/requisitions.xlsx",
+        "include_ranges": true
+      },
+      "name": "req_meta",
+      "parse": "repr"
+    },
+    {
+      "do": "solve",  #insted of tool call we need to run our defined function from solve.py
+      "name": "requisitions_range" # name of the function we want to run from solve.py
+    },
+    {
+      "do": "call",
+      "tool": "excel-read_data_from_excel",
+      "args": {
+        "filepath": "$ws/requisitions.xlsx",
+        "sheet_name": "Requisitions",
+        "start_cell": "A1",
+        "end_cell": {
+          "$": "req_end"
+        },
+        "preview_only": false
+      },
+      "name": "req_cells",
+      "parse": "json"
+    },
+    {
+      "do": "solve",
+      "name": "route_requisitions"
+    },
+    {
+      "do": "call",
+      "tool": "excel-create_workbook",
+      "args": {
+        "filepath": "$ws/routing_log.xlsx"
+      }
+    },
+    {
+      "do": "call",
+      "tool": "excel-get_workbook_metadata",
+      "args": {
+        "filepath": "$ws/routing_log.xlsx",
+        "include_ranges": true
+      },
+      "name": "out_meta",
+      "parse": "repr"
+    },
+    {
+      "do": "solve",
+      "name": "default_sheet"
+    },
+    {
+      "do": "call",
+      "tool": "excel-rename_worksheet",
+      "args": {
+        "filepath": "$ws/routing_log.xlsx",
+        "old_name": {
+          "$": "out_default_sheet"
+        },
+        "new_name": "Routing"
+      }
+    },
+    {
+      "do": "call",
+      "tool": "excel-write_data_to_excel",
+      "args": {
+        "filepath": "$ws/routing_log.xlsx",
+        "sheet_name": "Routing",
+        "data": {
+          "$": "rows"
+        },
+        "start_cell": "A1"
+      }
+    },
+    {
+      "do": "call",
+      "tool": "local-claim_done",
+      "args": {}
+    }
+  ]
+}
