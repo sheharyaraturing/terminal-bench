@@ -356,6 +356,30 @@ def check_verifier_image(task: Path, err, notes) -> None:
         err(f"{path}: no COPY/ADD into /tests. Separate verifier mode skips the "
             "tests/ upload, so the image has to bake the grading code itself.")
 
+    # Harbor collects each declared artifact out of this container, and the
+    # upload fails with "Could not find the file <parent> in container" when the
+    # parent directory does not exist. The trial is then an infrastructure error
+    # rather than a scored run. (Absorbed from the common check-separate-verifier
+    # check, which this project no longer runs.)
+    cfg = load_toml(task / "task.toml", err)
+    parents = set()
+    for art in cfg.get("artifacts") or []:
+        src = art if isinstance(art, str) else (art or {}).get("source")
+        if not isinstance(src, str):
+            continue
+        parent = str(Path(src.rstrip("/")).parent)
+        if parent not in ("", "/", "."):
+            parents.add(parent)
+    for parent in sorted(parents):
+        esc = re.escape(parent)
+        if not re.search(rf"mkdir\s+(-p\s+)?[^\n#]*(^|[\s/]){esc}([\s/]|$)",
+                         code, re.MULTILINE):
+            err(f"{path}: task.toml declares an artifact under {parent!r} but the "
+                "image never creates it. Harbor's artifact upload then fails with "
+                "\"Could not find the file ... in container\" and the trial reads "
+                "as an infrastructure error rather than a scored run. Add "
+                f"`RUN mkdir -p {parent}`.")
+
 
 def main() -> int:
     task = task_arg()

@@ -9,9 +9,18 @@ Every file here is a standalone check script, invoked by the autoreviewer as
 findings that should not block
 - collect every failure before exiting; never fail-fast on the first
 
-`project.toml` sets `include_common = true`, so the repo-root `checks/` common
-set runs alongside these. Nine common checks are shadowed by same-named files
-here (see **Overrides**).
+`project.toml` sets `include_common = false`: the repo-root `checks/` common set
+does not run. It is written for terminal-bench conventions this project does
+not follow (canary GUIDs, the "You have N seconds" instruction suffix,
+`terminal-bench/<slug>` package names, `author_name` metadata), and suppressing
+those needed six no-op shadow files that checked nothing and read as clutter.
+Two of its checks also contradicted the severity rule below by hard-failing
+what this suite reports as advisory — `check-dockerfile-platform.sh` on a
+`--platform` pin, and `check-task-slug.sh` on any slug with more than three
+hyphen-separated tokens. Both would block a legitimate task.
+
+The rules from that set worth keeping were absorbed rather than dropped — see
+**Absorbed from the common set** at the end.
 
 ## Running them
 
@@ -358,103 +367,28 @@ wording of a criterion, which is what turns "infer the invariants" into
 
 
 
-## Overrides
+## Absorbed from the common set
 
-These shadow same-named repo-root common checks. Two dispatch by shape, one is
-a bug fix, six are documented no-op passes.
+Turning the common set off would have lost a handful of genuinely useful rules.
+They live here now:
 
+| Common check | Where its rule lives now |
+|---|---|
+| `check-nproc.sh` | `check-trial-time-hermetic.py` — a bare `nproc` reads the host CPU count, so the same submission builds differently on different machines |
+| `check-pip-pinning.sh` | `check-trial-time-hermetic.py` (trial-time scripts) and `check-dockerfiles.py` (images) |
+| `check-trial-network-fetch.sh` | `check-trial-time-hermetic.py` — a fetch mid-trial turns a registry outage into a scored 0.0 |
+| `check-verifier-tooling-baked.sh` | `check-trial-time-hermetic.py` — verifier tooling belongs in `tests/Dockerfile`, not installed at grade time |
+| `check-separate-verifier.sh` | `check-task-toml.py` (mode, misplaced `artifacts`), `check-required-files.py` (`tests/Dockerfile`), `check-dockerfiles.py` (`COPY` into `/tests`, `RUN mkdir -p` for each artifact parent) |
+| `check-dockerfile-references.sh` | `check-dockerfiles.py` (`check_no_leaks`), applied to real `COPY`/`ADD` instructions rather than to any substring — the common version passed `tests/test_*.py` to `grep` as a basic regex, where `_*` means "zero or more underscores", so it matched the plain text `tests/test.py` in a comment |
+| `check-allow-internet.sh`, `check-no-allow-internet-true.sh` | `check-task-toml.py`, which rejects `allow_internet` entirely in favour of `network_mode` |
 
-| Override                         | Common check expects                                                                                                                                                                     | Reality here                                                                                                          | Replaced by                    |
-| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
-| `check-separate-verifier.sh`     | **dispatch** — separate mode always                                                                                                                                                      | dimensions tasks *are* separate, so it runs the common check; browser-rubric grades in the shared container by design | `check-verifier-contract.py`   |
-| `check-test-sh-sanity.sh`        | **dispatch** — uv/npm isolation in shared mode                                                                                                                                           | runs the common check for dimensions; the browser-rubric `test.sh` installs nothing                                   | `check-verifier-contract.py`   |
-| `check-dockerfile-references.sh` | **fix** — the common version passes `tests/test_*.py` to `grep` as a basic regex, where `_`* means "zero or more underscores", so it matches the plain text `tests/test.py` in a comment | same rule, applied to actual `COPY`/`ADD` instructions                                                                | —                              |
-| `check-canary.sh`                | a canary GUID in every file                                                                                                                                                              | no canary convention; the solution is a whole application tree                                                        | —                              |
-| `check-instruction-suffix.sh`    | the "You have N seconds…" line                                                                                                                                                           | briefs are in-world prose                                                                                             | `check-instruction-hygiene.py` |
-| `check-task-fields.sh`           | terminal-bench metadata vocabulary                                                                                                                                                       | neither shape uses it                                                                                                 | `check-task-toml.py`           |
-| `check-task-package-name.sh`     | `terminal-bench/<folder>`                                                                                                                                                                | `codearena/*` or `webdev/*`                                                                                           | `check-task-name.py`           |
-| `check-task-timeout.sh`          | one 5h cap on agent **and** verifier                                                                                                                                                     | the agent cap holds; a browser-rubric verifier budget is a worst-case segment chain                                   | `check-timeout-hierarchy.py`   |
-| `check-dockerfile-sanity.sh`     | apt pins **forbidden**                                                                                                                                                                   | the shapes disagree; neither answer is worth failing a task over                                                      | `check-dockerfiles.py`         |
-
-
----
-
-
-
-## Coverage against the reference spec
-
-All 39 checks in the circulated spec are covered. Fifteen were already
-implemented under a different filename, so the spec's name is listed as an
-alias rather than duplicated as a second script.
-
-
-| Spec check                                       | Here                                                                            |
-| ------------------------------------------------ | ------------------------------------------------------------------------------- |
-| `check-required-files.py`                        | same name                                                                       |
-| `check-no-placeholders.sh`                       | same name                                                                       |
-| `check-no-extraneous-files.py`                   | `check-no-stray-files.py`                                                       |
-| `check-instruction-content.py`                   | same name                                                                       |
-| `check-instruction-hygiene.py`                   | same name                                                                       |
-| `check-task-toml.py`                             | same name                                                                       |
-| `check-task-name.py`                             | same name                                                                       |
-| `check-timeouts.py`                              | `check-timeout-hierarchy.py`                                                    |
-| `check-agent-dockerfile.py`                      | `check-dockerfiles.py`                                                          |
-| `check-fixtures.py`                              | same name                                                                       |
-| `check-environment-does-not-leak-solution.py`    | `check-dockerfiles.py` (`check_no_leaks`)                                       |
-| `check-solve-sh.py`                              | `check-solve-contract.py`                                                       |
-| `check-reward-schema.py`                         | same name                                                                       |
-| `check-judge-toml-schema.py`                     | `check-rubric-schema.py`                                                        |
-| `check-judge-prompts-name-the-url.py`            | `check-rubric-prompt.py` + `check-runtime-contract-strings.py` (port agreement) |
-| `check-global-gate-present.py`                   | `check-rubric-prompt.py`                                                        |
-| `check-verifier-dockerfile.py`                   | `check-dockerfiles.py` (`check_verifier_image`)                                 |
-| `check-test-sh.py`                               | `check-verifier-contract.py` + `check-verifier-sandbox.py`                      |
-| `check-runtime-contract-strings.py`              | same name                                                                       |
-| `check-seed-literals-in-criteria.py`             | same name                                                                       |
-| `check-probe-not-in-seed.py`                     | same name                                                                       |
-| `check-demo-accounts-agree.py`                   | same name                                                                       |
-| `check-assets-paths-resolve.py`                  | `check-assets-referenced.py`                                                    |
-| `check-runtime-deps-in-both-images.py`           | same name                                                                       |
-| `check-package-manifest-deps-preinstalled.py`    | same name                                                                       |
-| `check-no-cdn-or-remote-assets.py`               | same name                                                                       |
-| `check-injection-guard-present.py`               | `check-rubric-prompt.py`                                                        |
-| `check-batched-independence-wording.py`          | same name                                                                       |
-| `check-mcp-server-is-runnable.py`                | `check-rubric-schema.py` + `check-dockerfiles.py` (command installed)           |
-| `check-no-trialforge-judge-keys.py`              | same name                                                                       |
-| `check-solution-does-not-coach-judge.py`         | same name                                                                       |
-| `check-seed-has-no-injection-payload.py`         | same name                                                                       |
-| `check-no-host-paths.py`                         | same name                                                                       |
-| `check-slug-is-clean.py`                         | `check-task-layout.py`                                                          |
-| `check-task-version-and-resources.py`            | `check-task-toml.py`                                                            |
-| `check-allowlist-matches-provider.py`            | same name                                                                       |
-| `check-instruction-states-offline-constraint.py` | same name                                                                       |
-| `check-toml-and-json-parse.py`                   | same name                                                                       |
-| `check-no-literal-secrets.py`                    | same name                                                                       |
-
-
-Beyond the spec, this suite also carries `check-app-manifest.py`,
-`check-rubric-segments.py`, and `check-verifier-sandbox.py` (the credential,
-rubric-readability, and privilege exposures of a verifier that starts
-submission code), plus shape dispatch throughout so the earlier browser-rubric
-tasks stay checked rather than exempt.
-
-### Where this deviates from the spec, and why
-
-`include_common = true`**, not** `false`**.** The spec recommends dropping the
-repo-root set because five of its checks fail every webdev task. Those five are
-shadowed by no-op overrides here, which leaves fourteen common checks running
-that are worth having (`check-ai-detection`, `check-pip-pinning`,
-`check-compose-host-binds`, `check-trial-network-fetch`, and so on). Turning the
-set off would silently drop them.
-
-`check-separate-verifier.sh` **is shadowed — but it dispatches.** The spec says
-not to shadow it because webdev wants separate mode. That is right for the
-current format and wrong for the earlier one, which grades in the shared
-container by design. The override runs the real common check for
-dimensions-shaped tasks and explains the exemption for browser-rubric ones, so
-neither shape is waved through.
-
-**Several rules are conditional on the task's own declared network.** The spec
-assumes `no-network` throughout. Unpinned manifest dependencies and off-origin
-CDN assets are hard failures when the run is actually offline or allowlisted,
-and NOTEs when the task declares `network_mode = "public"` — where they are a
-robustness cost rather than a broken run.
+Deliberately **not** carried over: `check-canary.sh` (no canary convention),
+`check-instruction-suffix.sh` (briefs are natural product requests),
+`check-task-fields.sh` (different metadata vocabulary),
+`check-task-package-name.sh` (`codearena/*`, not `terminal-bench/*`),
+`check-task-timeout.sh` (the useful rule is the ordering, not a flat cap),
+`check-dockerfile-sanity.sh` (apt pinning is a judgment),
+`check-dockerfile-platform.sh` and `check-task-slug.sh` (both hard-fail
+legitimate choices), and the checks that are inert here anyway —
+`check-gpu-types.sh`, `check-pytest-version.sh`, `check-compose-host-binds.sh`,
+`check-test-file-references.sh`, `check-ai-detection.py`.

@@ -10,11 +10,26 @@ rubrics = "rubrics/task-implementation.toml"
 extra_references = "extra_references"
 
 [checks]
-# Run the repo-root checks/ common set in addition to this project's checks/.
-# Nine incompatible common checks are shadowed by same-named overrides in
-# checks/ — see core/deterministic.py's name-shadow rule and checks/CHECKS.md
-# for what each override replaces and why.
-include_common = true
+# The repo-root checks/ common set is not run here. It is written for
+# terminal-bench conventions this project does not follow (canary GUIDs, the
+# "You have N seconds" instruction suffix, terminal-bench/<slug> package names,
+# author_name metadata), and suppressing those needed six no-op shadow files
+# that checked nothing and read as clutter.
+#
+# Two of its checks also contradict this project's severity rule by failing
+# what checks/ deliberately reports as advisory: check-dockerfile-platform.sh
+# hard-fails a --platform pin, and check-task-slug.sh hard-fails any slug with
+# more than three hyphen-separated tokens. Both would block a legitimate task.
+#
+# The rules from that set worth keeping were absorbed:
+#   check-nproc / check-pip-pinning / check-trial-network-fetch /
+#   check-verifier-tooling-baked  -> checks/check-trial-time-hermetic.py
+#   check-separate-verifier               -> check-task-toml.py (mode, artifacts),
+#                                            check-required-files.py (tests/Dockerfile),
+#                                            check-dockerfiles.py (COPY /tests, mkdir parents)
+#   check-dockerfile-references           -> check-dockerfiles.py (check_no_leaks)
+#   check-allow-internet / -true          -> check-task-toml.py
+include_common = false
 
 [validation]
 mode = "oracle_nop"
