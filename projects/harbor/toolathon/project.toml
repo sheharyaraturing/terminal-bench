@@ -6,7 +6,8 @@ description = "Toolathlon long-horizon document/tool-use tasks"
 [paths]
 tasks = "tasks"
 checks = "checks"
-rubrics = "rubrics/rubrics.toml"
+rubrics = "rubrics/task-implementation.toml"
+trajectory_analysis = "../../../rubrics/trial-analysis.toml"
 extra_references = "extra_references"
 
 [checks]

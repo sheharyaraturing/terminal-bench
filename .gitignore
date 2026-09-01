@@ -5,6 +5,10 @@
 *report*.json
 reports/
 *.ipynb
+*__pycache__/*
+*/tasks/*
+*.zip
+
 
 # Environment
 .env

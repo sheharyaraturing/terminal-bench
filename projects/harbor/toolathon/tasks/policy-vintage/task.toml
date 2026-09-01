@@ -34,7 +34,6 @@ workdir = "/workspace/dumps/workspace"
 name = "gw"
 transport = "sse"
 url = "http://127.0.0.1:8765/sse"
-args = []
 
 [environment.env]
 TASK_ID = "harbor/policy-vintage"

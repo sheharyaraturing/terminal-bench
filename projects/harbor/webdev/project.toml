@@ -1,0 +1,26 @@
+[project]
+name = "webdev"
+type = "harbor"
+description = "WebDev full-stack application tasks graded by a RewardKit CUA browser judge"
+
+[paths]
+tasks = "tasks"
+checks = "checks"
+rubrics = "rubrics/task-implementation.toml"
+extra_references = "extra_references"
+
+[checks]
+# Run the repo-root checks/ common set in addition to this project's checks/.
+# Nine incompatible common checks are shadowed by same-named overrides in
+# checks/ — see core/deterministic.py's name-shadow rule and checks/CHECKS.md
+# for what each override replaces and why.
+include_common = true
+
+[validation]
+mode = "oracle_nop"
+
+[trajectory_analysis]
+# Copy the task-under-review into the analysis container alongside the
+# trajectories; the task_specification / difficulty_crux criteria read
+# instruction.md and task.toml.
+include_task = true

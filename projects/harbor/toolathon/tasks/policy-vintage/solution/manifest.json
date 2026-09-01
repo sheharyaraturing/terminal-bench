@@ -1,0 +1,145 @@
+{
+  "steps": [
+    {
+      "do": "call",
+      "tool": "word-get_document_xml",
+      "args": {
+        "filename": "$ws/policy/AP_Expense_Manual.docx"
+      },
+      "name": "policy_xml_00"
+    },
+    {
+      "do": "call",
+      "tool": "word-get_document_xml",
+      "args": {
+        "filename": "$ws/policy/Expense_Policy_v3.docx"
+      },
+      "name": "policy_xml_01"
+    },
+    {
+      "do": "call",
+      "tool": "word-get_document_xml",
+      "args": {
+        "filename": "$ws/policy/Expense_Policy_v4.docx"
+      },
+      "name": "policy_xml_02"
+    },
+    {
+      "do": "call",
+      "tool": "word-get_document_xml",
+      "args": {
+        "filename": "$ws/policy/Expense_Policy_v5.docx"
+      },
+      "name": "policy_xml_03"
+    },
+    {
+      "do": "call",
+      "tool": "excel-get_workbook_metadata",
+      "args": {
+        "filepath": "$ws/claims.xlsx",
+        "include_ranges": true
+      },
+      "name": "claims_meta",
+      "parse": "repr"
+    },
+    {
+      "do": "solve",
+      "name": "claims_sheets"
+    },
+    {
+      "do": "call",
+      "tool": "excel-read_data_from_excel",
+      "args": {
+        "filepath": "$ws/claims.xlsx",
+        "sheet_name": {
+          "$": "claims_sheet_00"
+        },
+        "start_cell": "A1",
+        "preview_only": false
+      },
+      "name": "claims_cells_00",
+      "parse": "json"
+    },
+    {
+      "do": "call",
+      "tool": "excel-get_workbook_metadata",
+      "args": {
+        "filepath": "$ws/Format_Example.xlsx",
+        "include_ranges": true
+      },
+      "name": "example_meta",
+      "parse": "repr"
+    },
+    {
+      "do": "solve",
+      "name": "example_sheets"
+    },
+    {
+      "do": "call",
+      "tool": "excel-read_data_from_excel",
+      "args": {
+        "filepath": "$ws/Format_Example.xlsx",
+        "sheet_name": {
+          "$": "example_sheet_00"
+        },
+        "start_cell": "A1",
+        "preview_only": false
+      },
+      "name": "example_cells_00",
+      "parse": "json"
+    },
+    {
+      "do": "solve",
+      "name": "decide_claims"
+    },
+    {
+      "do": "call",
+      "tool": "excel-create_workbook",
+      "args": {
+        "filepath": "$ws/decisions.xlsx"
+      }
+    },
+    {
+      "do": "call",
+      "tool": "excel-get_workbook_metadata",
+      "args": {
+        "filepath": "$ws/decisions.xlsx",
+        "include_ranges": true
+      },
+      "name": "out_meta",
+      "parse": "repr"
+    },
+    {
+      "do": "solve",
+      "name": "default_sheet"
+    },
+    {
+      "do": "call",
+      "tool": "excel-rename_worksheet",
+      "args": {
+        "filepath": "$ws/decisions.xlsx",
+        "old_name": {
+          "$": "out_default_sheet"
+        },
+        "new_name": "Decisions"
+      }
+    },
+    {
+      "do": "call",
+      "tool": "excel-write_data_to_excel",
+      "args": {
+        "filepath": "$ws/decisions.xlsx",
+        "sheet_name": "Decisions",
+        "data": {
+          "$": "rows"
+        },
+        "start_cell": "A1"
+      }
+    },
+    {
+      "do": "call",
+      "tool": "local-claim_done",
+      "args": {}
+    }
+  ]
+}

@@ -30,7 +30,7 @@ RUN mkdir -p /workspace/dumps/workspace && chmod -R 0777 /workspace/dumps
 
 COPY task/ /harbor_task/
 
-RUN uv tool install 'harbor-rewardkit[documents]==0.1.*'
+RUN uv tool install 'harbor-rewardkit[documents]==0.1.7'
 
 COPY runtime/ /workspace/runtime/
 RUN chmod +x /workspace/runtime/*.sh

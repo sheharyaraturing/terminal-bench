@@ -1,0 +1,153 @@
+#!/usr/bin/env python3
+"""Run every deterministic check — common + project — against a webdev task.
+
+    checks/run-checks fleetops
+    checks/run-checks "TorqueBay Enterprise/torquebay-enterprise"
+    checks/run-checks --all
+    checks/run-checks fleetops --only rubric
+    checks/run-checks --list
+
+This delegates to core.deterministic.run_deterministic rather than walking the
+checks directory itself, so what it reports is exactly what the autoreviewer
+runs: the same common-set inclusion, the same name-shadowing rule (a project
+check shadows the common check of the same filename), and the same per-check
+timeout. A hand-rolled reimplementation would drift the moment either of those
+rules changed, and would then quietly disagree with CI.
+
+NOTE ON THE FILENAME: this file deliberately has no .py extension.
+core/deterministic.py discovers project checks with require_prefix=False — any
+.py or .sh in this directory is treated as a check and executed as
+`<file> <task-dir>`. A runner named run-checks.py would therefore be run as a
+check, and would run every check again from inside a check run. An
+extension-less file is skipped by _is_check_file(), which is what keeps this
+script a tool rather than a member of the suite.
+
+Exit status: 0 if every check passed, 1 otherwise (2 for a usage error).
+"""
+from __future__ import annotations
+
+import argparse
+import sys
+from pathlib import Path
+
+CHECKS_DIR = Path(__file__).resolve().parent
+PROJECT_DIR = CHECKS_DIR.parent
+PROJECT_NAME = PROJECT_DIR.name
+
+GREEN, RED, YELLOW, DIM, RESET = (
+    ("\033[32m", "\033[31m", "\033[33m", "\033[2m", "\033[0m")
+    if sys.stdout.isatty() else ("", "", "", "", "")
+)
+
+
+def repo_root() -> Path:
+    """Walk up until we find the checkout that owns core/registry.py."""
+    for parent in [CHECKS_DIR, *CHECKS_DIR.parents]:
+        if (parent / "core" / "registry.py").is_file():
+            return parent
+    sys.exit("FATAL: could not locate the repository root (no core/registry.py "
+             f"above {CHECKS_DIR})")
+
+
+sys.path.insert(0, str(repo_root()))
+
+try:
+    from core.deterministic import gather_checks, run_deterministic
+    from core.registry import list_tasks, load_project
+except ImportError as exc:  # pragma: no cover - environment problem, not a bug
+    sys.exit(f"FATAL: cannot import the autoreviewer core ({exc}). Run this from "
+             "a full checkout; the runner reuses the harness rather than "
+             "reimplementing it.")
+
+
+def resolve(project, wanted: str) -> Path:
+    """Accept a task id, a tasks/-relative path, or a path from anywhere."""
+    for candidate in (project.tasks_dir / wanted, Path(wanted),
+                      project.root / wanted):
+        if candidate.is_dir():
+            return candidate.resolve()
+    sys.exit(f"FATAL: no such task {wanted!r}. Known tasks: "
+             f"{', '.join(list_tasks(project)) or '(none)'}")
+
+
+def run_one(project, task: Path, only: str | None, quiet: bool) -> bool:
+    rel = task.relative_to(project.root) if task.is_relative_to(project.root) else task
+    print(f"\n{'=' * 72}\n{rel}\n{'=' * 72}")
+
+    result = run_deterministic(project, task)
+    checks = [c for c in result.checks if not only or only in c.name]
+    if only and not checks:
+        print(f"{YELLOW}no check name contains {only!r}{RESET}")
+        return True
+
+    failed = [c for c in checks if not c.passed]
+    for c in checks:
+        mark = f"{GREEN}PASS{RESET}" if c.passed else f"{RED}FAIL{RESET}"
+        print(f"  {mark}  {c.name} {DIM}[{c.source}]{RESET}")
+        # A failing check's output is the whole point; show it in full.
+        if not c.passed:
+            for line in c.output.splitlines():
+                print(f"        {line}")
+        elif not quiet:
+            # Surface real advisories, but not the overrides' own boilerplate.
+            for line in c.output.splitlines():
+                if line.startswith("NOTE") and "not applicable" not in line:
+                    print(f"        {YELLOW}{line}{RESET}")
+
+    total = len(checks)
+    if failed:
+        print(f"\n  {RED}{len(failed)} of {total} checks failed:{RESET} "
+              f"{', '.join(c.name for c in failed)}")
+    else:
+        print(f"\n  {GREEN}all {total} checks passed{RESET}")
+    return not failed
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        prog="checks/run-checks",
+        description=f"Run all deterministic checks for the {PROJECT_NAME} project.",
+    )
+    parser.add_argument("task", nargs="?",
+                        help="task id (e.g. fleetops) or path; omit with --all/--list")
+    parser.add_argument("--all", action="store_true", help="run against every task")
+    parser.add_argument("--only", metavar="SUBSTR",
+                        help="only checks whose filename contains SUBSTR")
+    parser.add_argument("--list", action="store_true",
+                        help="list the checks that would run, and exit")
+    parser.add_argument("-q", "--quiet", action="store_true",
+                        help="hide NOTE advisories from passing checks")
+    args = parser.parse_args()
+
+    project = load_project(PROJECT_NAME)
+
+    if args.list:
+        pairs = gather_checks(project)
+        print(f"{len(pairs)} checks for project {PROJECT_NAME!r} "
+              f"(include_common={project.include_common_checks}):")
+        for path, source in pairs:
+            print(f"  {source:8} {path.name}")
+        return 0
+
+    if args.all:
+        tasks = [project.tasks_dir / t for t in list_tasks(project)]
+        if not tasks:
+            sys.exit(f"FATAL: no tasks under {project.tasks_dir}")
+    elif args.task:
+        tasks = [resolve(project, args.task)]
+    else:
+        parser.print_help()
+        return 2
+
+    results = {t: run_one(project, t, args.only, args.quiet) for t in tasks}
+
+    if len(results) > 1:
+        print(f"\n{'=' * 72}\nsummary")
+        for t, ok in results.items():
+            mark = f"{GREEN}PASS{RESET}" if ok else f"{RED}FAIL{RESET}"
+            print(f"  {mark}  {t.name}")
+    return 0 if all(results.values()) else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
