@@ -15,14 +15,19 @@ separate verifiers) that TrialForge does not follow, so only these
 purpose-built checks run.
 
 `_lib.py` is the shared helper module (task discovery, TOML loading, the tool
-inventory, the suite constants — the `target_tool_calls` band, judge model
-(`openrouter/openai/gpt-5.6-luna`), image prefix — and uniform reporting). It is
-not a check; running it directly exits 0 as a no-op. Note: there is no absolute
-band on the claim count and no tool-count budget — those checks were retired.
+inventory, the suite constants — judge model (`openrouter/openai/gpt-5.6-luna`),
+image prefix — and uniform reporting). It is not a check; running it directly
+exits 0 as a no-op. Note: there is no absolute band on the claim count, no
+tool-count budget, and no `target_tool_calls` band — those checks were retired.
+(The `MIN_/MAX_` range constants remain defined in `_lib.py` but are no longer
+consumed by any check.)
 
-`tool_inventory.txt` is data, not a check: the committed offline copy of the
+`tool_inventory.txt` is data, not a check: the canonical offline copy of the
 environment image's full tool surface (`POST /list-tools` on the pinned
-`turing-mcpatlas` image). It lets the tool-surface checks run with no network.
+`turing-mcpatlas` image). The tool-surface checks (`check-enabled-tools.py`,
+`check-no-dangerous-tools.py`, `check-instruction-hygiene.sh`) each inline a
+copy of this list so they run standalone with no network and no sidecar file;
+regenerate them from `tool_inventory.txt` only when the image tag changes.
 
 ---
 
@@ -80,14 +85,30 @@ real persona request.
 - **What:** the instruction reads as a natural persona request: it names no
 tool and no server from the inventory, leaks no grader machinery
 (`reward.toml`, `rewardkit`, `enabled_tools`, `mcp_servers`, `oracle`,
-`final_answer.txt`, `task.toml`, `harbor`, …), and names no sandbox paths
-(`/data/…`, `/logs/…`).
+`final_answer.txt`, `task.toml`, `harbor`, …), and references only sandbox
+paths the container actually provides.
 - **How:** pure greps — word-boundary case-insensitive patterns for grader
-terms, fixed-string matches for sandbox paths, and the tool/server names from
-`tool_inventory.txt`.
-- **Why:** CONTRIBUTING.md: the agent must work out the toolchain and the data
-layout itself. Naming a tool, a server, or a path hands over what the task is
-built to test; naming the grader breaks the fourth wall.
+terms, the tool/server names inlined from `tool_inventory.txt` (no sidecar
+file), and a sandbox-path check. `/logs/…` always fails (harness/judge area);
+every other absolute path in the instruction (`/data/…`, `/home/…`,
+`/workspace/…`, …) is allowed only when it aligns with the task's Dockerfile
+— equal to, an ancestor of, or a descendant of a path the Dockerfile
+materializes (COPY dest, RUN mkdir/cp/sqlite, WORKDIR, …) — and fails when
+the instruction names a path the container does not provide. No data roots are
+hardcoded: every path token is checked against the Dockerfile. URLs are
+stripped first and a leading non-word boundary excludes fractions ("3/4"), so
+only real file paths are examined. Server names
+that are ordinary English words (`time`, `memory`, `fetch`, `git`,
+`calculator`) only fire when the name shares a line with a tool/server-context
+word (`server`/`tool`/`mcp`/`plugin`/`api`/`endpoint`/`integration`/`connect`),
+so innocent prose ("at the time") is ignored while real leaks ("the time
+server") still fire; all other (distinctive) server names fire on any
+standalone match.
+- **Why:** CONTRIBUTING.md: the agent must work out the toolchain itself, and
+the instruction and the Dockerfile must agree on the data layout. Naming a
+tool or a server hands over what the task is built to test; naming the grader
+breaks the fourth wall; naming a `/data/…` path that does not exist sends the
+agent looking for a layout the container does not provide.
 
 ---
 
@@ -149,18 +170,19 @@ findable by directory but cross-references by name dangle.
 
 
 
-### `check-metadata-bounds.py`
+### `check-metadata-bounds.py` — REMOVED
 
-- **What:** `[metadata]` carries a non-empty `persona`, a `domain` in the known
-set (`software-engineering`, `research-science`), and `target_tool_calls` in the
-40–70 long-horizon band. `target_claims` is **not** range-checked — the suite
-fixes no absolute band on the claim count.
-- **How:** field assertions against the suite constants in `_lib.py` (all
-tunable via env vars).
-- **Why:** these fields drive the suite's distribution reporting and the
-quality bar. This check owns only the *absolute* ranges — the *relative*
-contract (target_claims == criterion count) belongs to
-`check-claims-consistency`, so the two complement rather than duplicate.
+> **Removed:** this check enforced `[metadata].domain` against a hardcoded
+> two-value list (`software-engineering` / `research-science`). The set of
+> allowed domains is owned by the suite config and changes often, so the
+> membership test flagged valid tasks every time the list was extended. The
+> domain's *fit* is still judged by the `metadata_matches_the_task` rubric
+> criterion (which no longer hardcodes the list either); the deterministic
+> membership check is gone.
+>
+> Earlier history: the check also used to require `target_tool_calls` in a
+> 40–70 band, retired because the suite fixes no tool-call budget (authored
+> tasks legitimately run from the twenties into the seventies).
 
 ---
 

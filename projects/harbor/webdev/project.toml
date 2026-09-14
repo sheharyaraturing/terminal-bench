@@ -1,0 +1,18 @@
+[project]
+name = "webdev"
+type = "harbor"
+description = "WebDev / codearena browser-judged app-build tasks"
+
+[paths]
+tasks = "tasks"
+checks = "checks"
+rubrics = "rubrics/task-implementation.toml"
+
+[checks]
+# Repo-root common checks are terminal-bench conventions (canary, instruction
+# suffix, terminal-bench/<slug> names). WebDev re-encodes the useful ones
+# locally (separate verifier, COPY /tests, no literal secrets).
+include_common = false
+
+[validation]
+mode = "oracle_nop"

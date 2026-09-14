@@ -6,7 +6,7 @@ description = "TrialForge MCP-Atlas long-horizon tool-use tasks"
 [paths]
 tasks = "tasks"
 checks = "checks"
-rubrics = "rubrics/task-implementation.toml"
+rubrics = "rubrics/task-implementation.compact.toml"
 trajectory_analysis = "rubrics/trajectory-analysis.toml"
 extra_references = "extra_references"
 

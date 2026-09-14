@@ -23,11 +23,6 @@ from pathlib import Path
 # Project root = checks/..   (the trialforge project directory).
 CHECKS_DIR = Path(__file__).resolve().parent
 ROOT = CHECKS_DIR.parent
-# The tool inventory is committed alongside the checks (not under ci/ — this
-# is a project-local copy, not the standalone-repo layout the checks were
-# originally written for).
-INVENTORY = CHECKS_DIR / "tool_inventory.txt"
-
 IMAGE_PREFIX = os.environ.get(
     "IMAGE_PREFIX",
     "us-central1-docker.pkg.dev/turing-delivery-rl-gym/daytona/turing-mcpatlas:",
@@ -40,7 +35,6 @@ MAX_EXPOSED = int(os.environ.get("MAX_EXPOSED", "30"))
 MIN_TOOL_CALLS = int(os.environ.get("MIN_TOOL_CALLS", "40"))
 MAX_TOOL_CALLS = int(os.environ.get("MAX_TOOL_CALLS", "70"))
 CLAIMS_TOLERANCE = int(os.environ.get("CLAIMS_TOLERANCE", "4"))
-DOMAINS = {"software-engineering", "research-science"}
 
 
 def task_arg() -> Path:
@@ -70,18 +64,6 @@ def read_text(path: Path) -> str:
         return path.read_text(encoding="utf-8")
     except (UnicodeDecodeError, OSError):
         return ""
-
-
-def load_inventory() -> set[str]:
-    """The image's full tool surface (names only), committed for offline CI."""
-    tools: set[str] = set()
-    if not INVENTORY.is_file():
-        return tools
-    for line in read_text(INVENTORY).splitlines():
-        line = line.strip()
-        if line and not line.startswith("#"):
-            tools.add(line)
-    return tools
 
 
 def tool_prefix(tool: str) -> str:

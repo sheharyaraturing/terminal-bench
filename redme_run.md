@@ -97,7 +97,9 @@ tail -f runs/<run_id>/log.txt
   (override with the `HARBOR_AGENT_SETUP_TIMEOUT_MULTIPLIER` env var, default
   `3.0`).
 - **Rubric model:** defaults to `claude-opus-5` (override with the
-  `HARBOR_CHECK_MODEL` env var).
+  `HARBOR_CHECK_MODEL` env var; applies to both the `harbor check` leg and
+  the direct-Anthropic-API fallback). Set `HARBOR_CHECK_MODEL` to a cheaper
+  model (e.g. `claude-sonnet-4-6`) for a faster, lower-cost review.
 - **Rubric outer timeout:** 50 min (`HARBOR_CHECK_TIMEOUT_SEC` in
   `core/rubric.py`).
 - **Environment backend:** defaults to local Docker. Set

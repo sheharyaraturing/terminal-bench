@@ -1,6 +1,0 @@
-Document-Type: Policy
-Reference: POL-030
-
-Applies to: all staff.
-Review cycle: annual.
-Supersedes any prior guidance on this subject.

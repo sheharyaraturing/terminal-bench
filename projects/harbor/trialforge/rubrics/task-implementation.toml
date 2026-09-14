@@ -3,153 +3,13 @@
 # One [[criteria]] block per quality check. The reviewer reads the task and returns
 # `pass` / `fail` / `not_applicable` per criterion with a short explanation.
 #
-# ===========================================================================
-# HOW TO REVIEW  (read this before the criteria)
-# ===========================================================================
+# The shared review METHODOLOGY that governs every criterion below — how to review,
+# the two-sided gate (ORACLE >= 0.95 / NOP <= 0.05), the evidence standard, what
+# counts as "required", the three lenses, and the witness rule — lives in
+# `extra_references/review_guidelines.md`. TOML comments are stripped before the
+# reviewer ever sees this file, so that guidance was moved into a real file the
+# reviewer is instructed to read. Read it first and apply it to every criterion here.
 #
-# WHAT A TASK IS
-#   A long-horizon MCP tool-use task. An agent reads `instruction.md`, works inside a
-#   sandbox built from `environment/Dockerfile` using the MCP servers declared in
-#   `task.toml`, and leaves a final answer at `/logs/agent/final_answer.txt`. An LLM
-#   judge (rewardkit) scores that text claim-by-claim against `tests/reward.toml`.
-#
-#   tasks/<name>/  — THIS IS THE COMPLETE, CLOSED LIST. Nothing else may exist here.
-#     task.toml                 config: name, metadata, timeouts, MCP servers, verifier env
-#     instruction.md            the prompt — the ONLY thing the agent sees
-#     environment/Dockerfile    the sandbox: seed image + fixtures + setup SQL
-#     environment/fixtures/     files copied into /data
-#     solution/solve.sh         the ORACLE: the reference final answer
-#     tests/reward.toml         the rubric: one [[criterion]] per ground-truth claim
-#     tests/test.sh             verifier entrypoint: bridge output, run rewardkit
-#   Any additional material a task needs lives under `environment/` (normally
-#   `environment/fixtures/`) and nowhere else. There is no design-notes file: a `NOTES.md`
-#   in the task folder is a defect, not documentation — see `task_folder_holds_only_task_files`.
-#
-# GROUND TRUTH FOR THE FORMAT
-#   `mcpAtlasProject/TASK_FORMAT.md` explains the format, the Harbor pitfalls, and the
-#   rewardkit contract, and walks both reference tasks. READ IT FIRST. It is the
-#   authority on what each file is for. Where TASK_FORMAT.md and a task disagree about
-#   what a field means, TASK_FORMAT.md wins; where it disagrees about a task's own
-#   numbers, the task's files win (the doc can go stale — it already reports claim
-#   counts that no longer match).
-#   `tasks/TEMPLATE/` is the canonical skeleton: its comments state the rules
-#   (persona voice, no tool names, likert/points=3, `judge` not `model`, `--with mcp<2`,
-#   no `docker_image`). A task that violates a TEMPLATE comment is violating a rule
-#   someone already paid for in debugging time.
-#
-# THE ORGANIZING PRINCIPLE — the two-sided gate
-#   Every criterion here exists to protect one of two facts:
-#     ORACLE >= 0.95  the task is solvable and the verifier accepts a correct answer.
-#     NOP    <= 0.05  the rubric is not satisfiable without doing the work.
-#   When judging any criterion, ask which side of that gate a defect breaks. A claim the
-#   oracle cannot satisfy breaks the first. A claim a blank answer earns breaks the
-#   second. Say which one in your explanation.
-#
-# WHAT IS IN SCOPE RIGHT NOW
-#   `solution/solve.sh` is reviewed as a FINAL ANSWER, not as a trajectory. There is no
-#   trajectory grading in this pipeline yet: the judge is handed
-#   `/logs/agent/final_answer.txt` and nothing else. So judge solve.sh on whether its
-#   TEXT is the right answer, complete, grounded in the real environment, and in the
-#   persona's register — not on how it was produced (both reference tasks legitimately
-#   `cat` a pre-derived answer). Trajectory criteria — tool-call efficiency, phase
-#   ordering, whether the agent actually used the servers — are deliberately DEFERRED and
-#   will be added when trajectories are captured. Do not fail a task for lacking them,
-#   and do not reward `[judge].atif_trajectory` usage yet.
-#
-# METHOD — miss nothing
-#   1. Read `instruction.md` and write down the CHECKLIST of deliverables it asks for,
-#      including precision demands ("every figure to the dollar") and the qualitative
-#      asks ("why", "flag it", "which would you publish").
-#   2. Read `tests/reward.toml` and list every claim.
-#   3. Read `solution/solve.sh` and list every assertion it makes.
-#   4. Then reconcile the three lists IN BOTH DIRECTIONS. Deliverable with no claim,
-#      claim with no deliverable, claim the oracle does not satisfy, oracle statement
-#      nothing checks — each is a separate finding.
-#   5. Read `environment/Dockerfile` + `fixtures/` and confirm every input those three
-#      documents assume actually exists at the path they assume, and that the numbers
-#      are derivable from it. Spot-check arithmetic you can compute from the fixtures.
-#   6. Read `task.toml` and `tests/test.sh` as the wiring: could this task even run.
-#
-# WHAT AN EXPLANATION MUST CONTAIN
-#   Every `fail` names a concrete defect: quote the offending text, or name the claim /
-#   fixture / config key. Say what it does to the gate (which agent wrongly scores 1,
-#   which correct agent wrongly scores 0, or which run crashes), and give the fix.
-#   Every `pass` on a criterion where you checked something non-obvious should say what
-#   you verified — "recomputed week 7 revenue from the fixture, 13,688 matches" is worth
-#   more than "looks fine".
-#
-# THE PASS BAR
-#   FAIL when the criterion is materially violated: one defect that makes the task
-#   unrunnable, unsolvable, trivially satisfiable, or wrong; or several smaller defects
-#   together. PASS when it holds — a single cosmetic nit does not fail a criterion, but
-#   say it. Never pass leaving a real defect unmentioned; never fail without naming one.
-#   Mark `not_applicable` only where the criterion's own guidance allows it.
-#
-# EVIDENCE, AND HOW TO AVOID FALSE FINDINGS
-#   * **A finding needs a command and its real output.** "The verifier env block is missing"
-#     is an opinion; the parsed value showing it absent is a finding. A bar reported as met
-#     without its measured number is not a finding either.
-#   * **Never present an unrun check as passed.** If a check cannot be run here — no upload
-#     archive, no run artifacts, no image, no credential — return `not_applicable` and say
-#     which input was missing. Oracle and nop verification are the usual casualties.
-#   * **Read the current file before reporting.** A defect already fixed is stale; say so
-#     rather than reporting it.
-#   * **Say when a suspicion fails to reproduce.** That is a useful result, not a blank.
-#   * **Then argue against your own findings.** For each, check whether the information
-#     exists somewhere you did not look — another claim, the rubric header, a fixture comment, the
-#     Dockerfile, the prompt's own framing. Ask whether it is a real defect or merely a
-#     convention this task does not follow. Drop or downgrade whatever does not survive.
-#   * **Greps over-flag.** Tool-name searches hit ordinary English: `time`, `memory` and
-#     `git` are words. Read the sentence before reporting a leak. An automated atomicity
-#     pass over-flags worse: almost every claim contains "and" and several numbers, and that
-#     is not the test — the test is whether the parts serve different goals.
-#   * **Derive ground truth the same way every time.** Read the pre-fixture state from the
-#     pristine seed database (byte-identical to what the image serves); do not rebuild it
-#     from the CSVs. Apply the task's fixtures to a COPY, in the order the Dockerfile applies
-#     them. Never mutate the seed.
-#   * **There is no model pass bar.** Do not fail a task because a model scored low. Grade
-#     the task. And a claim that every model misses identically is a claim defect, not a
-#     model result.
-#
-# THREE LENSES, THEN COMPARE
-#   Audit independently along three lines before reconciling: (1) ground truth and
-#   solvability — recompute the numeric claims exposed to a data trap off the fixtured data
-#   (triage per `numeric_claims_survive_the_data_traps`; a claim that only restates a stored
-#   value needs no recompute); (2) instruction and
-#   rubric — read `instruction.md`, `tests/reward.toml` and `solve.sh` as one artifact and ask
-#   whether they describe the same task; (3) shipping and run forensics — what actually gets
-#   uploaded, and what the trials did. Disagreement between the lenses is itself a finding;
-#   say so rather than averaging it away.
-#
-# WHAT COUNTS AS "REQUIRED" — apply this in every criterion below
-#   A value or condition is required by the task ONLY when `instruction.md` literally states
-#   it, or uses an unambiguous synonym with no other equally-valid reading. None of the
-#   following makes a value required, and a claim that hinges on one is a rubric defect
-#   rather than a correct check:
-#     - thematic or descriptive wording ("do it properly", "make it clean");
-#     - the name or title of an entity (a file called `..._BACKUP.csv` does not by itself
-#       require the answer to use the word "backup");
-#     - THE ORACLE'S CHOICE OF A VALUE. `solve.sh` is ONE valid completion, not the
-#       standard. Where the instruction is silent — a format, an ordering, a framing, which
-#       of two correct labels to use — the rubric must accept any completion the environment
-#       permits, even though the oracle picked one;
-#     - your own inference about what was probably intended.
-#   When the instruction is silent on a value, the claim must accept whatever a correct agent
-#   could legitimately produce. Do not invent requirements.
-#
-# STANDARD OF EVIDENCE — name the witness
-#   Findings in the claims blocks are only reportable with a concrete witness answer:
-#     - **False-PASS witness** (for a coverage or weakness finding): describe a specific
-#       answer that satisfies EVERY existing claim while skipping the outcome you say is
-#       ungraded. If you cannot describe one, the outcome is already covered — do not report
-#       it.
-#     - **False-FAIL witness** (for a strictness finding): describe a specific correct answer
-#       a competent agent would plausibly write that this claim would score 0 or 0.5. If you
-#       cannot, the claim is defensible — do not report it.
-#   And when you propose a fix, respect the floor: **loosening a claim so that it would also
-#   pass an agent who skipped the work is not a fix — it trades a false FAIL for a false
-#   PASS.** Loosen to the weakest form that still fails a skipping agent; where a value is
-#   genuinely needed, use the one the oracle actually produced.
 
 # ---------------------------------------------------------------------------
 # BLOCK A — instruction.md, and whether the config describes the same task
@@ -166,34 +26,37 @@ FAIL if the prompt:
 - reads as a specification rather than a request: markdown headings, `Requirements:` / `Steps:` / `Deliverables:` blocks, numbered procedures, or a bulleted list of things to output;
 - has no persona or an incoherent one — the voice does not match the `[metadata].persona` field, or drifts between a person and a task description;
 - carries no job-to-be-done. "Compute X and report Y" is a function signature. "This goes to our accountant on Friday and I need numbers I can sign off on" is a reason the work matters, and it is what tells the agent which parts are load-bearing;
-- is written about the agent rather than to it ("the agent should…", "your task is to…").
+- is written about the agent rather than to it ("the agent should…", "your task is to…");
+- is fragmented by unnecessary line breaks — hard breaks mid-sentence, one clause or one sentence per line, or blank lines splitting a single thought — so it reads as pasted, hard-wrapped, or machine-formatted text rather than a message a colleague would actually type. Judge the presentation, not just the words: a request a person wrote flows as ordinary prose. The reverse over-flag is real, so do NOT fault a deliberate long single paragraph or an ordinary paragraph break between two distinct points (see `instruction_not_ai_generated`, which records that the reference prompts are single paragraphs by design); the defect is breaks the content does not call for, not the presence of breaks.
 
 Both reference prompts show the register: a deadline, a constraint, a hint of who left the mess, and one line of steering. Judge against that.
 
-PASS if the prompt is a coherent first-person request from the declared persona with a real reason for the work. FAIL if it is a spec, a checklist, a task description, or a persona-less instruction."""
+PASS if the prompt is a coherent first-person request from the declared persona with a real reason for the work, presented as prose a person would type. FAIL if it is a spec, a checklist, a task description, a persona-less instruction, or prose fragmented by line breaks the content does not warrant."""
 
 [[criteria]]
 name = "instruction_no_scaffolding"
-description = "The prompt never names tools, servers, or file paths — the agent must discover the toolchain and the data"
+description = "The prompt never names tools, servers, or fixture filenames — the agent must discover the toolchain and the data. A container path aligned with the Dockerfile is allowed."
 guidance = """
 The task tests whether an agent can find its way. Naming the toolchain or the data files removes exactly the part being measured, and any claim downstream of that discovery becomes free.
 
 FAIL if the prompt names:
 
 - an MCP tool or server (`sqlite_query`, `git_git_log`, "use the filesystem server");
-- a file path or filename the agent is supposed to discover (`/data/handover_notes.md`, `Pet Care 2023 Weekly Financials.csv`, `turing.db`);
+- a file path or filename the agent is supposed to discover (`Pet Care 2023 Weekly Financials.csv`, `turing.db`) — but see the alignment exception below for a container path like `/data/...`;
 - a table or column name that is the object of the search rather than a term the persona would naturally use;
 - the scoring — how many claims there are, what the judge checks, what earns credit;
 - **benchmark vocabulary at all** — claim, rubric, criterion, oracle, grader, reward, verifier, "task" in the benchmark sense. Seeing those words tells the model it is being graded and changes how it answers;
 - a procedure that hands over the approach ("first list the tables, then join on week").
 
-The test for an identifier is whether the persona would have it in their head. A name a real user says — "the workbook", "the 2023 financials", a week number, a service line the business uses — is fine. An internal handle they would never see — a table name, a column name, a database path, a fixture filename, a row id — is a leak. When in doubt, ask whether the string exists in the persona's world or only in the sandbox.
+The test for an identifier is whether the persona would have it in their head. A name a real user says — "the workbook", "the 2023 financials", a week number, a service line the business uses — is fine. An internal handle they would never see — a table name, a column name, a fixture filename, a row id — is a leak. When in doubt, ask whether the string exists in the persona's world or only in the sandbox.
 
 The allowed forms of steering are cues, not pointers: "Sam left notes in there somewhere — start with those" tells the agent a note exists without naming the file; "find the right extract in the data drop" says a search is required. Domain vocabulary the persona would really use ("the workbook", "the warehouse", "net margin") is not a leak.
 
-Exception: a genuinely undiscoverable input — an endpoint with no entry point, a credential the environment cannot reveal — may be stated. Data sitting in `/data` is never undiscoverable.
+Exception (container paths): a sandbox path the Dockerfile actually materializes (e.g. `/data/lab`, `/home/agent/domains`) MAY be stated in the prompt, provided it is aligned — the path equals, is an ancestor of, or is a descendant of a path the task's `environment/Dockerfile` creates (COPY dest, `RUN mkdir`, WORKDIR). This is the one case where naming a `/data/...` path is not scaffolding: the instruction and the container agree on the data location, so the path is accurate rather than a discovery the agent must perform. A `/data/...` (or `/home/...`, `/workspace/...`, etc.) path that the Dockerfile does NOT create is still a leak — it sends the agent looking for a layout the container does not provide. Fixture filenames and table/column names are NOT covered by this exception; those remain leaks because the persona would never have them in their head.
 
-PASS if the prompt steers with cues only and names no tool, server, discoverable path, or scoring detail. FAIL if it names any of them, or hands over the procedure."""
+Exception (genuinely undiscoverable input): an endpoint with no entry point, a credential the environment cannot reveal — may be stated.
+
+PASS if the prompt steers with cues only and names no tool, server, fixture filename, or scoring detail, and any container path it names is aligned with the Dockerfile. FAIL if it names any of those, names a container path the Dockerfile does not create, or hands over the procedure."""
 
 [[criteria]]
 name = "instruction_not_ai_generated"
@@ -222,18 +85,48 @@ description = "The prompt asks for everything the claims grade, so an agent that
 guidance = """
 This is the fairness criterion, and it is the one that most often breaks. The rubric grades the final answer against N claims; if the prompt never asks for something a claim requires, a correct agent loses that claim for following instructions.
 
-Walk `tests/reward.toml` claim by claim and find, for each, the words in `instruction.md` that cue it. The bootstrap task's prompt shows the discipline: "standard deviation" is named because a claim scores it; "calendar date range" because a claim wants dates and not just week numbers; "the numbers behind why they agree or differ" because a claim wants the sqrt(n) argument that no agent would volunteer unprompted.
+Walk `tests/reward.toml` claim by claim and find, for each, the words in `instruction.md` that cue it. Do this as an explicit LEDGER, not as an impression: one row per claim, with the phrase from the prompt that asks for it quoted beside it, and an empty cell where you cannot find one. A rubric of forty or sixty claims cannot be reconciled by reading — the claims that turn out to be uncued are exactly the ones a reading skims past, because each looks locally reasonable. Every empty cell is a finding.
+
+Three shapes recur in the empty cells and are worth naming while you build the ledger: a claim requiring a STATISTIC the prompt never names (the prompt asks how long something takes, the claim wants the median); a claim requiring an INTERMEDIATE figure on the route to the requested answer (the prompt asks how many changesets span more than one commit, the claim also requires the total distinct changesets the agent grouped on the way); and a claim requiring an EXTRA FIELD bundled beside a requested value (the right ISBN plus a publication year nothing asked for). Each is a correct, fully responsive answer scoring zero, and on a short rubric one of them can put that answer under the pass bar by itself — so compute that arithmetic and say so. The claim-side labels are `ESTIMATOR_PREFERENCE` and `MISALIGNED_CLAIM` in `claims_are_defensible`; the finding here is that the prompt never asked. The bootstrap task's prompt shows the discipline: "standard deviation" is named because a claim scores it; "calendar date range" because a claim wants dates and not just week numbers; "the numbers behind why they agree or differ" because a claim wants the sqrt(n) argument that no agent would volunteer unprompted.
 
 FAIL if:
 
 - a claim requires a value, a comparison, a verdict, or a qualitative reading that the prompt never asks for. Name the claim and the missing cue;
 - a claim requires precision the prompt never demands (whole dollars, a percent to one decimal) — precision demands must be stated, as "every figure to the dollar please";
 - the prompt asks for a deliverable so vaguely that two reasonable agents would produce differently-shaped answers and only one would score;
-- the prompt demands something the environment cannot support, so the claim is unreachable from the sandbox.
+- the prompt demands something the environment cannot support, so the claim is unreachable from the sandbox;
+- the prompt is not ANSWERABLE end to end: a competent agent cannot tell when it is DONE (open-ended scope with no closing condition, so one rollout stops early and the next rambles, and neither is the task); or a fallback the prompt itself offers ("if you cannot do X, report Y") is unreachable with the given tools and data, turning graceful degradation into a second dead end; or two of the prompt's own instructions contradict each other so no single answer satisfies both. Each makes some correct completion impossible or unrecognisable — name the sentence and the completion it blocks.
 
 Do NOT require the prompt to enumerate the claims or to state values. Cueing is asking for the thing; it is not telling the agent the answer.
 
 PASS if every claim traces to something the prompt asks for, at the precision the claim demands. FAIL if any claim is uncued, or the prompt's ask is too vague to make the claim fair."""
+
+[[criteria]]
+name = "instruction_is_unambiguous"
+description = "Every quantity and instruction the rubric grades has exactly one reading in the prompt — the counting unit is defined, and no load-bearing phrase admits two readings that lead to different graded answers"
+guidance = """
+`instruction_states_the_deliverable` asks whether the prompt CUES each claim. This asks the sharper question: is the claim cued UNAMBIGUOUSLY — is there exactly one thing a competent agent could reasonably think it is being asked for? An ambiguous prompt produces the quietest failure in the whole format: several agents read one phrase two defensible ways, one reading matches the claim and the others score 0, and the task looks merely "hard" while it is actually grading which reading the agent guessed. Every such loss is a false FAIL the score distribution hides, and it hits many rollouts at once, so it is worth its own pass.
+
+Walk the prompt for the phrases the claims depend on, and for each ask whether a SECOND competent reading exists that a claim would punish. This is the mirror of a coverage check: not "is anything left ungraded" but "does anything graded have two right answers".
+
+How to check, mechanically:
+  1. List every claim that grades a NUMBER, a chosen ITEM, or a SET.
+  2. For each, find the sentence in `instruction.md` that asks for it, and try to satisfy that sentence TWO ways — a different counting unit (services vs copies), the other reading of an ambiguous word ("cannot lapse at all"), or method-only vs a restated output ("work to the dates" vs "state the dates").
+  3. If two readings produce two different answers and the claim would score only one, that is a finding — record both readings and the claim. If every graded sentence yields exactly one answer, the prompt is unambiguous for grading.
+
+FAIL if:
+
+- **A graded quantity has no defined unit.** The prompt asks "how many are exposed / affected / at risk / duplicated / still to clear" and a claim pins a number, but the prompt never fixes what is counted — services or installed copies, rows or distinct records, items or the works behind them. Two agents then report two different TRUE numbers about two different units and only one scores. When a claim grades a count, the prompt must fix the unit: a clause such as "count each copy that reaches production as its own exposure, not one per service" is exactly what makes the count gradeable. The false-FAIL witness is concrete — an answer giving the correct count of the OTHER legitimate unit.
+- **A load-bearing phrase admits two answer-changing readings.** "A hostname that cannot lapse at all" reads as either "has no registration behind it" or "auto-renews", and those select different hostnames; whichever the claim wants, the other correct reading scores 0. "Anything that looks over the limit and isn't" reads as "over on a percentage test" or "physically large", and those select different items. The fix lives in the prompt or a fixture, not the claim: disambiguate the phrase so one reading survives.
+- **A selector does not fix WHEN it is evaluated.** The prompt selects the records to work on with a phrase whose truth depends on the instant it is judged at — a present participle or a present tense ("a line still running an older revision", "accounts currently holding the grant", "items now over the limit") — and the environment contains a state CHANGE inside the relevant window, so the selector picks one record set as of the review instant and a different one as of the time the work was done. Both readings are competent, they select different records, and every downstream count rides on which one the agent took, so the claim that pins the record set punishes a whole family of correct answers at once and takes the per-record claims with it. Check it mechanically: for each selector phrase, evaluate it at each instant the task makes available — the review instant the scope note fixes, and the event time of the records themselves — and see whether the selected set changes. If it does, the prompt must say which instant governs ("was still running, WHEN IT PRODUCED THEM, a revision older than the current published one"). Note that a prompt disambiguating itself ELSEWHERE — a later sentence implying a count of three, a clause presupposing a record with a later reload — does not repair a selector sentence that inverts on its own reading: the agent reads the selector, applies it, and never revisits it.
+- **The prompt directs METHOD and a claim grades OUTPUT.** "Work to the block dates in the scope note, not to today" tells the agent what to compute AGAINST; a claim that then requires the answer to RESTATE those dates grades an output the prompt never asked to see. The discriminator is whether stating the value leaves a trace in the deliverable: an anti-clock date claim is LEGITIMATE when the date is itself a required output or another graded claim depends on it being right (a cut-off that determines which records are ineligible must be stated), and is a METHOD-ECHO DEFECT only when nothing in the deliverable turns on stating it and the prompt merely said to work to it — there, every correct agent uses the date, none reports it, and the claim collects near-zero across all rollouts (the fingerprint). Either the prompt must ask for the restatement or the claim must drop it (the claim-side label is `MISALIGNED_CLAIM` in `claims_are_defensible`; the finding here is that the prompt's wording does not ask for what the claim needs).
+- **The prompt leaves a scope open where a claim reads it closed.** The prompt asks for "the combined figure" and a claim requires the per-item breakdown; the prompt asks for "the reason" and a claim requires a specific enumerated set of reasons. If a claim demands more granularity, or a more definite set, than the prompt's wording commits to, the gap is a real ambiguity.
+
+Do NOT flag ordinary underspecification a competent persona resolves the same way every time (a professional default, a domain convention), and do NOT flag a phrase that is only ambiguous in the abstract but has one reading in context. The bar is: TWO competent agents would plausibly answer differently AND a claim would split them — name both readings and the claim that punishes the loser, or it is not a finding.
+
+The fix always restores a single reading: tighten the prompt, disambiguate in a fixture, or — where the openness is legitimate — loosen the claim to accept every reading the prompt permits (respecting the preamble floor: do not loosen so far a skipping agent passes). Never fix an ambiguous prompt by silently canonising the annotator's reading in the claim.
+
+PASS if every graded quantity has a defined unit and every load-bearing phrase has one competent reading. FAIL if any counted quantity lacks a unit, any load-bearing phrase admits two answer-changing readings, a claim grades an output the prompt only directed as method, or a claim reads a scope closed that the prompt left open — with both readings and the losing claim named."""
 
 [[criteria]]
 name = "metadata_matches_the_task"
@@ -247,13 +140,13 @@ Check each:
 - **`[task].description`** — one line that actually describes this task's ask. Not the template's placeholder, not a description of a different task.
 - **`[task].version`** and **`schema_version`** — present; schema is the Harbor schema the file conforms to (`1.4` for this suite).
 - **`[metadata].persona`** — the same person whose voice `instruction.md` is written in, AND a person who would plausibly make this request. Two tests, both required: the voice test (does the prompt read as this role talking) and the alignment test (is this task type within this role's responsibilities, and is the deliverable shaped by their job). "Small-Business Finance Analyst" against a prompt about closing the books passes both. A research-engineer persona asked to reconcile an accounts payable ledger fails the second even if the voice is right — and a persona nobody in the prompt resembles is a copy-paste from a sibling task. Adjacent work is fine (an analyst reading a handover note, a research engineer checking a row count); a task squarely in someone else's job is not.
-- **`[metadata].domain`** — exactly one of `software-engineering` or `research-science`, and it must match the work the task actually requires, not the incidental tooling. A reconciliation that happens to use Python is still software-engineering; a statistics task that happens to read a CSV is still research-science. The domain should also be coherent with the tool surface: a research-science task with no code execution or literature surface, or a software-engineering task whose only tools are paper search, is mislabelled somewhere.
+- **`[metadata].domain`** — present, non-empty, and matching the work the task actually requires, not the incidental tooling. A reconciliation that happens to use Python is still software-engineering; a statistics task that happens to read a CSV is still research-science. The domain should also be coherent with the tool surface: a research-science task with no code execution or literature surface, or a software-engineering task whose only tools are paper search, is mislabelled somewhere. The set of allowed domain values is owned by the suite config and changes often, so do NOT hardcode or fail on the specific string here — judge only that the domain is present and that it fits the task.
 - **`[metadata].annotator`** — this field must NOT be shipped in the task. It carries an identifying name that does not belong in a benchmark task, so its ABSENCE is correct and expected. Do not fault a task for omitting it. Flag it only when it IS present (an annotator string that survived into task.toml), and treat that presence — not its absence — as the defect.
 - **No placeholder survivors** — `CHANGE-ME` anywhere in `task.toml`, `instruction.md`, `solve.sh` or `reward.toml` is an automatic fail.
 
 Do NOT judge the claim count here (neither an absolute band nor target_claims vs the criterion count). Claim-count concerns belong to `target_claims_matches_criterion_count`; this criterion is only about whether the descriptive metadata matches the task.
 
-PASS if every descriptive field matches this task, `annotator` is absent, and nothing is a leftover placeholder. FAIL on a wrong domain, a persona that does not match the prompt's voice, a name/description that belongs to another task, an `annotator` field that is present, or any `CHANGE-ME`."""
+PASS if every descriptive field matches this task, `annotator` is absent, and nothing is a leftover placeholder. FAIL on a persona that does not match the prompt's voice, a name/description that belongs to another task, an `annotator` field that is present, or any `CHANGE-ME`. (A missing or grossly misfit domain is a defect, but do not fail solely because the string is not in a particular hardcoded list — that list is owned by the suite config and changes often.)"""
 
 [[criteria]]
 name = "target_claims_matches_criterion_count"
@@ -271,20 +164,21 @@ PASS if `target_claims` equals the actual `[[criterion]]` count. FAIL only when 
 
 [[criteria]]
 name = "task_is_long_horizon"
-description = "The ask genuinely requires the target tool-call budget, with real dependency between phases"
+description = "The ask genuinely requires sustained, dependent multi-phase work — judged from the task, not from any tool-call number"
 guidance = """
-These tasks exist to exercise long-horizon tool use. `target_tool_calls` (40-70) is a claim about the work, and it must be true because of dependency, not volume.
+These tasks exist to exercise long-horizon tool use. What matters is that the work is genuinely sustained and DEPENDENT — each phase consuming the previous phase's output — not that it hits any particular count.
 
-FAIL if:
+`target_tool_calls` is NOT graded here. There is no required band and no consistency test against the ask: any value is acceptable, and a task is not defective because its `target_tool_calls` is higher or lower than the number of calls you estimate the ask needs. Do NOT fail, and do NOT even note, a mismatch such as "target_tool_calls says 45 but the ask looks reachable in 20" — that comparison is explicitly not a criterion in this suite.
 
-- the ask decomposes into N independent lookups that could run in any order. Twenty parallel reads is one step performed twenty times, not twenty steps;
-- the whole task is reachable in a handful of calls — one query and one calculation — while `target_tool_calls` claims 45;
-- `target_tool_calls` is wildly inconsistent with the ask in either direction, or below the floor for its difficulty tier (20 calls is the minimum for a task to count as long-horizon at all);
-- a single tool in the allowlist collapses the task (a shell tool that can run one script producing the entire answer, when the task is meant to require discovery and reconciliation across sources).
+Judge only the work itself. FAIL if:
+
+- the ask decomposes into N independent lookups that could run in any order, with no phase depending on another — an unordered fan-out is one step performed many times, not many steps;
+- the whole task is genuinely reachable in one or two steps — a single query and a single calculation, with no discovery, reconciliation, or synthesis;
+- a single tool in the allowlist collapses the task (a shell tool that can run one script producing the entire answer, when the task is meant to require discovery and reconciliation across sources). This is about a tool that removes the REASONING; deliberately-exposed extra or write-capable distractor tools are fine and are covered under `tool_surface_is_a_deliberate_allowlist`.
 
 The shape to look for is genuine phase dependency: discover what exists, decide which source is authoritative, learn the mapping, compute, then reconcile and explain — where each phase's input is the previous phase's output. Both reference tasks have it; the reconciliation task's row-by-row pass is exactly the phase a totals-only agent skips, and the claims covering it are the ones a shortcut agent loses.
 
-PASS if the ask requires sustained, dependent work in the neighbourhood of the declared budget. FAIL if it is a handful of calls, an unordered fan-out, or short-circuitable by one tool."""
+PASS if the ask requires sustained, dependent work across multiple phases. FAIL only if it is genuinely one or two steps, an unordered fan-out, or short-circuitable by one tool — never for a `target_tool_calls` value."""
 
 [[criteria]]
 name = "difficulty_is_essential"
@@ -360,6 +254,8 @@ FAIL if:
 - the instruction implies a source of steering ("Sam left notes") that the environment does not contain — that single cue is the whole discovery path, and without the file the task is unsolvable;
 - the task depends on a path in the seed image that the Dockerfile does not verify and TASK_FORMAT.md does not document.
 
+This criterion is about inputs EXISTING. Whether the environment states the RULE, the TERM or the UNIT a claim grades — a definition of "exposed", a resolution rule for two conflicting records, a currency for a column of bare numbers — is the separate and frequently-missed question owned by `claims_are_grounded_in_stated_evidence`. A fixture can be present and complete here and still leave a claim ungrounded there, so do not let a pass on this criterion stand in for that one.
+
 PASS if every assumed input exists, at the path the task assumes, from a documented source (seed image or fixture). FAIL if any input is missing, at a different path, or unattributable."""
 
 [[criteria]]
@@ -400,21 +296,25 @@ PASS if every mutation either cannot silently miss or asserts its own effect, an
 
 [[criteria]]
 name = "environment_is_deterministic"
-description = "The sandbox is reproducible: pinned image, pinned servers, committed fixtures, no task-relevant network fetch"
+description = "The sandbox is reproducible: pinned image, pinned servers, committed fixtures, and no determinism risk the task itself introduces outside its declared MCP servers"
 guidance = """
-The claims are exact values. Anything that can change between builds can invalidate them without a code change.
+The claims are exact values. Anything the TASK controls that can change between builds can invalidate them without a code change. This criterion is about determinism the task is responsible for — NOT about the inherent behaviour of a declared MCP server.
+
+**Network access through a declared MCP server is legitimate and expected, and is NOT a determinism defect here — even when a graded claim depends on it.** Several servers in this image exist precisely to reach the network (`open-library`, `arxiv`, `crossref`, `paper-search`, `wikipedia`, `whois`, `ddg-search`, `fetch`). A task whose deliverable is "find the Penguin Books 2003 edition of Frankenstein and its translator" is SUPPOSED to read a live catalogue over the Open Library server, and the fact that a community-editable catalogue could change upstream is a property of the tool the task is deliberately testing, not a misconfiguration the author can fix or snapshot. Do NOT fail (or note) a task because a claim's ground truth is read live through an MCP server the task legitimately uses — that is the intended design, and flagging it is a false positive.
+
+What this criterion DOES police is determinism the task introduces on its own, outside the MCP tool surface.
 
 FAIL if:
 
 - the base image or any MCP server version floats (`:latest`, an unpinned `npx` package, a `uvx` package with no `==`);
 - a fixture is generated at build time from a network source rather than committed;
-- the task reads live data whose content is task-relevant;
+- the task reaches the network OUTSIDE its MCP servers — a `curl`/`wget` in the Dockerfile or setup, a fixture builder that fetches at build time, a `solve.sh` or `test.sh` that pulls live data — i.e. any non-MCP live dependency the task wires in itself;
 - setup depends on wall-clock time or a random seed without fixing it;
-- a package install is unpinned in a way that could move a computed answer (a different scipy, numpy, or sqlite version producing different digits than the ground truth was derived on).
+- a package install is unpinned in a way that could move a COMPUTED answer (a different scipy, numpy, or sqlite version producing different digits than the ground truth was derived on).
 
-Standard registries (npm, PyPI) are stable infrastructure; pin the version, not the registry. Note that `uvx` servers must additionally carry `--with mcp<2` — that is a functional requirement covered under `mcp_server_hygiene`, but it is also a pin, and an unpinned MCP SDK floats to 2.0.0 and silently kills the server.
+Standard registries (npm, PyPI) are stable infrastructure; pin the version, not the registry. Note that `uvx` servers must additionally carry `--with mcp<2` — that is a functional requirement covered under `mcp_server_hygiene`, but it is also a pin, and an unpinned MCP SDK floats to 2.0.0 and silently kills the server. The verifier's own rewardkit pin (`harbor-rewardkit==0.1.*`) is the suite standard and is not a graded-value determinism risk — do not flag its patch-floating pin.
 
-PASS if every version is pinned, fixtures are committed, and nothing task-relevant is fetched at build or run time. FAIL on any floating version, generated-at-build fixture, or live dependency that could change a graded value."""
+PASS if every version is pinned, fixtures are committed, and the task introduces no determinism risk of its own outside its declared MCP servers. FAIL on any floating version, generated-at-build fixture, non-MCP live dependency, or unfixed clock/seed. Reading live data THROUGH a declared MCP server the task legitimately uses is not a defect."""
 
 [[criteria]]
 name = "environment_does_not_leak_the_answer"
@@ -428,6 +328,7 @@ Check every file that survives into the image:
 - **Fixtures may cue, never solve.** A handover note saying "the December load did not go cleanly, please check it properly" is ideal: it points at the area and states nothing gradeable. The same note listing the three defects and their amounts would destroy the task.
 - **No annotator artefacts in the image.** `reward.toml`, `solve.sh`, anything under `tests/` or `solution/`, and any stray notes file must never be COPY'd into the sandbox.
 - **No pre-computed answer sitting in the data.** A results table, a saved report, or a spreadsheet tab that already contains the graded figures.
+- **No graded value recoverable by a TRIVIAL operation over a shipped file.** A leak is not only a file that STATES the answer; it is any file that YIELDS it without the reasoning the task exists to measure. The shape to hunt: a shipped changelog, index, manifest, register or summary whose entries correspond one-to-one with the things a claim counts, so that counting the lines — or counting a parenthetical flag on them — reproduces the claim's number. Two greps then replace the grouping, reconciliation or classification work the whole task was built around, and an agent can score the arithmetic claims off the summary file without ever touching the primary source. Test it, do not eyeball it: for every graded count, total, set or per-item tally, ask whether one mechanical pass over a shipped file (a line count, a flag count, a sort, a single query) reproduces it, and run that pass. Where the environment ships a repository, bundle or archive, check it at EVERY ref and state the task exposes — a file that is a bare header at the opening ref and a full enumeration at HEAD leaks at HEAD, and the agent works at HEAD. The fix is normally to thin the file to prose that cues without enumerating, not to add a claim.
 - **Check the whole image surface, not just `/data`.** Env vars, shell history, `/tmp`, a git repo whose later commits contain the fix.
 
 PASS if the sandbox contains the inputs and the cues but no gradeable value, and no annotator or setup artefact survives. FAIL if any graded number, defect description, or rubric text is readable from inside the container."""
@@ -488,11 +389,23 @@ A distractor is FAIR when:
 
 A distractor is UNFAIR when the correct choice is undecidable from inside the sandbox, when both sources could reasonably be called authoritative, or when the claims silently assume one of two equally-supported readings.
 
+A related, subtler failure is a **graded discriminator that is not load-bearing.** When a claim rewards one attribute as THE reason a case is in or out — "auto-renew is what separates the safe registrations from the at-risk ones", "the extra is what makes it exposed rather than the version" — the environment must contain a case where that attribute ALONE decides: a control where the graded attribute points one way and every confound points the other. If the graded attribute co-varies perfectly with another across every row (everything that auto-renews also happens to expire outside the window), nothing forces the intended reading, an agent that reasoned correctly from the confound gives the same verdict for a different stated reason, and the claim silently grades a coincidence — marking down a correct agent or crediting a lucky one. To clear this, find the fixture row that isolates the graded attribute and name it; if none exists, the fix is a fixture row that isolates it, not a reword of the claim. (Conversely, do not manufacture a finding here when such a control DOES exist — verify against the data before reporting, per the preamble.)
+
+**A trap must fail on exactly ONE dimension, and its rejection must be scored somewhere.** The mirror of the previous paragraph: where a fixture ships a candidate the answer is meant to REJECT — a licence row that must not be relied on, a record that looks eligible and is not, a source that looks authoritative and is superseded — check how many independent reasons there are to reject it. A trap that fails on expiry AND format AND extent at once discriminates nothing: an agent that rejected it for the wrong reason, or by a rule it never understood, is indistinguishable from one that reasoned correctly, and the row the author built as the task's discrimination point measures nothing. One decisive axis, with the others clean, is what makes the rejection evidence of understanding. Then check whether anything GRADES the rejection: if the oracle spends a sentence rejecting the trap and no claim scores that sentence, the trap is decoration — an answer that swallows it whole loses nothing directly, and only loses at all if some other claim happens to catch the downstream value. Say which claims (if any) a trap-swallowing answer would fail, and name them; if the answer is "none", the fix is a claim that scores the rejection, or a trap sharpened to one axis (see the false-positive requirement in `rubric_penalises_padded_answers`).
+
+**Numerical inertness is NOT the fairness test, and arguing it is the most over-fired finding in this criterion.** A distractor or a directed choice is fair when it DISCRIMINATES — a careless agent can get it wrong, a careful one can resolve it from the artifacts — not when it moves a downstream number. Do NOT report any of these:
+
+- a direction that AGREES with what the tree already says ("work to the versions in the scope note", where every file carries the same pin). That is a consistency cue, and it still separates the agent that resolved the version from the one that guessed;
+- an as-at instant over an immutable file tree, which is inert by nature and still fixes the frame the answer is written in;
+- any argument of the form "following the direction and ignoring it produce the same answer", standing alone.
+
+There IS one reportable version, and it is a CLAIM defect rather than a fixture defect: where a claim PAYS for the directed choice although the direction could not have been read any other way, that claim grades transcription. It belongs to the copied-value shape in `claims_assert_outcomes_not_topics` — report it there, once, and not here.
+
 The same applies to the tool surface: distractor tools should be off-task but plausible for the persona (a literature surface for a research engineer), and no distractor tool should be capable of short-circuiting the task.
 
 Also check the reverse failure: the authoritative source must be discoverable. If the prompt's only steering is "Sam left notes in there somewhere", the note must be findable by listing `/data` and must itself name the authoritative file.
 
-PASS if every distractor is plausible, resolvable from in-environment evidence, and internally consistent. FAIL if any distractor is undecidable, makes a graded claim depend on a coin flip, or is so implausible it distracts nobody. Mark N/A if the task ships no distractors."""
+PASS if every distractor is plausible, resolvable from in-environment evidence, internally consistent, decided by a single identifiable axis, and consequential — with the claim that scores its rejection, and the fixture row that makes each directed choice matter, both named. FAIL if any distractor is undecidable, makes a graded claim depend on a coin flip, is so implausible it distracts nobody, fails on several dimensions at once so that rejecting it evidences nothing, has its rejection graded by no claim, or is inert because no record falls on the other side of the boundary it sets. Mark N/A if the task ships no distractors."""
 
 # ---------------------------------------------------------------------------
 # BLOCK C — the MCP tool surface: can the agent actually work?
@@ -532,22 +445,29 @@ PASS if every server block is stdio, pinned, correctly argued, `--with mcp<2` wh
 
 [[criteria]]
 name = "tool_surface_is_a_deliberate_allowlist"
-description = "The exposed tools are a reasoned needed-plus-distractor split, verified against the real tool inventory"
+description = "enabled_tools is a reasoned allowlist grouped under the three heading comments, every entry backed by a declared server and verbatim from the inventory"
 guidance = """
-The allowlist is a design artifact: it decides how much of the task is discovery. Both reference tasks document the split — "10 needed + 6 same-server distractors + 12 off-server distractors = 28 exposed", "8 needed, 20 distractors. Every name verified against ci/tool_inventory.txt".
+The allowlist is a design artifact: it decides how much of the task is discovery. `[metadata].enabled_tools` in `task.toml` IS that allowlist, and this suite authors it as three labelled groups.
 
 Check that:
 
-- **the split is stated and plausible.** A comment recording needed vs distractor counts is how a reviewer knows the surface was designed rather than accumulated;
+- **the allowlist is organised under the three heading comments.** `enabled_tools` must carry three groupings, each introduced by a comment:
+  - **needed tools** — everything a phase of the task actually requires;
+  - **same-server distractors** — extra tools from a server the task DOES use (e.g. a `# same-server distractors` block with `git_git_diff_unstaged`, `git_git_status` alongside a needed `git_git_log`), there to tempt a wrong call on the right server;
+  - **off-server distractors** — tools from servers the task does not need at all (e.g. `whois_whois_domain`, `ddg-search_search`), there to test whether irrelevance is noticed.
+  A missing group heading, or an `enabled_tools` that is one undifferentiated list, is the finding: the three headings are how a reviewer knows the surface was designed rather than accumulated. `tasks/transitive-pin-escape/task.toml` is the canonical shape (`# needed`, `# same-server distractors`, `# off-server distractors`).
+- **every enabled tool's server is declared.** Each entry is `<server>_<tool>`; its `<server>` prefix MUST have a matching `[[environment.mcp_servers]]` block in the SAME `task.toml` — this applies to all three groups, including off-server distractors, whose servers are not needed for the work but must still be declared so the tool actually reaches the agent. A prefix with no declared server is a silent no-op (the tool never reaches the model). (Structural coverage of this is also in `mcp_servers_are_declared`.)
 - **every needed tool is present.** Walk the instruction's phases and confirm the surface supports each one;
-- **no tool trivialises the task.** A general shell or arbitrary-command tool can collapse a multi-phase discovery task into one script. If such a tool is exposed, the task must still require the reasoning — say why it does. A restricted variant (`ls`/`cat`/`find` only) is a different and usually acceptable case;
+- **no tool trivialises the REASONING.** A general shell or arbitrary-command tool can collapse a multi-phase discovery task into one script. If such a tool is exposed, the task must still require the reasoning — say why it does. A restricted variant (`ls`/`cat`/`find` only) is a different and usually acceptable case. This is about a tool that removes the thinking, not about a tool merely being powerful or write-capable;
 - **names are verbatim from the tool inventory**, including the odd-looking double prefixes. An invented or guessed name is dead weight in the allowlist and evidence the surface was not verified;
-- **distractors fit the persona.** A research engineer plausibly has a literature surface; a finance analyst plausibly has file and DB tools. A distractor nobody in this role would have is noise, not a distractor;
-- **no destructive tool is exposed.** Check the `destructiveHint` annotation on every allowlisted tool in the inventory. A destructive tool in the surface lets an agent damage the environment it is being graded on, and gives it a route to make its own answer true (see `reward_hacking` in the trajectory rubric). Write-capable tools need a stated reason; destructive ones need a very good one.
-- **the counts are within the suite's bars** — the number of servers declared and the number of tools exposed both have expected ranges. A surface far outside them is either starved or padded, and either way was not measured against the bar.
-- **the surface matches the declared domain** — see `metadata_matches_the_task`.
+- **distractors fit the persona.** A research engineer plausibly has a literature surface; a finance analyst plausibly has file and DB tools. A distractor nobody in this role would have is noise, not a distractor.
 
-PASS if the surface is a documented needed-plus-distractor split with verbatim tool names, covering every phase without trivialising any. FAIL if a needed tool is missing, a name is invented, a tool short-circuits the task, or the split is undocumented and looks accumulated."""
+Do NOT flag the following — they are deliberate design choices in this suite, and flagging them is a false positive:
+
+- **Write-capable or destructive distractor tools.** Exposing a mutating tool as a TRAP is the intent — `sqlite_update_records` tempts an agent to "fix" the ledger it was asked only to report; `filesystem_write_file` / `filesystem_edit_file` / `desktop-commander_start_process` / `git_git_checkout` tempt editing the environment instead of auditing it. A `destructiveHint: true` or write-capable tool in the allowlist is NOT a defect and needs NO stated reason — the trap is the point. The one hard limit is a tool that can IRREVERSIBLY destroy the ground truth mid-rollout (`sqlite_delete_records`), which the deterministic `check-no-dangerous-tools.py` already bans; flag that, and nothing else, on destructiveness.
+- **Surface size.** There is no tool-count or server-count budget in this suite (the count-band checks were retired). Do not fail or note a surface for being "too large" or "too small"; extra distractors are intended padding, not accumulation.
+
+PASS if the allowlist is grouped under the three heading comments, every entry is backed by a declared server and verbatim from the inventory, every phase is covered, and no tool removes the reasoning. FAIL if a group heading is missing, a needed tool is absent, an entry's server is undeclared, or a name is invented, or a tool short-circuits the reasoning. Do NOT fail for write/destructive distractor tools (except `sqlite_delete_records`) or for surface size."""
 
 # ---------------------------------------------------------------------------
 # BLOCK D — solution/solve.sh, judged as the FINAL ANSWER
@@ -590,7 +510,9 @@ Do the work here — this is the criterion where a reviewer earns their keep:
 
 FAIL if any figure is unattributable, contradicts a recomputation, breaks the oracle's own arithmetic, or describes a mechanism the environment does not implement.
 
-PASS if every figure is traceable and every recomputable figure checks out. FAIL on any hallucinated, contradictory, or arithmetically impossible value — and say which ones you could not verify and why."""
+6. **Check that a cited source actually says what the oracle attributes to it.** A conclusion can be TRUE while its citation is wrong — the oracle writes "the render path imports it, as the vendor README says" when the README says no such thing and the link is only established by a package manifest. The value is not hallucinated, but the reference answer models a citation the evidence does not support, which trains the wrong grounding habit and can mislead the next author. Name the claim, the source it cites, and what that source actually contains.
+
+PASS if every figure is traceable, every recomputable figure checks out, and every cited source supports what the oracle attributes to it. FAIL on any hallucinated, contradictory, or arithmetically impossible value, or a citation the named source does not support — and say which ones you could not verify and why."""
 
 [[criteria]]
 name = "numeric_claims_survive_the_data_traps"
@@ -606,6 +528,8 @@ The three traps, for the claims you flagged:
 1. **Stringly-typed data compares lexically.** The seed stores its columns as TEXT — currency with symbols and thousands separators, counts, dates — so any comparison SQLite performs on them is a string comparison. `ORDER BY`, `MAX`/`MIN`, `>`, `BETWEEN` and `DISTINCT` all return confident nonsense: `'9'` sorts above `'10'`, `' $ 1,000.00 '` above `' $ 900.00 '`, and `'2/1/2023'` above `'15/1/2023'`. So any exposed claim must have been derived with an explicit cast or a parse. Check **how** the ground truth was computed, not only what it says — and check the oracle the same way, since the two must agree for the right reason, not by coincidence.
 2. **The seed's own anomalies exist before any fixture runs.** The pristine data already contains duplicates, blanks, inconsistent formatting and rows that break the pattern. A fixture that injects four duplicate rows into a table that already had one produces **five** duplicate groups, not four; a claim about "the missing values" must count the ones that were always missing. So every count/anomaly claim must be derived from the **fixtured copy** and never from the fixture's stated intent: establish the pre-fixture baseline once and state it.
 3. **Every accepted calculation route must be verified.** Where a claim accepts more than one legitimate way to reach the value — a stored column or a recomputation from its inputs, one denominator or another for a ratio, a t-based or a normal-approximation band, rounding at the row or at the total — every accepted route must have been checked, including any difference the claim asserts between them. An unverified alternate route is an unpassable claim for the agent that takes it, and the failure will look like an agent error.
+
+A claim can also assert something false in its FRAMING while the value it pins is right — a window it miscounts, a mechanism that explains only part of the cases, a source it mis-describes. That is `claim_premises_are_true_of_the_environment`, and it applies to claims this triage tells you not to recompute: a claim that merely restates a stored value can still carry a false premise in the sentence around it.
 
 The reviewer's own derivation follows the same discipline, whatever the task: read the pre-fixture state from the pristine seed database (byte-identical to what the image serves), never rebuild it from source files; apply the task's fixtures to a **copy**, in the order the Dockerfile applies them; never mutate the seed.
 
@@ -623,7 +547,8 @@ FAIL if:
 - the oracle states the value but not the qualitative part the claim also requires. A claim demanding a mechanism ("identifies X as the cause, not merely that a problem exists") is only partially met by a number; a claim demanding "more than one KIND of defect" needs the synthesis, not the list;
 - the oracle's value is outside the claim's own stated tolerance — check every numeric claim against the oracle's number, both directions;
 - the oracle satisfies a claim only by implication, so a reasonable judge could score it partial. Claims are graded individually against the text; nothing carries over between them;
-- the oracle contradicts itself between sections, so which statement the judge scores depends on which it reads.
+- the oracle contradicts itself between sections, so which statement the judge scores depends on which it reads;
+- the oracle RENDERS a value in a form the claim as written would not accept — the claim pins a digit form ("42 pages") and the oracle spells the number in words ("forty-two"), or the claim pins a currency/precision the oracle drops. This scores the oracle below 1.0 on its own claim and breaks the gate. It is usually a symptom of an over-pinned claim (fix the claim per `claims_are_defensible` FRAGILE_CLAIM so any correct rendering counts); until then, the oracle and the claim must at least agree on the rendering.
 
 Also check the mechanical prerequisite: the oracle's output must reach `/logs/agent/final_answer.txt`, either because `solve.sh` writes it (`tee`) or because `test.sh` bridges Harbor's `oracle.txt`. If neither happens, the judge is handed nothing and the oracle scores ~0 however correct the text is — see `verifier_bridges_agent_output`.
 
@@ -670,6 +595,8 @@ PASS if the script has a sane error posture, delivers its output to a place the 
 name = "claims_cover_the_whole_deliverable"
 description = "Every deliverable the instruction asks for has at least one claim — nothing the persona asked for goes ungraded"
 guidance = """
+ENUMERATE EVERY INSTANCE: list EVERY deliverable the prompt asks for that no claim scores — every gap, not the first; each is its own finding with its own false-PASS witness.
+
 Reconcile in the instruction-to-rubric direction: take your deliverable checklist and find the claim for each item. Every gap is a finding, and you should list them explicitly.
 
 FAIL if:
@@ -687,10 +614,18 @@ The recurring shapes to hunt for, each of which is a real gap seen in practice:
 - **Invariance not graded** — the prompt scopes the work ("only the authoritative source", "the rest as-is") and nothing grades the scoping.
 - **Derivation not graded** — the deliverable is satisfiable by copying a value the environment hands over, and nothing grades the figure the agent had to compute (see `claims_assert_outcomes_not_topics`).
 - **Cardinality not graded** — the prompt implies a definite set ("the specific reason for each gap") and nothing prevents an answer that adds spurious ones (see `rubric_penalises_padded_answers`).
+- **Scope parameter not graded** — the deliverable depends on a parameter that decides WHICH records are in play (an as-of or assessment date, a cut-off, a reporting basis, a population rule, an effective window) and no claim grades it. Every per-record claim is then evaluated against whatever scope the answer chose, so an answer that worked to the wrong cut-off — or invented one, or never opened the file that fixes it — loses nothing for the error that governs its whole answer. The false-PASS witness is concrete and worth writing out: an answer that states a cut-off the scope note contradicts, and is right about everything the claims do grade. The repair is NOT automatically "add a claim that restates the parameter" — that is the method-echo trap, and a claim requiring the answer to print a date the prompt only told it to work TO is a `MISALIGNED_CLAIM` the next review will fail (see `instruction_is_unambiguous`). Prefer, in this order: a claim whose CORRECTNESS TURNS ON the parameter — a closed-set or false-positive claim that an answer built on the wrong cut-off cannot satisfy, which is the fix that costs nothing and grades the thing that actually matters; then, only where the prompt asks for the parameter to be stated, a claim naming it. Say which of the two this task needs, and check the sibling tasks in the suite — where one task scores its assessment date and another with the same shape does not, the gap is worth naming.
+- **Membership not graded** — the prompt asks for the SPECIFIC members (which services are wrongly flagged, which are wrongly cleared, which items to drop) and the only claim grades the DIRECTIONAL or summary statement ("the approach over- and under-counts", "there are both false positives and false negatives") without ever grading the named members. An answer that states the direction while naming no members — or the wrong ones — then collects the claim. The false-PASS witness is an answer that asserts the direction correctly and lists none of the actual members. Grade the members themselves (and pin each count to the set it rests on — see the bare-count shape in `claims_assert_outcomes_not_topics`).
+
+**Never demand a claim for something the prompt does not ask for.** This criterion reconciles PROMPT to claims, so a gap exists only when the prompt actually requests the thing. Where a value looks load-bearing but the prompt never asks to see it — it directs what to compute AGAINST rather than what to print, or another claim merely depends on it being right — the finding belongs to `instruction_states_the_deliverable` or `instruction_is_unambiguous`, phrased as "the prompt must ask for this", and NOT as a demand for a new criterion. This is the single most expensive mistake a review of this kind makes: a claim added for an uncued value is a `MISALIGNED_CLAIM` that the next review fails under three or four other criteria, and the author pays twice for one review's inconsistency.
+
+**Prefer the fix that does not grow the rubric.** Where the gap is real, say which EXISTING claim should carry the outcome, or that the prompt should stop asking for it. Adding criteria is the last resort, not the default: on a long rubric every added criterion widens the distance between what the prompt asks and what the rubric grades, which is the gap half the other criteria here measure.
 
 Report each gap with a **false-PASS witness**: the specific answer that satisfies every existing claim while skipping the deliverable. If you cannot describe one, the deliverable is already covered — do not report it. And do not report an outcome another claim already implies transitively (a claim on the total revenue figure implies the components summed correctly when the components are also claimed); "should be asserted explicitly" is a preference, not a gap.
 
 Note the asymmetry with the reverse direction: a claim with no deliverable is an unfair claim (`instruction_states_the_deliverable`); a deliverable with no claim is an under-graded task (this criterion). Both are defects, for different reasons.
+
+**Answer the scope-parameter question explicitly, either way.** Say what parameter decides which records are in play for this task — the as-of or assessment date, the cut-off, the basis, the population rule — and name the claim that grades it, or state that none does. A review that never mentions the parameter has not run this part, and an answer built on the wrong cut-off is the most expensive thing a rubric can fail to notice.
 
 PASS if every deliverable in the prompt, quantitative and qualitative, has at least one claim, and multi-part deliverables are split. FAIL if any asked-for item is ungraded or bundled such that a partial answer scores the same as a complete one."""
 
@@ -718,7 +653,9 @@ PASS if every claim's subject, value and tolerance agree with the oracle. FAIL o
 name = "claims_do_not_subsume_or_contradict"
 description = "No claim is satisfiable only by satisfying another, and no two claims demand incompatible framings"
 guidance = """
-Two structural defects in the claim set itself, independent of whether any single claim is well written. You do not need a full pairwise matrix — that all-pairs read is the expensive part and most pairs are unrelated. In one pass, group the claims by shared subject (same defect, same figure, same ratio, same entity) and examine only claims that fall in the same group; claims with no shared subject cannot subsume or contradict each other.
+Two structural defects in the claim set itself, independent of whether any single claim is well written. You do not need a full pairwise matrix — that all-pairs read is the expensive part and most pairs are unrelated. Group first, mechanically, then read only within a group.
+
+**How to group, so nothing is grouped by impression.** Scan every claim description for the concrete tokens that identify its subject — record ids and codes (a vial id, an award number, a batch code, a record label), entity names, figures, metric names — and build one group per token: every claim that mentions that identifier belongs to its group. Then read each group STRAIGHT THROUGH, all its claims side by side, as one block. On a long rubric a single identifier can pull a dozen claims out of fifty, and the collision is usually two or three lines apart inside that group — invisible when the claims are read in file order one at a time, obvious when the group is read together. Claims sharing no identifier, figure or subject cannot subsume or contradict each other.
 
 **Subsumption.** Within a group, no claim may be satisfiable only by satisfying another. When claim B is implied by claim A, the pair behaves as one claim with double weight — which, under unweighted scoring, is a weighting smuggled in through claim count (see `no_weights_and_the_pass_bar_is_honest`). Test the related pair: can an answer satisfy B while failing A? If not, they are one claim. The common shapes:
 
@@ -730,36 +667,179 @@ Genuine independence is fine and desirable: an answer can state the warehouse to
 
 **Contradiction.** Within a group, no two claims may contradict, or demand incompatible framings of the same finding. A rubric that rewards both "treats the warehouse as authoritative" and "treats the workbook as authoritative" is unpassable — no answer satisfies both, and every agent loses one. Subtler forms: one claim requiring a figure the other's framing excludes, two claims demanding different denominators for the same ratio, or a claim requiring a value alongside one requiring the caveat that the value is wrong.
 
+The form that hides best, and the one to hunt for in every identifier group, is **a record state phrased as a disposition.** One claim grades what the SYSTEM currently says — "the vial is still in circulation and available for work", "the principal still holds the grant", "the award is still listed as active" — while a sibling requires the answer to ACT on the very thing that state is wrong about — quarantine the vial, revoke the grant, take it off the list. Read the first claim as the judge reads it, alone: "is still in circulation AND AVAILABLE FOR WORK" is not a description of the inventory record, it is a permission, and the correct answer — the one the rubric elsewhere demands — must deny it. Every honest answer then loses that claim while the oracle, phrased in the author's own words, keeps it. The test is mechanical: for each claim, ask whether a fully correct answer to the task as a whole would ASSERT this sentence. If the correct conclusion contradicts it, the claim is grading the stale state as though it were the verdict. The fix keeps both claims and separates the two things — grade the record state AS a record state ("is still flagged in circulation in the inventory record", "the export still shows the grant as counting") so the disposition claim can stand beside it.
+
+A claim no correct answer can assert is the same defect whether its twin is present or not: if the task's own correct conclusion denies the claim's sentence, report it here even when you cannot find the colliding sibling.
+
 Report the pair, say which claim is right, and give the resolution: merge the subsumed pair into one claim, or fix the contradicting one.
 
-PASS if every claim can be independently satisfied and no two are incompatible. FAIL on any subsuming pair or contradicting pair, naming both claims and the fix."""
+PASS if every claim can be independently satisfied, no two are incompatible, and no claim asserts something the task's own correct answer must deny. FAIL on any subsuming pair, any contradicting pair, or any claim that grades a stale state as a disposition — naming both claims, the identifier group you found them in, and the fix."""
 
 [[criteria]]
 name = "claims_are_defensible"
 description = "No claim would falsely FAIL a correct agent — not over-pinned, brittle, misaligned, or contradicting the instruction"
 guidance = """
+ENUMERATE EVERY INSTANCE: scan ALL claims in the file and report EVERY one that trips this, each distinct issue on a claim listed separately (most critical first) — never the first offender only. If a claim also violates another criterion, flag it under that one too; a finding here does not excuse the other.
+
 The inverse of coverage, and the failure mode nobody notices: a claim that a correct answer cannot earn does not look like a bug, it looks like a hard task. Every rollout loses the same points, the score distribution shifts down, and the rubric quietly grades something other than correctness.
 
 Walk every claim and assign the labels that apply. Each finding needs a **false-FAIL witness** — a specific correct answer that would lose the claim — and a corrected claim wording.
 
+**Before assigning labels, run one mechanical pass — it catches the case reviewers most often miss.** For every claim that requires a specific LABEL, VERDICT, CATEGORY NAME, or COLUMN HEADING — a bucket such as "out of scope", a kind such as "error-behaviour difference", a status word, a verdict term — search `instruction.md` for that exact term. If the prompt does not use it (it named its own buckets, named the category only by a hypernym, or never named it at all), the claim must accept any wording that conveys the same verdict; demanding the literal term is a `FRAGILE_CLAIM` / `ENUM_PREFERENCE` false-FAIL whose witness is a correct answer using the synonym. A verdict is graded by what it decides, not by the word chosen for it — "no asset", "decommissioned" and "not applicable" all convey the same verdict as "out of scope".
+
+Run the same test against the FIXTURES and not only the prompt. Where the environment names the referent several ways — a row carrying both a name and a code, a field addressable by header or by position, a document identifiable by filename or by its own heading, a party named or referred to by role — the claim must accept all of them, and a claim that pins one handle is a false FAIL even though the term is "in the data". That sweep has its own criterion, `graded_names_accept_every_alias_the_environment_uses`; a finding there is ALSO a finding here, so record it in both.
+
 - **`ENUM_PREFERENCE`** — the claim pins one value where the task does not pin it, so an equally-valid alternative fails. Two shapes: (i) the instruction leaves the choice open and the claim accepts one option; (ii) the instruction names the outcome only by a synonym, a hypernym, or not at all, and the claim demands one exact expression of it. "States the margin as 44.4%" is defensible only if 44.37% and "about 44%" are genuinely wrong given what the prompt demanded; if the prompt asked for a margin and never fixed the precision, the claim must accept the correct value at any reasonable precision. Decide the valid set from the instruction and ordinary domain practice — NOT from what the oracle happened to write.
-- **`FRAGILE_CLAIM`** — brittle matching where flexible matching is warranted. The judge reads prose, so fragility here is semantic as much as clerical: a claim that requires several specific keywords together, so a correct paraphrase that omits or reorders one fails; a claim that requires one word form ("transposition") when an equally clear description ("the digits were swapped", "re-keyed as 4,340") is just as correct; a claim that requires an exact number format when the instruction only demanded the value ("$332,178" vs "332,178" vs "332178"); a claim pinning wording on an open-ended explanation the instruction never dictated.
-- **`TRAJECTORY_PREFERENCE`** — the claim rewards a mechanism or a route rather than the answer the instruction asked for: requiring the answer to say it queried SQLite, to name a specific tool, to report an intermediate figure, or to present the reconciliation in one particular order, when other correct answers reach the same conclusions differently. (Related but distinct from the process-claim ban in `claims_are_atomic_and_specific`: that one is about claims the judge cannot see evidence for; this one is about claims the judge CAN see and should not be grading.)
-- **`MISALIGNED_CLAIM`** — the claim checks a condition the instruction never asked for: an extra figure, a field, a framing, a caveat. This includes a claim on a **derived or coupled value whose derivation rule appears nowhere** — asserting a margin when the instruction never says which denominator, asserting a per-line percentage the prompt never requested, asserting a rounding convention nothing states. If one of several plausible derived values is pinned, call it `ENUM_PREFERENCE` instead.
+- **`UNCLOSED_SET`** — ENUM_PREFERENCE at the level of a SET: the claim grades a set as CLOSED or EXHAUSTIVE ("the supported disagreements are exactly these three", "these are the affected services", "the whole gap is these two causes") when the environment does not actually close it, so a correct agent that reports a real ADDITIONAL member — one you can verify is present at HEAD — is docked for being right. It is the false-FAIL twin of the exclusivity/closure claim that `rubric_penalises_padded_answers` recommends as a padding defence: closing a set is only fair once you have confirmed the set is complete against the current environment. Before accepting ANY exhaustive-set or "these are all of them" claim, re-derive the set from the fixtures/source at HEAD and hunt for members the claim omits; the recurring failure is a claim that lists what a naive approach (a manifest-vs-range scan, a single query) surfaces while the data contains further true members that a thorough agent finds and is then penalised for. The false-FAIL witness is that omitted-but-correct member, named. Fix by COMPLETING the set to every member actually present at HEAD — not by dropping the closure, which reopens the padding hole `rubric_penalises_padded_answers` exists to close; where the true set is genuinely open-ended, regrade the claim to reward committing to a correct non-empty subset without penalising true additions.
+- **`FRAGILE_CLAIM`** — brittle matching where flexible matching is warranted. The judge reads prose, so fragility here is semantic as much as clerical: a claim that requires several specific keywords together, so a correct paraphrase that omits or reorders one fails; a claim that requires one word form ("transposition") when an equally clear description ("the digits were swapped", "re-keyed as 4,340") is just as correct; a claim that requires an exact number format when the instruction only demanded the value ("$332,178" vs "332,178" vs "332178", and a spelled "forty-two" vs "42" — a number is the same number whatever its rendering, unless the instruction dictated a format); a claim that demands a specific categorical LABEL, verdict, or bucket name the instruction never uses ("out of scope" when the prompt named only two buckets and never used that phrase, so equally-clear synonyms like "no asset", "decommissioned" or "not applicable" are docked on vocabulary alone); a claim pinning wording on an open-ended explanation the instruction never dictated.
+- **`ESTIMATOR_PREFERENCE`** — the claim pins a statistic, an aggregation or a basis the task never fixes: the median where the prompt asked only "how long it has come to take", the mean where either is defensible, a sum where an average is equally right, rounding at the row where rounding at the total is as valid, one denominator among several. Two tests, and the second is the sharp one. First, does the instruction NAME the estimator — search the prompt for the word; a statistic the prompt never names is not required. Second, do the competing estimators actually DIFFER enough to matter: recompute both. Where two legitimate estimators land inside the claim's own stated tolerance (a mean of 54.4 and a median of 53.9 against a claim asking for "about 54"), the claim is grading the WORD and discriminating nothing — every correct agent that used the other estimator loses a point on vocabulary while its number was accepted. Fix by naming the estimator in the prompt or accepting either.
+- **`FRAMING_PREFERENCE`** — the claim accepts only ONE end of a two-ended fact. A permissions gap can be stated as "our house holds no permission for this translation" or as "the translation rights sit with that agency"; a source mismatch as "the export under-counts" or "the directory over-counts"; a test failure as "the range was not yet in effect" or "the test predates the range". These are the same finding, and where ANOTHER claim in the file grades the other end (and a third claim requires naming the very party this claim forbids naming instead), the file itself proves both framings are acceptable. The false-FAIL witness is the answer that identifies the real obstacle in the other direction. Fix by accepting either statement of the fact. (The vocabulary half of this — which handles a referent may be named by — is `graded_names_accept_every_alias_the_environment_uses`.)
+- **`TRAJECTORY_PREFERENCE`** — the claim rewards a mechanism or a route rather than the answer the instruction asked for: requiring the answer to say it queried SQLite, to name a specific tool, to report an intermediate figure, or to present the reconciliation in one particular order, when other correct answers reach the same conclusions differently. (Related but distinct from the process-claim ban in `claims_are_atomic_and_specific`: that one is about claims the judge cannot see evidence for; this one is about claims the judge CAN see and should not be grading.) This label also covers the DOCUMENTED-ROUTE case: where the environment states a fact outright in a file, a claim may not require the agent to have established that fact by one particular experiment ("recomputing the index from the listing columns reproduces the printed value on every row, while the same arithmetic on the raw exports does not"). An answer that cites the document HAS the fact; requiring the experiment grades the route the agent took to find it. It is doubly wrong when a separate claim already grades the fact itself — then the pair pays once for the finding and once for the method, and only the method claim fails, so the rubric's hardest-looking claim is measuring discovery style.
+- **`MISALIGNED_CLAIM`** — the claim checks a condition the instruction never asked for: an extra figure, a field, a framing, a caveat. This includes a claim on a **derived or coupled value whose derivation rule appears nowhere** — asserting a margin when the instruction never says which denominator, asserting a per-line percentage the prompt never requested, asserting a rounding convention nothing states. Three recurring shapes belong here and are worth naming explicitly: (i) the claim requires a FINER granularity than the prompt committed to — the prompt asks for "the combined figure" and the claim grades each component's individual share, so an agent who gave exactly the combined figure the prompt asked for scores 0; (ii) the claim requires a SUPERLATIVE or RANKING the prompt never asked for — "the largest single extract on the manifest", which forces the agent to order the whole set to earn a claim nominally about one item, and which may not even be cued (the item need not "look" extreme by the test the prompt named); (iii) the claim grades an OUTPUT the prompt only directed as METHOD — "work to the block dates" becomes a claim that the dates be restated in the answer, or the claim adds a PROVENANCE / source-attribution bar ("taken from the scope note") to a content value the prompt asked for without asking where it came from, so a correct value stated without naming its source is docked, or the claim requires the answer to DECLARE it performed work the prompt asked it to DO ("states that all twenty entries were examined" when the prompt said to go through every entry) — requesting the work is not requesting a self-report of the work. (iv) the claim requires an INTERMEDIATE figure the prompt never asked to see — a subtotal, a raw count, or a grouping key on the route to the requested answer. An agent that gives exactly the figures the prompt requested, all correct, is docked for not showing its working; and where the claim ALSO pins the internal term for that intermediate ("grouping by their shared Changeset-Id yields 26 distinct changesets"), it charges the agent for not using an identifier the prompt never used. Check the arithmetic of the damage too: on a short rubric one such claim can put a fully responsive answer below the pass bar on its own. Either the prompt must ask for the intermediate, or the claim must grade the figure the prompt asked for; (v) the claim BUNDLES an unrequested field into a claim about a requested one — the right identifier plus a publication year nothing asked for, the right total plus a ticket date the prompt never requested. The bundling is what hides it: the claim looks like coverage of the thing the prompt asked for, and the unrequested half is what the judge withholds on. Grade the requested value, and make the extra either optional colour or a separate claim the prompt actually cues. Each fails an agent who did exactly what the prompt said. If one of several plausible derived values is pinned, call it `ENUM_PREFERENCE` instead; if one of several plausible estimators is pinned, call it `ESTIMATOR_PREFERENCE`.
 - **`CONTRADICTS_INSTRUCTION`** — the severe form: the claim asserts the opposite of something the instruction explicitly says, so it fails an agent that followed the prompt verbatim. The instruction says use the authoritative workbook and a claim grades the backup's figure; the instruction says report to the dollar and a claim requires a rounded total; the instruction says flag the internal gap and a claim requires the reconciled figure with no gap. Fix by ALIGNING the claim to what the instruction literally says — not by deleting it.
 
 Watch for a subtler source of over-strictness: **an ambiguous representation in the data itself**. Where the environment stores a value in a form that admits two readings — `2/1/2023` as either 2 January or 1 February, a bare number that could be dollars or thousands, a label that maps to two reporting names — a claim requiring one rendering fails an agent that read the data the other way and reasoned correctly from it. Either the claim accepts both renderings, or the instruction disambiguates, or the fixture does. A claim that quietly assumes the annotator's reading is a false-fail waiting for its first rollout.
+
+**When you flag an ambiguous reference, the repair is ACCEPTANCE, not a literal string.** A claim that accepts a description matching two objects in the tree ("the root lockfile", where two lockfiles sit at the root) is a real defect — but the fix is to accept every handle the environment itself uses for the intended object AND to disqualify the wrong one: "requirements.lock, however the answer refers to it — the tree's own phrase for it counts; an answer resting on the dev lockfile does not". Demanding the literal filename instead converts a precision defect into an ALIAS defect, and the next review fails the same claim under `graded_names_accept_every_alias_the_environment_uses` because the fixtures' own prose uses a different handle. Build the alias table first (that criterion), then word the fix.
 
 An unreachable requirement is the same defect from the other side: if the environment or a stated constraint makes an outcome impossible, a claim requiring it fails every correct agent. Check that each claim's outcome is actually achievable in the sandbox.
 
 Do NOT flag: a value the instruction states verbatim (an exact figure or label the persona quoted is correctly required exactly); a precision the instruction explicitly demanded ("every figure to the dollar" makes the dollar figure required); a clearly-implied professional default; a claim that is merely strict while still accepting every correct completion. And do not flag a claim for being too weak here — that is `claims_assert_outcomes_not_topics` and `claims_cover_the_whole_deliverable`.
 
-PASS if every claim accepts every completion a correct agent could legitimately produce. FAIL if any claim pins an open value, demands specific wording or formatting the instruction never dictated, grades a mechanism, adds an unrequested condition, contradicts the instruction, or requires something unreachable — with the false-FAIL witness named."""
+PASS if every claim accepts every completion a correct agent could legitimately produce. FAIL if any claim pins an open value, pins an estimator or basis the task leaves open, accepts one framing of a two-ended fact, grades a set as closed that the environment does not actually close, demands specific wording or formatting the instruction never dictated, grades a mechanism or the route by which a documented fact was found, adds an unrequested condition (including an intermediate figure or a bundled extra field), contradicts the instruction, or requires something unreachable — with the false-FAIL witness named."""
+
+[[criteria]]
+name = "graded_names_accept_every_alias_the_environment_uses"
+description = "Where a claim requires something to be identified, it accepts every name, id, position or role the environment itself uses for it — including the fixture's own words"
+guidance = """
+ENUMERATE EVERY INSTANCE: build the alias table once, then report EVERY claim that pins one handle where the environment supplies several — every claim in the family, not the first one you notice.
+
+The largest single family of false-FAILs in this format is a claim that pins ONE name for a thing the environment names several ways. The agent reads the data, identifies the right thing, and says so in the vocabulary the data gave it — and is docked on vocabulary alone. The judge typically concedes the substance in its own reasoning and withholds anyway, because the claim asked for a word. Every rollout that read the data the natural way loses the same point, so it looks like a hard claim rather than a broken one.
+
+`claims_are_defensible` owns over-pinning in general, and its mechanical pass searches `instruction.md` for a demanded term. That search is necessary and NOT sufficient, because these aliases live in the FIXTURES rather than the prompt — and the most expensive of them is not a string anywhere: it is a POSITION ("index 5", "the field after the currency") where the claim wants a column NAME. So build the alias set from the environment.
+
+How to check, mechanically:
+
+  1. List every claim that requires something to be IDENTIFIED — an entity, a site, a person, a party, a column, a file, a document, a record, a category, a cause, a source.
+  2. For each referent, open the fixture that defines it and collect EVERY handle the environment gives it. The classes that recur:
+     - **name and code** — a row carrying several handles for one thing: a numeric id, a full legal name, and a short working name are all licensed the moment the fixture row holds them together, and an answer that identifies the group by its id HAS identified the group;
+     - **column and position** — a field can be named by its header or by its index, and in a task whose subject IS a positional shift, the positional form is the more precise answer, not a weaker one;
+     - **file and title** — a document's filename, its own heading, and its document type are one referent. Where a file's first line declares it to BE the kind of document the claim asks the answer to cite, citing it by filename is a correct attribution and must score;
+     - **party and role** — a named organisation and the role the fixture uses for it ("the licensor", "the rights holder", "the issuing site", "the vendor") are the same party whenever the fixture's own text uses that role;
+     - **converse framings of one fact** — "our house holds no permission for the translation" and "the translation rights sit with that agency" are the same finding stated from the two ends. The mechanical trigger is a PAIR: wherever one claim requires the fact stated from party A's side and ANOTHER claim in the same file requires naming party B for that same item, the rubric has already conceded that both ends describe it — so the first claim must accept the second's phrasing, and docking an answer that gave the other end is a pure vocabulary charge. Scan for that pair deliberately; it reads as two sensible claims and only the pairing exposes it.
+  3. **Walk the five classes one at a time and say what you found for each**, including "none in this task". A sweep that reports only the class you noticed first is where the misses live: a review that catches every title-vs-reference claim and never asks whether a PARTY is also named by a role has run one fifth of this check. In particular, do not stop at the identifier classes — the party ↔ role and converse-framing classes are the two that get skipped, and they are the two whose witnesses are hardest for an author to argue with.
+  4. Confirm each claim accepts the whole alias set for its referent. Where some claim in the same file already spells out two handles for the same referent while its neighbours name only one, that asymmetry settles the question: the author considered the alias acceptable and simply did not write it everywhere.
+
+The rule that makes this decidable: **an answer that quotes the environment's own words for a thing can never fail a claim about that thing.** If a fixture phrases a grant as "the English translation commissioned by the licensor", an answer using that phrase has cited the grant; if the adjacent register line makes the identity trivial, demanding the other handle grades transcription, not understanding.
+
+FAIL if any claim:
+
+- requires one handle where the environment supplies several — a name where a code identifies the same row, a code where the name does;
+- requires a NAME where a position, index, or ordinal identifies the same field unambiguously;
+- requires a document to be cited by TYPE where the document's own content declares that type (or by type where only its filename exists);
+- requires a named party where the fixture refers to that party by role;
+- accepts only ONE end of a two-ended fact whose other end another claim grades;
+- docks an answer for using the fixture's own phrasing of the thing being identified.
+
+The fix is one clause naming the accepted handles — "identifying the site by its number also counts in full", "the channel column (equivalently the field at index 5) counts in full" — applied to EVERY claim in the family, not only the one you found first. Cross-check the family against `sibling_claims_carry_the_same_tolerances`.
+
+Do NOT flag: a handle the instruction itself quoted and required; a claim whose alternative handle is genuinely ambiguous in the data (two rows share the code, the position differs between sources, the role names two parties); or a claim that pins a name because naming it IS the deliverable the prompt asked for.
+
+Each finding needs a false-FAIL witness: the correct answer that identifies the referent by the other handle. PASS if every identification claim accepts every handle the environment uses for its referent, and you can name the fixture line that supplies them. FAIL on any claim that charges an answer for using the data's own vocabulary — quoting the fixture line, the claim, and the correct answer it docks."""
+
+[[criteria]]
+name = "sibling_claims_carry_the_same_tolerances"
+description = "Relief and scope language is applied consistently across claims that grade the same kind of fact — no claim lacks the waiver or the qualifier its near-twin carries"
+guidance = """
+ENUMERATE EVERY INSTANCE: this criterion is a diff over the whole file; report EVERY asymmetry it finds, most costly first.
+
+This is the cheapest high-yield pass in the review, and nothing else in this rubric performs it: every other claims criterion reads ONE claim at a time, so an inconsistency BETWEEN claims is invisible to all of them. The defect is not that a claim is strict — it is that the same author, in the same file, already decided how strict to be, and then wrote that decision into some claims and not others. Where the relief is missing, a correct answer loses a point the author never meant to charge, and the claim's own siblings are the proof of intent.
+
+Do it as one mechanical pass over `tests/reward.toml`:
+
+  1. **Extract the relief language.** Collect every clause that WIDENS a claim: "any wording conveying X counts in full", "references or unambiguous titles are acceptable", "either form counts", "do not withhold for a missing Y", "naming Z is not required; Z is graded separately", "this criterion assesses A, not B", "a complete enumeration is not required", "any of these renderings counts". Record which claim each sits in, so you have the count per relief sentence.
+  2. **For each distinct relief sentence, say what it excuses** — an identifier form, a paraphrase of an explanation, a secondary figure graded elsewhere, an omitted enumeration, one of several renderings of a value.
+  3. **Find every claim whose grading turns on the SAME thing that relief excuses**, whether or not its sentence looks similar. A waiver accepting reference labels instead of full titles bears on EVERY claim that requires an item to be identified. A waiver accepting equivalent framings bears on every claim grading an open-ended explanation or a rule statement. A "graded separately, do not withhold" clause bears on every claim carrying a secondary value that another claim also grades.
+  4. **Every claim in that set that lacks the relief is a finding**, and the sentence already in the file is the fix — quote both, and name the correct answer the gap punishes.
+
+Run the pass in the STRICTNESS direction too, because the asymmetry cuts both ways. Where two claims grade the two directions of one comparison, or two members of one family, and one spells out a SCOPE QUALIFIER the other omits — "...whether that export shows them under a non-counting state or holds no row for them at all", present on one direction and absent on its mirror — the claim without it is scoped differently from the way it reads, and usually differently from the way its own value was derived. That is how a claim ends up pinning a value its own wording cannot produce (see `claim_premises_are_true_of_the_environment`). Decide which side is right and say so: normally the relief is copied onto the claim lacking it, but where the missing element is a RESTRICTION, the fix is to state the restriction, not to relax the twin.
+
+**The bar for reporting is a demonstrable dock, not an asymmetry.** Relief language LOWERS a bar; its absence does not by itself RAISE one, and a likert judge does not begin demanding verbatim wording because a sentence is missing. An asymmetry is reportable only where the missing clause plausibly costs a real answer a point — which means the claim grades something whose EXPRESSION is open: an explanation in the answer's own words, a mechanism, or an identification the environment supplies more than one handle for. Name that answer. Where the claim grades a value, a count, a date or a verdict — where wording is not what the judge is matching — the missing clause is cosmetic and is NOT a finding.
+
+**Do not bill one defect twice.** If the claim you are about to report is already reported under `claims_are_defensible` or `graded_names_accept_every_alias_the_environment_uses` with the same witness and the same fix, that is ONE defect: cross-reference it in a line and raise no second finding here. What this criterion contributes that the others cannot is the SIBLING EVIDENCE — the author's own sentence, elsewhere in the same file, proving the latitude was intended. Report it here when that evidence is what makes the case; cross-reference when it is not.
+
+One caution against over-correcting, because copying a waiver is only right when the thing waived is not the claim's point: a waiver must never excuse the load-bearing value itself, and a waiver copied without naming what it excuses is the vacuous waiver that `claim_description_is_self_consistent` fails. Widen the claim; do not hollow it.
+
+And do not manufacture an asymmetry: a claim that grades something genuinely different from its neighbour does not need its neighbour's waiver. An asymmetry with no false-FAIL witness is not a finding.
+
+PASS if every relief clause and scope qualifier in the file is applied to every claim whose grading turns on the same thing, so no two claims grading the same kind of fact differ in the latitude they allow. FAIL on any claim that lacks the relief or the qualifier a sibling carries — quoting the sentence, listing the claims on both sides, and naming the correct answer the missing clause docks."""
+
+[[criteria]]
+name = "claims_are_grounded_in_stated_evidence"
+description = "Every rule, term and unit a claim grades is established somewhere the agent can read — the rubric never grades a definition the environment never states"
+guidance = """
+ENUMERATE EVERY INSTANCE: report EVERY ungrounded rule, term and unit, each with the search that came back empty.
+
+A claim can pin a perfectly correct value and still be unearnable, because the RULE that decides it, the TERM it uses, or the UNIT it pins was never stated anywhere the agent can read. The agent then applies every rule the environment DOES state, reasons correctly, and reaches the other verdict — or states the right number in the only notation the environment licensed and is docked for the notation. This is the quietest false-FAIL in the format: nothing in the claim looks wrong, the oracle earns it (the author knew the rule), and every rollout loses the same point, so the task merely looks hard.
+
+`environment_provides_required_inputs` asks whether the FILES and VALUES a claim needs exist. This asks the different question: whether the DEFINITION a claim grades exists. A fixture can be present, complete and readable and still never state the rule the claim turns on.
+
+Work from `tests/reward.toml` claim by claim, and for each extract three things:
+
+  1. **The deciding rule** behind any judgement, verdict, classification or disposition the claim grades — what makes a case "exposed", "eligible", "in scope", "still counting", "cleared", "reportable"; which of two records a revised finding lands on; how a tie, an overlap or a conflict resolves.
+  2. **Every term or label** the claim treats as defined — a status word, a category, a bucket, a metric name, a term of art.
+  3. **Every unit or basis** the claim pins — a currency, a measure, a timezone, a per-unit versus per-case basis, a denominator, a rounding convention.
+
+Then search the whole agent-visible set — `instruction.md` plus everything under `environment/` — for each one. The check is mechanical and its result is a count. A term that appears ONLY in `reward.toml` (which grades it) and in `instruction.md` (which merely ASKS about it) has zero grounding, and that is the finding. A unit pinned on a dozen money figures with no currency named in any fixture, against columns typed as bare numbers, is the same finding.
+
+FAIL if:
+
+- **The deciding rule is absent.** The claim grades a judgement and no agent-visible file states the rule that settles it. The recurring shape is a policy document that states the rule for a NEIGHBOURING case and is silent on the graded one — a section defining exposure entirely through one mechanism (whether a void preceded a payment) while the graded case turns on another (an invoice paid, never voided, billed above the price now authorised). A careful reader applies the stated framing and concludes the OPPOSITE of the claim. Read the section the claim depends on sentence by sentence and say what each sentence actually covers. "The rule is implied by the ask" is not grounding: a reporting directive ("give me the price we bill against what is authorised now") tells the agent what to SHOW, not how to DECIDE — and the proof is when a claim grading that very figure is earned by the same answers that then conclude the wrong verdict.
+- **The rule is asymmetric and unstated.** Two cases look alike in the evidence and the claims require OPPOSITE dispositions, with nothing in the environment breaking the symmetry. Every correct agent then answers symmetrically — some both in, some both out — and none can reach the claim's split. Where the only statement of the asymmetry lives inside the rubric, the rubric is the sole source of truth for a rule the agent never sees.
+- **A graded term is undefined.** The term appears in no fixture. A prompt ASKING "does this still count as X" does not define X, and the judge has no rule either — so the same proposition scores differently on different rollouts. An undefined term destroys grading STABILITY as well as fairness, which makes it worse than ordinary over-strictness.
+- **A graded unit or basis is unestablished.** The claims pin a currency, measure, timezone or per-unit basis that nothing in the environment names. The agent's only licensed rendering — bare numbers, or its own consistent notation — must then be accepted: either the environment names the unit, or every claim drops it. A claim that already tolerates PRESENTATION ("with or without cents counts in full") while pinning an ungrounded UNIT is the giveaway that the author thought about rendering and stopped one step short.
+- **A graded method detail is unestablished.** The claim scores HOW something was done ("matched by title and author", "compared against the shifted field") when no fixture records the method. The substance may be gradeable; the unrecorded detail is not.
+
+The fix runs in the environment's direction first: state the rule, the term or the unit in the fixture that ought to carry it — one sentence in the policy note, one line in the scope note, a `currency =` beside the period fields. The claim-side fix (accept every disposition the stated evidence supports) is right only where the openness is legitimate. It is never right to leave the rule unstated AND the claim pinned.
+
+Each finding needs a false-FAIL witness built the same way: the answer a competent agent produces by applying every rule the environment DOES state. If that answer satisfies the claim, the rule was grounded after all — do not report it.
+
+**Required evidence, whichever way the verdict goes.** This check is a search, so its result is a list. Your review must name, for the load-bearing ones, the file and sentence that establishes each graded rule, term and unit — or the search that came back empty. A verdict with neither is an UNRUN check, not a pass: the defects this criterion exists for hide behind exactly that silence, because a rubric whose claims all look reasonable is what an ungrounded rule looks like from the rubric side. Start from the JUDGEMENT claims (exposed / eligible / in scope / cleared / reportable / still counts) — those are where the missing rule lives — and say for each where the deciding rule is written.
+
+PASS if every rule, term and unit a claim grades is established in a file the agent can read, and you can name the file and quote the sentence for each load-bearing one. FAIL if any graded judgement has no stated rule, any graded term appears nowhere in the environment, any pinned unit or basis is unnamed, or a graded method detail is unrecorded — naming the claim, the empty search, and the correct answer the gap punishes."""
+
+[[criteria]]
+name = "claim_premises_are_true_of_the_environment"
+description = "Every factual premise inside a claim's own sentence is true of the environment, and the claim's stated rule actually yields the value it pins"
+guidance = """
+ENUMERATE EVERY INSTANCE: report EVERY false premise, incomplete mechanism and mis-described fixture, with both values named.
+
+A claim description is not only a target; it is a set of ASSERTIONS about the world — a count ("the 34 raw commits in the window"), a window, a mechanism ("a line with no comma in any field splits into the expected parts"), an authorship ("her own note"), a document's content, a set's membership. Those assertions reach the judge as fact. When one is false, the damage runs both ways: an answer stating the TRUTH is docked for contradicting the claim, and an answer parroting the claim's false premise is REWARDED for being wrong. That second half is why this is not a cosmetic defect.
+
+This is distinct from the criteria around it. `claims_are_traceable_to_the_solution` compares the claim with the oracle; `cross_file_consistency` compares files with each other; `numeric_claims_survive_the_data_traps` recomputes a claim's VALUE. None of them tests the claim's own sentence against the data. Do that here.
+
+Two mechanical passes, in order:
+
+1. **Premise check.** For every claim, list the factual assertions its description makes about the environment and verify each against the fixtures and the data. Counts, windows and totals get recomputed. A named author, owner, source or party gets checked against the file that records it — including whether that file records one AT ALL (a notes table with no author column cannot support "her own note"). A described document gets opened and read. A quoted state ("access was already pulled") gets compared with what the record actually says ("marked for removal").
+2. **Literal-rule execution.** Where a claim states the rule its value rests on, execute that rule AS WRITTEN and confirm it produces the claim's own value. If the claim's wording, applied literally, yields a different number than the claim pins, the claim depends on a restriction it never states — and the honest agent's answer is the one the literal wording produces. This is often visible without touching the data: the SIBLING claim covering the mirror direction spells out the qualifier and this one carries nothing, so two claims that read as a matched pair are scoped differently (see `sibling_claims_carry_the_same_tolerances`).
+
+FAIL if:
+
+- **A premise is false.** A count, window, total, set or date stated inside the claim does not match the environment. Report both values and say which is true. A defect that is "wording-only" because the graded value survives either premise is still a defect: it asks the agent to assert something false about data the agent has just counted correctly, and it docks the answer that states the true premise.
+- **An asserted mechanism is incomplete.** The claim explains WHY an outcome happens and its explanation accounts for only part of the cases it claims to cover. This is the expensive shape, because the BETTER answer loses: where the claim's stated reason covers one subset and the real mechanism covers a larger set, an agent that traces the behaviour properly states the general rule and scores zero, while an agent that states the claim's narrower reason — and the undercount that comes with it — collects full credit. Recompute the population the claim's sentence describes AND the population that actually behaves that way; if they differ, the claim is rewarding the smaller, wrong story. Fix by widening the claim to the true mechanism, not by trimming the answer.
+- **The claim mis-describes its own evidence.** It attributes a note, document or figure to a party the fixture does not name, or paraphrases a record into a stronger state than the record supports. An answer that describes the fixture ACCURATELY is then marked down for accuracy, which is the worst incentive the format can carry.
+- **The claim's literal rule does not yield the claim's value.** Name the value the wording produces, the value the claim pins, and the unstated restriction between them.
+
+Scope this honestly. Run the recompute wherever the fixtures make it executable — a shipped repository or bundle is executable material, so a claim about "the commits in the window" is checkable by counting them at the refs the fixture ships. Where a premise can only be checked against material you were not given, say which premise and which input was missing rather than passing it silently.
+
+PASS if every premise inside every claim is true of the environment, every asserted mechanism covers the whole population it describes, and each claim's stated rule yields the value it pins — naming what you recomputed. FAIL on any false premise, any partial mechanism presented as THE reason, any claim that mis-describes the fixture it grades, or any value the claim's own wording cannot produce."""
 
 [[criteria]]
 name = "claims_assert_outcomes_not_topics"
 description = "Each claim asserts the outcome, not merely that the answer addressed the subject"
 guidance = """
+ENUMERATE EVERY INSTANCE: walk ALL claims and report EVERY one that trips this, most critical first — not the first only.
+
 **A claim mentioning a deliverable is not coverage. Coverage is a property of what the claim asserts.** A claim can select exactly the right subject and still grade nothing, because an answer that raises the subject without getting it right satisfies it. The judge is generous by construction: given "discusses the warehouse discrepancy", an answer saying "the warehouse totals differ from the workbook" scores 1.0.
 
 FAIL on these shapes:
@@ -769,7 +849,9 @@ FAIL on these shapes:
 - **Attribution without value** — the mirror: the mechanism named but no amount, when the prompt demanded the amount each reason accounts for.
 - **Partial terminal state** — the claim accepts a signal short of the deliverable: the components without the total, the total without the verdict, the analysis without the recommendation the persona asked for.
 - **Negatively-phrased claims** — a claim that grades an ABSENCE ("does not use the stale backup figures", "avoids conflating the two defects") is earned by an empty answer, which asserts nothing. Restate it positively as the thing a correct answer contains ("attributes the figures to the authoritative workbook").
-- **Copied-value claims** — a claim satisfiable by repeating a number the environment hands over. If a figure appears in a fixture, a note, or the instruction itself, a claim requiring only that figure grades reading, not deriving. Pair it with the derived outcome, or grade the figure the agent had to compute.
+- **Copied-value claims** — a claim satisfiable by repeating a number the environment hands over. If a figure appears in a fixture, a note, or the instruction itself, a claim requiring only that figure grades reading, not deriving. Pair it with the derived outcome, or grade the figure the agent had to compute. This applies to a PARTIAL leak too: if a claim requires two parts and the instruction (or a fixture) hands over one of them — the prompt says "audit the app, including how it is mounted" and the claim grades "names the mount AND the handler bodies" — then that part is free and only the rest is really graded, which inflates the claim's apparent difficulty and weakens nop-resistance. Grade only the part the agent had to discover, and confirm a blank/bluffed answer cannot collect the leaked half.
+- **Bare count or extreme** — a claim that grades a count, a total, or a ranking by its NUMBER alone, so an answer that reaches the right number by the wrong members earns it. "3 exposures" is satisfied by an answer that says three while naming a service the rest of the answer clears; "the largest is X" is satisfied by a confidently-wrong X. Pin the number TO the set it rests on: require the count and the members it counts to agree, as one judgement ("a count of 3 that rests on treating a cleared service as an exposure does not satisfy this"), so an answer that miscounts the members cannot collect the number. This is a permitted combining exception (the count is not meaningful apart from its set), not a compound-claim violation under `claims_are_atomic_and_specific`.
+- **Agreement/consistency without the value** — a claim that grades whether two sources "agree", "match", "tie", or "are consistent" WITHOUT stating the value they must agree on is earned by a self-consistent WRONG answer: the judge, seeing one claim at a time, confirms the agreement the answer asserts and cannot check the number. A trial that reported the wrong shared total but said the two headers "agree exactly" took full credit. Name the expected value the sources must agree on. The same hole hides behind a **dangling reference** — "that figure", "the total above", "the amount from the previous point" — which has NO referent when the judge reads this claim alone, so the answer supplies its own (possibly wrong) value and still scores. Every claim must be self-contained and name what it grades. The same unresolved referent also fails in the opposite direction when it sits in an EXCLUSION clause, where the judge binds it to the items the clause meant to exclude and reads the claim as requiring them — that false-FAIL half is in `claim_description_is_self_consistent`, and one dangling phrase can produce both, so resolve every referent backwards in both passes.
 
 The repair rule has a floor: **add the weakest assertion a skipping agent still fails.** Do not fix a topic-only claim by pinning an enum the instruction leaves open — that trades a false PASS for a false FAIL (see `claims_are_defensible`). Where a value is genuinely needed, use the one the oracle produced.
 
@@ -790,32 +872,53 @@ Check whether the rubric can distinguish that answer from a correct one. The def
 - **A synthesis or exclusivity claim** — one that requires the answer to commit: that the defects are of exactly these kinds, that these three account for the whole gap, that this is the interval to publish. The reconciliation task's "makes clear the defects are of MORE THAN ONE KIND" is close to this shape, and the bootstrap task's "concludes that BCa is still the interval to report" is exactly it. A claim requiring a decision cannot be satisfied by a list of options.
 - **A completeness or arithmetic-closure claim** — the components must sum to the stated total, or the decomposition must account for the whole gap. A padded answer breaks the arithmetic as soon as it adds a spurious cause with an amount.
 - **A claim wording that excludes hedging** — "identifies X as the cause" rather than "mentions X as a possible cause". Present-tense assertion, not possibility.
+- **A claim that fails a FALSE POSITIVE.** Padding is one way to be confidently wrong; the other is to assert a member that is not in the true set at all — an extra exposed award, an extra affected service, a defect that does not exist — usually because the answer worked to the wrong scope. A rubric of per-member claims scores only what the answer got RIGHT, so adding a fabricated member costs exactly nothing, and an answer can clear the bar on a scope it invented. At least one claim must be scored against the SET rather than its members: that the exposed set is exactly these, that no other item qualifies, that the count and the members agree. Pair this with the scope-parameter claim (`claims_cover_the_whole_deliverable`), because the two together are what make a fabricated answer lose points rather than merely fail to gain them.
+
+One caution before you rely on an exclusivity or closure claim: it is fair ONLY when the enumerated set is genuinely complete against the environment. A claim that closes the set — "the defects are of exactly these kinds", "these three account for the whole gap", "the affected services are only these" — turns into a false-FAIL the moment ground truth at HEAD contains a member the claim omits, because the same claim that punishes padding now docks a thorough agent who reported the real extra. Re-derive the set from the fixtures/source and confirm it is closed before trusting it; never close a set you have not recomputed. When the set is not actually closed, that is the `UNCLOSED_SET` finding in `claims_are_defensible`, and the fix there (complete the set, do not drop the closure) is what preserves this defence.
 
 Also watch the milder form: an answer that states the right figure and then a contradictory one. If no claim requires internal consistency, both are present and the judge finds the one it is looking for.
 
+**One finding, not two.** The set-closure hole is usually also reportable as a coverage gap, and it is the same defect with the same witness and the same fix. If `claims_cover_the_whole_deliverable` is already carrying it, cross-reference it in one line and do not raise it again here. This criterion adds something only when the padding exploit DIFFERS from the coverage gap — a hedged list that collects several mechanism claims at once, or an answer that states a figure and its contradiction and is scored on whichever the judge finds.
+
 Do not demand that a task add a claim for a padding risk it does not have — a task whose deliverable is a single computed figure cannot be padded. Judge whether THIS task's answer space admits a shotgun answer, and if it does, whether the rubric catches it.
 
-PASS if the rubric would score a hedged or padded answer materially below a committed correct one — via a synthesis, closure, or assertion-worded claim. FAIL if listing every plausible alternative, or stating a figure alongside a contradictory one, would score the same as the right answer. Mark N/A if the deliverable has no answer space to pad."""
+**Name the claim that fails a false positive, or say there is none.** One line, in every verdict: which criterion would dock an answer that asserts a member outside the true set — an extra exposed item, an invented blocker, a fabricated cause. "None" is a finding, not a pass, whenever the deliverable has a set to over-include.
+
+PASS if the rubric would score a hedged, padded or fabricated answer materially below a committed correct one — via a synthesis, closure, false-positive or assertion-worded claim. FAIL if listing every plausible alternative, stating a figure alongside a contradictory one, or asserting a member outside the true set would score the same as the right answer. Mark N/A if the deliverable has no answer space to pad and no set to over-include."""
 
 [[criteria]]
 name = "claims_are_atomic_and_specific"
 description = "One fact per claim, naming the value, checkable from the final answer text alone"
 guidance = """
+ENUMERATE EVERY INSTANCE: report EVERY claim that trips this, and every distinct problem on a claim (a claim can be both compound AND vague), not the first only.
+
 The four properties the TEMPLATE requires of a claim — ATOMIC, VERIFIABLE, STABLE, SPECIFIC. Stability has its own criterion below; the other three are here.
 
 FAIL on:
 
-- **Not atomic.** **One fact per claim is the rule; combining is the exception.** The judge returns a single score, so a claim carrying two facts hands an answer with one of them to the judge's discretion — and 0.5 tells you nothing about which half is missing.
+- **Not atomic — and only where the bundle moves a score.** One fact per claim is the ideal, but a bundled claim is a DEFECT only when you can name the score it changes. This is the most over-fired check in the rubric, so read this bar before reporting anything under it.
 
-  Do not decide this by scanning for the word "and" (almost every claim contains one, and that is not the test). Decide it with this question: **could a competent answer plausibly get one part right and the other wrong?** If yes, they are separate claims — split them, no matter how naturally they read together.
+  **`points = 3` already supplies the middle band.** An answer holding one of two bundled parts lands on 0.5 by design — that is what the likert scale is for. So "0.5 does not tell you which half was missing" is a REPORT-LEGIBILITY complaint, not a scoring defect, and it is not reportable here. Neither is "a competent answer could get one part right and the other wrong" on its own: that describes most well-formed claims.
 
-  Combining is permitted only when the parts cannot come apart: two expressions of one measurement, where an answer that has one necessarily has the other. "Reports sd 0.16 and se 0.022" survives, because se is sd/sqrt(n) and an agent with one has the other. "Reports the series as mildly right-skewed with a skewness of about 0.71" survives, because the adjective is just the number read aloud.
+  Splitting on that argument alone has repeatedly made tasks WORSE. A claim bundling a value with the target it was computed against, split in two, leaves a standalone half copyable straight out of `instruction.md`; a claim bundling two absences, split in three, turns one leaked fixture sentence into three free claims. The split is not automatically an improvement, and proposing it without checking the product is how a review makes the next round harder.
 
-  Everything else splits. Two figures an agent could compute independently — "the mean and the standard deviation", "revenue and expenses", "Boarding and Grooming revenue" — are separate claims even though they belong to one table. A value plus its cause is two claims: an agent can measure the $17,331 gap and explain none of it. A step plus its follow-up — "creates it and shares it", "computes it and flags the inconsistency" — is two claims, because skipping the second is exactly the failure worth catching.
+  Report a bundle ONLY when one of these holds, and say which:
+  - **Free credit for a wrong part** — an answer that gets one part WRONG still banks the 0.5, and nothing else in the rubric grades that part. A verdict bundled with "and no clean item wrongly called a blocker" pays half to an answer that wrongly calls one; a value bundled with the precedence rule behind it pays half to an answer that gets the rule backwards, when no other claim grades the rule. That is the shape worth reporting: the bundle is the only thing standing between a wrong answer and credit.
+  - **A free half** — one part is handed over by the prompt or by a fixture, so only the other part is really graded (see the copied-value shape in `claims_assert_outcomes_not_topics`).
+  - **Opposite failure modes in one score** — precision and recall of the same reported set, where an answer can fail on either axis and the judge withholds the same 0.5 for two opposite failures.
+  - **An all-required bundle that ZEROES a partly-correct answer** — the description says every listed part is required, so an answer correct on three of four scores 0 rather than 0.5. Here the likert band is not doing its job, because the claim's own words removed it.
 
-  When in doubt, split. An extra claim costs nothing (scoring is unweighted, so N claims over one insight is how you weight it anyway); a merged claim silently destroys signal.
+  If none of those holds — the parts always travel together, or the part an answer might miss is graded by its own claim elsewhere — do not report it.
+
+  **Before proposing a split, test the product.** If the standalone claim would be copyable from `instruction.md`, satisfiable by quoting one shipped file, or otherwise earned without the work, the split makes the rubric worse and the bundle stays. Say so explicitly rather than recommending the split anyway.
+
+  Plainly fine, and not reportable: two expressions of one measurement ("sd 0.16 and se 0.022", where se is sd/sqrt(n)); an adjective that is the number read aloud ("mildly right-skewed, skewness about 0.71"); a value with a cause where the cause has its own claim; two figures from one table that an answer giving one would ordinarily give both of. None of these moves a score.
+
+  The one always-reportable pair is **precision and recall of the same reported set**: "stays within the permitted set AND names every member" fails on two opposite axes, so an answer that adds nothing wrong while omitting real members and an answer that is complete while over-including collect the SAME 0.5 for opposite failures, and neither the score nor the report can tell them apart. Grade "reports no member outside the true set" and "reports every member of the true set" separately.
+
+  When in doubt, leave it alone and say why. An unnecessary split costs the author a round and can introduce a free claim; a bundle whose parts are each graded somewhere costs nothing.
 - **Not specific** — a claim a vague answer satisfies. "Discusses the discrepancy between the sources" is earned by "the sources disagree". Name the value, the amount, or the mechanism, so a hand-waving answer scores 0. This is the criterion the nop-resistance gate depends on most.
-- **Not verifiable from the text** — a claim about what the agent DID rather than what it SAID. The judge is handed `final_answer.txt` only, so no final answer can ever evidence a process step. The bootstrap task documents deliberately dropping such a claim: "the agent demonstrates parsing the currency-formatted dollar columns" is unprovable from the answer, so every rollout would lose the same half point; a correct mean is itself the proof. Any process claim is a fail unless the task actually feeds the judge a trajectory — which this pipeline does not do yet.
+- **Not verifiable from the text** — a claim about what the agent DID rather than what it SAID. The judge is handed `final_answer.txt` only, so no final answer can ever evidence a process step. The bootstrap task documents deliberately dropping such a claim: "the agent demonstrates parsing the currency-formatted dollar columns" is unprovable from the answer, so every rollout would lose the same half point; a correct mean is itself the proof. Any process claim is a fail unless the task actually feeds the judge a trajectory — which this pipeline does not do yet. The near-miss version is a claim that grades the answer's ACCOUNT of how a fact was established ("states how the problem was found: recomputing X reproduces Y on every row while the same arithmetic on Z does not") when the environment records that fact outright in a file. That is checkable from the text, so it is not unverifiable — it is the wrong target: the fact is what matters, the route is the agent's business, and an answer citing the file has established the fact. See `TRAJECTORY_PREFERENCE` in `claims_are_defensible`, and check whether a sibling claim already grades the fact itself.
 - **Over-specified phrasing** — a claim that pins wording rather than substance, so a correct answer that says the same thing differently loses. Claims should state what must be true, and may state what counts as equivalent (as the bootstrap rubric does: "stating the band's endpoints as mean plus-or-minus 1.96 SE counts as giving the half-width").
 - **Unclear to the judge** — the description is the judge's whole prompt for that claim. If it needs the task's context to be interpretable, the judge does not have that context.
 
@@ -842,6 +945,51 @@ A useful test: could a careful non-specialist with only the answer text and the 
 PASS if every claim is decidable by reading the answer against a stated value or range. FAIL on any claim requiring the judge to calculate, re-derive, adjudicate expertise, or compare against data it was never given."""
 
 [[criteria]]
+name = "claim_description_is_self_consistent"
+description = "Each claim states ONE full-credit bar that cannot be read two ways — no enumerate-then-waive, no waiver that excuses nothing it names, and no exclusion a judge can read as a requirement to include"
+guidance = """
+ENUMERATE EVERY INSTANCE: check every claim in the file and report EVERY one with this defect, and list ALL of a claim's distinct self-consistency problems (a claim can both enumerate-then-waive AND carry a vacuous waiver), never just the first.
+
+The claim `description` is the judge's ENTIRE instruction for that claim. If the description names one target in its first sentence and a weaker, different target in its last, the judge is handed two bars and picks one unpredictably — so the SAME proposition scores 1.0 under one reading and 0.0 under the other, run to run, with nothing reporting why. This is not a coverage defect and not a strictness defect; it is an INSTABILITY defect, and it stays invisible until you compare gradings of near-identical answers. It is distinct from `claims_are_stable_with_justified_tolerances` (which is about the ANSWER varying across draws); here the answer is fixed and the CLAIM's own text scores it two ways.
+
+The signature is the **enumerate-then-waive** shape — a description that lists several specific facts and then forgives most of them:
+
+  "States that item X is 18 pages, 8.7% of a 208-page work, and a complete chapter. Any wording conveying that extent is not why it fails counts in full."
+
+The judge now has two incompatible targets: the enumerated figures, or the single waived proposition. In practice it enforces whichever it reads as primary, so "irrespective of extent" scores 1.0 while "at any extent" scores 0.0 for the same claim. You do not need scores to see this: read the description twice on purpose, once strictly (every enumerated fact required) and once leniently (only the waived proposition required), and if those two readings award a different score to one plausible answer, the claim has two targets.
+
+How to check, mechanically — **and list EVERY waiver in the file before judging any of them.** Collect each relief clause with the claim it sits in, then mark each one: does it NAME the element it excuses, and is it imperative? A waiver that names nothing ("any equivalent statement of that rule counts in full") is a finding on its own row, and these are routinely skipped because the claim reads generous. The sweep is what catches them; reading claims in order and stopping at the first two-target description is not.
+
+  1. Read each `description` as the judge's whole prompt for that claim, and look for a WAIVER phrase — "any wording…", "counts in full", "is the entire bar", "…alone", "irrespective of…", "do not withhold for…".
+  2. If there is a waiver, compare what the text BEFORE it states as required against what the waiver forgives.
+  3. If the waiver forgives something the earlier text presented as required, the claim has two targets — flag it, and name two correct answers (one giving the enumerated detail, one giving only the waived proposition) it would score differently.
+  4. If a waiver is present but names nothing specific it excuses, or excuses only phrasing while a substantive multi-item enumeration stays required, that is ALSO a finding — the judge will enforce the full list and the waiver only misleads; delete it or make it name what it forgives.
+  5. Whether or not there is a waiver, check for a claim that grades a PROPERTY ("consistent with its own list", "self-consistent") and separately pins a FIXED value, range, or floor on the same quantity; if a correct answer can satisfy the property while breaking the threshold, the two rules collide — flag it.
+  6. Exception: a waiver that only ADDS accepted equivalent phrasings of the same target ("stating it as mean ± 1.96 SE counts as the half-width") is fine — it widens one bar, it does not forgive a required part.
+  7. Resolve every REFERENT in the description backwards. Read the claim alone, as the judge does, with no sibling claims and no task context. For each "that set", "those items", "the figure above", "the amount from the previous point", "this basis", scan BACKWARDS from it for the antecedent. A referent whose only possible antecedent appears LATER in the sentence — typically after a colon, in a list of the things the clause means to EXCLUDE — is a finding on its own, before you consider what the sentence means.
+  8. Read every EXCLUSION clause twice, once as an exclusion and once as a requirement. Any clause of the form "a total that counts A or B among the failures does not satisfy this", "must come from X", "any item counted toward that total must be one of these" is a constraint on the answer's basis, and a judge reading it strictly can take the named items as the set the answer is REQUIRED to contain. If that inverted reading is available, the claim will sometimes be graded on it.
+
+FAIL if a description:
+
+- **enumerates specific facts, then waives them.** Whatever is truly required must BE the description; whatever is optional must not be stated as though required. If only the waived proposition is graded, delete the enumeration. If the figures are required, delete the waiver and grade them.
+- **paints a multi-part target, then says one part "counts in full" / "is the entire bar".** "States the amount, the event count, the 18:30Z window, and the destination partition. The amount with the direction counts in full." The judge grades the four-part picture it was shown and withholds credit for the three missing parts, never invoking the waiver. Rewrite so the description IS the bar: lead with the full-credit condition ("Full credit if the answer states the amount and its direction"), then, only if needed, an explicit non-withholding clause ("Do not withhold for a missing event count or an unnamed window"). Description and full-credit bar must name the same thing.
+- **offers two credit rules that can disagree** — any description where a strict reading and a lenient reading of its own text award a different score to one answer.
+- **carries a vacuous or misdirected waiver.** A waiver that names nothing specific it excuses ("any equivalent statement counts in full" tacked onto a two-part "A, so B" claim), or that excuses only WORDING while a substantive multi-item enumeration stays required ("any wording that splits the set on that basis counts in full", after listing seven items the answer must separate), does NOT make the claim lenient. The judge enforces the full enumeration and withholds on any missing part; the waiver only misleads the author into thinking the claim was relaxed, or two judges read it opposite ways. This is the failure behind a claim that reads generous and scores strict. The rule a waiver must meet: it must be IMPERATIVE and it must NAME the element it excuses — "do not withhold if the answer omits the event count" is a waiver; "any equivalent statement counts in full" is a decoration, because the judge cannot tell which part of a multi-part target it releases. Where the rule a claim grades is split across two places in the environment, so the passage a correct agent naturally quotes carries only part of it, a non-naming waiver rescues nobody: name the omission the waiver forgives ("do not withhold where the answer gives the rule as a different work with a different author and a different term"). Fix: either make the waiver NAME exactly what it excuses ("do not withhold if the answer omits the event count"), or drop the decoration and grade the enumeration honestly — splitting a required list into atomic claims per `claims_are_atomic_and_specific`.
+- **presents an OPTIONAL element as if it were required (or the reverse).** A clause added as a bonus — "…; noting in addition that X also counts in full", "…, and Y also earns credit" — is routinely read by the judge as a REQUIRED part, so an answer giving exactly what the first sentence asks is capped at 0.5 for omitting the "optional" extra. If X is genuinely optional, say so unmistakably ("X is not required and adds no credit"); if it is required, put it in the bar. An additive "also counts in full" appended to a bonus is the exact phrasing that misfires — it looks like a widening but reads as a second required target.
+- **a waiver so loose it admits a WRONG answer (the false-PASS direction).** The same non-imperative waiver fails both ways: when the judge ignores it, correct answers are docked (above); when the judge HONOURS it, it can pass an answer that contradicts the description. "Fixes the tally at four, then waives the integer with 'any count counts in full'" admits an answer that says six — a wrong value scoring full. A waiver must name exactly what it excuses AND stop short of excusing the load-bearing value itself; if the count/verdict is the point, it cannot be the thing waived.
+- **states an EXCLUSION a judge can read as an INCLUSION.** The claim pins the right value and then constrains the basis it must rest on, using a forward-dangling referent: "the figure has to rest on that set of batches: a total that counts A, which has no logged value, or B, scrapped before release, among the failures ... does not satisfy this". Scanning backwards, nothing defines "that set"; the only items named arrive after the colon, and they are the ones to EXCLUDE — so a judge binds the phrase to them and reads the clause as a requirement that the total INCLUDE them, zeroing answers whose correct total properly excludes them. The inverted reading is not rare judge error: it is the plainest reading of the sentence as written, and it fails exactly the answers that did the work right. The fix is usually already in the same file — a sibling claim stating the identical exclusion in a shape that cannot invert ("the answer need not list the batches; it fails only where the count it gives counts A among the failures"). Prefer that shape everywhere: put the value first, then "it fails only where ...", and never introduce a set by a demonstrative that has no antecedent behind it.
+- **waives a RELATIONSHIP without pinning the other side of it.** The claim grades a value together with its relation to a second value ("would post 12,042 as it stands, which is 540 above the corrected standard total"), then waives the relation ("do not withhold for omitting the 540 when both totals are stated") without ever requiring the second total to be CORRECT. What remains gradeable is "did you state the first figure plus some other number", so an answer pairing the right figure with a wrong second total collects full credit while an answer giving the same pair is docked elsewhere — the claim scores inconsistently in both directions at once. Split it: one claim for the figure, one for the relation with BOTH values named, and drop the open-ended waiver.
+- **grades a property and also pins a fixed threshold on the same quantity.** "Gives a count consistent with its own list" (a self-consistency rule) followed by "any count from six to eight counts in full" (a fixed range) collide the instant a correct answer is self-consistent at five: one rule passes it, the other fails it. Grade the property, or grade the value the prompt actually fixes — never both. (If the prompt does not fix the range at all, the fixed floor is also a `MISALIGNED_CLAIM` under `claims_are_defensible`.)
+
+**The repair must CLOSE the target, not append an escape hatch.** The commonest wrong fix for an unbounded description ("any route the tree actually supports") is to enumerate the accepted answers and then add an open clause — "…or any other check the answer describes that names a specific file or comparison". That reproduces the exact defect it was meant to cure, two bars again, and the open clause usually admits a WRONG answer as well, because "names a file" is not "would work": a reviewer who proposes reviewing a lockfile the package is absent from names a file, misses the thing entirely, and collects full marks. Replace an unbounded target with a CLOSED list of what counts. If a reader could satisfy the trailing clause with something that defeats the claim's purpose, that clause is itself the finding.
+
+The repair is one rule: **make the description equal to the full-credit bar.** State exactly what a 1.0 answer must contain and nothing it need not; where partial credit is meaningful, state what earns 0.5 explicitly ("both figures earn full; one earns partial") rather than by an afterthought waiver.
+
+Each finding needs a witness: two plausible correct answers, differing only in the waived part, that this description would plausibly score differently. If you cannot construct that pair, the description is not two-targeted — do not report it. And distinguish this from a genuine EQUIVALENCE clause, which is fine and encouraged: "stating the endpoints as mean ± 1.96 SE counts as giving the half-width" widens a single bar to accept an equivalent phrasing; it does not name a second, weaker target. Only flag a clause that RELAXES the stated target to something less, not one that RESTATES it in other words.
+
+PASS if every claim states a single, self-consistent full-credit bar, every referent in it resolves backwards, and no exclusion in it can be read as a requirement. FAIL on any description that enumerates then waives, paints a target it then forgives, offers two credit rules that disagree, carries a waiver that excuses nothing it names while the enumeration stands, waives a relationship without pinning the other side, states an exclusion a judge can invert into an inclusion, or grades a property and pins a contradicting threshold on the same quantity — naming the answer pair it would score inconsistently."""
+
+[[criteria]]
 name = "claims_are_stable_with_justified_tolerances"
 description = "Stochastic quantities carry tolerances derived from measured spread; exact quantities are not given fake latitude"
 guidance = """
@@ -852,11 +1000,12 @@ Require:
 - **Every stochastic value carries a tolerance, and the tolerance is justified by measurement.** The bootstrap rubric is the model: it records the seed-to-seed span over 120 seeds for the BCa endpoints, sets the claim tolerances from those spans, and says so in the header. A bare tolerance with no stated provenance is a guess.
 - **Tolerances are neither too tight nor too loose.** Too tight fails correct agents whose arithmetic is right for the draw they took — the bootstrap header warns explicitly against tightening a measured 0.0022-0.0044 range to "about 0.003", because grading against the mean of a spread marks down correct answers. Too loose lets a wrong method pass.
 - **Exact quantities are stated exactly.** Row counts, summary statistics computed from a fixed series, and closed-form bands are deterministic; giving them a wide tolerance invites near-misses to pass. The rubric should say which values are exact and which are Monte-Carlo — both reference headers do.
+- **Both sides of a graded comparison carry consistent tolerance.** When a claim grades a difference, a ratio, or an "X versus Y" comparison, a band on the headline operand while the other is pinned to an exact figure is a false-FAIL: the untoleranced side silently becomes an exact-match bar, and a correct answer whose comparator differs from the annotator's by a hair is docked even though both compared quantities are right. Tolerance the comparator on the same basis as the headline figure (or state both exactly, if both are genuinely deterministic). The witness is concrete — a trial that lands the headline value inside tolerance and reads the comparison correctly, docked solely because its second number sat just outside an implicit exact match (e.g. a claim that bands 20.93 but leaves an 18.32 comparator un-toleranced, docking answers that computed 18.27 from a valid basis).
 - **Direction-unstable comparisons are NOT claimed.** The bootstrap rubric deliberately does not claim that BCa is narrower than the symmetric band, because the width comparison flips with the seed; it claims the endpoint shift, which held on all 120 seeds. A claim whose truth depends on the draw is a coin-flip claim and must be removed or restated.
 - **No dependence on drifting data.** Nothing keyed to current time, live services, or a package version that could change the digits. If the ground truth is version-sensitive, the version must be pinned in the environment and named in the provenance.
 - **Deliberate non-claims are documented.** A header that records what was considered and rejected, and why, is strong evidence the rubric was measured rather than assembled.
 
-PASS if every stochastic claim has a measured, appropriately-sized tolerance, exact claims are exact, and no claim's truth depends on the draw or on drifting data. FAIL on an unjustified tolerance, a tolerance that excludes correct answers or admits wrong ones, or a claim whose direction can flip between runs."""
+PASS if every stochastic claim has a measured, appropriately-sized tolerance, exact claims are exact, both sides of any graded comparison are toleranced consistently, and no claim's truth depends on the draw or on drifting data. FAIL on an unjustified tolerance, a tolerance that excludes correct answers or admits wrong ones, a comparison that bands one side while pinning the other, or a claim whose direction can flip between runs."""
 
 [[criteria]]
 name = "rubric_is_not_trivially_satisfiable"
@@ -868,10 +1017,16 @@ The second side of the gate. Simulate three cheap agents against the claim list 
 2. **The bluffer** — a plausible answer written from the prompt alone, with no access to the data: correct structure, invented numbers, hedged mechanisms ("there appear to be discrepancies between the sources, likely due to loading issues"). It must score near 0. Any claim it earns is a claim graded on shape rather than substance.
 3. **The shortcut agent** — one that does the easy half and stops. Totals off the obvious source, no row-by-row work. It should score the easy claims and fail the hard ones, and the aggregate should land BELOW the pass bar. If the shortcut agent passes, the task's difficulty is not what the rubric measures.
 
+**The verdict here is decided by ARITHMETIC, and you must do it before writing anything.** Count the claims each cheap agent earns, divide by the total claim count (unweighted mean), and compare against the suite's pass gate of **0.85**. Then:
+
+- **If the computed score is below the gate, this criterion PASSES.** State the number and the claims you counted. A leaky claim you found on the way is still worth reporting — but under the criterion that OWNS it: a topic-only or prompt-copyable claim is `claims_assert_outcomes_not_topics`, a value a fixture hands over is `environment_does_not_leak_the_answer`. Do not fail this criterion for them.
+- A review that writes "roughly 10 of 51 claims are reachable from the prompt alone, about 0.20 — well under the bar" and then returns FAIL has PROVED the rubric is not trivially satisfiable and failed it anyway. That is a bug in the review, not a defect in the task. The same goes for a bluffer at 0.23 or a shortcut agent at 0.45 against a 0.85 gate: those are passes, and saying so, with the number, is the review.
+- The one exception that needs no aggregate: **a claim a literally blank answer earns** — a negatively-phrased claim, or one satisfied by "(no agent output captured)" — breaks the nop floor by itself and is a FAIL whatever the mean says.
+
 FAIL if:
 
-- any claim is satisfiable by restating the prompt, by naming a category without a value, or by generic hedging;
-- the easy claims alone clear the pass bar. Count them: if 7 of 12 claims are gettable by any competent agent and the bar is 0.75, the agent must land 9 — so the hard claims are load-bearing, which is the intent. Recompute this arithmetic for the task in front of you as an unweighted mean;
+- the cheap-agent arithmetic ACTUALLY clears the gate — show the count and the division;
+- any claim is earned by a literally blank answer (the exception above);
 - a value is guessable — a round number, a figure implied by the prompt, or something an LLM would produce by default for this domain;
 - a claim is phrased as an absence ("does not use the stale copy", "does not conflate the two defects"). A blank answer asserts nothing and therefore violates nothing, so the nop agent earns it. Negative claims must be restated positively — see `claims_assert_outcomes_not_topics`;
 - the rubric's own header claims a difficulty split that the claim list does not support.
@@ -895,7 +1050,7 @@ FAIL on:
 
 **Making the hard claims matter is done by claim count and claim ordering, not by weights.** If the reconciliation insight deserves more of the score, give it more claims — one per distinct finding — rather than doubling one claim's weight.
 
-Verify against the platform, not only the file: if run artifacts are available, `verifier/reward-details.json` reports the `weight` actually applied per claim. Declared weights that the platform ignores are the most dangerous case, because the file, the notes and the reward all disagree and nothing errors.
+The file is the whole check and it is sufficient: parse `reward.toml`, confirm no weight key exists at any level, confirm `points` is uniform, and recompute any stated pass arithmetic as an unweighted mean. Do not defer any part of this to run artifacts — a declared weight that the platform silently ignores is the most dangerous case precisely because nothing errors at run time, so the file is where it must be caught.
 
 PASS if no weight is declared anywhere, `points` is uniform, no document describes a weighting, and any stated pass arithmetic holds as an unweighted mean. FAIL on any weight key, any documented-but-unimplemented weighting, non-uniform points without a reason, or pass arithmetic that does not recompute."""
 
@@ -911,12 +1066,15 @@ Trace the dependency structure of the claim set:
 - **Remember scoring is unweighted** (`no_weights_and_the_pass_bar_is_honest`), so the only lever on how much an insight is worth is how many claims cover it. An insight carried by one claim out of fourteen moves the reward by 0.07 however hard it was — if that is the crux, it is under-represented, and the fix is more claims on it, not a weight.
 - **Check the increments the reward can actually take.** With claims grouped into a few blocks, enumerate the reachable scores: an agent that gets the easy block only, the easy block plus one insight, everything. If there are two or three reachable values and the middle one sits far from the pass bar, the gradient is cosmetic.
 - **Look for gating dependencies.** A claim that is unreachable unless another claim was earned is not independent signal. Some chaining is inherent (you cannot decompose a gap you never measured); the question is whether the whole rubric is one chain.
+- **Map the claims onto the SOURCES that supply them, and check every source is load-bearing.** For each claim, name where its value comes from — a database table, each fixture document, a shipped repository, a live server surface. Then invert the map and count claims per source. A source, or a whole discovery LAYER, that only one claim needs (or none) is a phase of the task that can be skipped wholesale: where a task ships six documents and exactly one claim depends on a value that exists nowhere but a document, the document-reading phase the task was built around carries a few per cent of the score, and an agent that queries the database and never opens a file can score near the top. The mechanical version is quick: take each graded value and ask whether it is obtainable from a cheaper source than the intended one; if every value is in the database, the documents are decoration. The false-PASS witness is the answer that ignores a whole source and still clears the bar. The fix is to score one more fact that ONLY that source establishes — not to add difficulty elsewhere. (Where the cheaper source is one the task ships by accident, the finding is also a leak: see `environment_does_not_leak_the_answer`.)
 - **Look for near-duplicate claims that let one insight collect twice.** Two claims satisfied by the same sentence double the weight of one finding and shrink everything else. This is the coverage-inflation failure from the other side: the claim count says 12, the independent signal says 8.
 - **Sanity-check against a plausible partial agent.** Describe an agent that does the obvious half competently and stops. Its score should land clearly between the nop and the oracle — not at 0.05, and not at 0.9.
 
 The healthy shape is several independent insights, each with its own claim or two, so an agent that improves on one dimension sees its reward move.
 
-PASS if the claims decompose into several independently-failing insights and a partial agent lands in the middle of the range. FAIL if the claims collapse into one or two blocks, if near-duplicates inflate a single insight, or if the reachable scores are effectively binary despite the aggregation."""
+**Give the claims-per-source tally.** One line per source — each fixture document, the database, each server surface — with the number of claims that depend on it. A source with a count of zero or one means that whole layer of the task can be skipped, and this tally is the only way that shows up; a verdict without it has not run the check. Watch particularly for a task that ships a folder of documents against a rubric where every graded value also exists in the structured data.
+
+PASS if the claims decompose into several independently-failing insights, every evidence source the task is built around is load-bearing for at least one claim, and a partial agent lands in the middle of the range. FAIL if the claims collapse into one or two blocks, if near-duplicates inflate a single insight, if a whole source or discovery layer can be skipped without cost, or if the reachable scores are effectively binary despite the aggregation."""
 
 [[criteria]]
 name = "rewardkit_contract_is_correct"
@@ -931,6 +1089,7 @@ Every item here is a silent failure mode: the file parses, the run completes, an
 - **`type = "likert"` with `points = 3`** on every criterion. NOT `binary` — binary collapses the middle outcome and throws away the partial-credit signal the whole scoring shape exists to preserve.
 - **`files` is present and points at the graded final-answer file.** The accepted locations are `/logs/artifacts/final_answer.txt` (the primary path for this suite, whose verifier runs in a SEPARATE container that sees `/logs/artifacts` and never `/logs/agent`) or `/logs/agent/final_answer.txt` (shared-mode). Either is correct — do NOT fault a task for using the `/logs/artifacts` path. Without `files` the judge sees no evidence and scores everything 0, which looks exactly like a failing task. Any other path must be one `test.sh` guarantees exists.
 - **`timeout` and `reasoning_effort` are set** to sane values (300 / `medium` in both reference tasks). A judge timeout shorter than a many-claim individual run will truncate scoring.
+- **Each criterion is distinguishable in per-claim reporting.** rewardkit derives a per-claim id from the START of each `description`, so two criteria whose descriptions open with the same words collapse to the SAME id and collide in `reward-details.json`: results can no longer be attributed by claim (scoring is unaffected, attribution is lost). Do not eyeball this — the rule is deterministic, so SIMULATE it. Take the first 40 characters of each `description`, lower-case them, replace every run of characters that is not a letter or a digit with a single underscore, and trim any leading or trailing underscore; that string is the id. Compute it for every criterion, group the criteria by id, and report each group of two or more with its members and the number of ids lost (criteria minus distinct ids). This costs one pass and is exact, which matters because the collision is invisible in the file: descriptions that differ substantially at the end can be identical for the first 40 characters. The pattern that causes it is a shared template opening — "States the published person-time for the ...", "Gives the corrected event count for the ..." — repeated per entity, so long rubrics with per-item claim families are where to look first. Fix by making the first 40 characters distinct: lead each description with the entity, item or figure that distinguishes it rather than with the shared verb phrase. (Verify the id rule against the platform if a `reward-details.json` is at hand — its `name` field is the id — but the simulation above is the check, and it needs nothing but `reward.toml`.)
 - **`atif_trajectory` is NOT in use.** Trajectory grading is out of scope for now (see the preamble); a task pointing the judge at a trajectory is grading something this pipeline does not yet review, and it under-trains answer completeness.
 
 PASS if every key is the one rewardkit reads, with the values this suite requires, and the judge's provider matches the forwarded credential. FAIL on `model` instead of `judge`, `all_pass`, `binary`, a missing or wrong `files`, a provider/credential mismatch, or trajectory judging."""
@@ -1000,23 +1159,30 @@ Require:
 PASS if the bridge covers every output shape this task will meet, in the right precedence, without clobbering a real answer. FAIL if any shape it will actually encounter lands the judge with nothing, with a runtime log, or with an overwritten answer."""
 
 [[criteria]]
-name = "verifier_always_writes_a_reward"
-description = "A reward file is produced on every code path, including judge and credential failures"
+name = "verifier_writes_reward_only_on_a_real_verdict"
+description = "test.sh runs rewardkit and lets a genuine pass/fail verdict be written — and does NOT fabricate a reward when the verifier fails for infrastructure reasons"
 guidance = """
-Harbor requires a reward file on every path. rewardkit does NOT write one when it crashes — a missing key, a 401, a judge error — and `set -euo pipefail` then aborts before anything is written, which Harbor reports as `RewardFileNotFoundError`: an error that says nothing about the actual cause and costs a debugging cycle every time.
+In this suite a reward is written ONLY for a real verifier verdict: rewardkit ran, the judge scored the claims, and the outcome — all-pass, partial, or fail — is what lands in `/logs/verifier/reward.json`. An INFRASTRUCTURE failure (an empty `OPENROUTER_API_KEY` giving a 401, a judge error, a `uvx` resolution failure, the judge exceeding `[judge].timeout`) must NOT be turned into a score. On those paths the script should abort and let Harbor surface `RewardFileNotFoundError`, because a missing reward correctly signals "this trial produced no verdict" — masking it as `{"reward": 0.0}` would make a broken judge look like a failing agent.
+
+**This inverts the older "always write a fallback reward" rule, which does not apply to this suite.** Do NOT fail a task for LACKING a `{"reward": 0.0}` fallback on the rewardkit-crash path. `uvx --from 'harbor-rewardkit==0.1.*' rewardkit /tests` as the last line under `set -euo pipefail`, with no reward-writing guard around it and no `mkdir -p /logs/verifier`, is CORRECT and is exactly what the reference tasks do — that configuration must PASS this criterion. The distinction is: pass/fail (the verifier ran) writes a reward; an infra error (the verifier could not run) writes nothing.
 
 Require:
 
-- **A fallback that writes `{"reward": 0.0}` to `/logs/verifier/reward.json`** on every failure path: the rewardkit install failing, and the rewardkit run failing. `python3 -m rewardkit /tests` as the last line of a `set -e` script with no guard is a fail — compare the two reference tasks, one of which has the guard and one of which does not.
-- **`mkdir -p /logs/verifier`** before writing it.
-- **The install guarded** — `python3 -c "import rewardkit" || pip install --quiet harbor-rewardkit`, with the install's own failure handled.
-- **Credentials forwarded explicitly** (`export OPENROUTER_API_KEY="${OPENROUTER_API_KEY:-}"`) and matching both `[verifier.env]` in `task.toml` and the provider in `[judge].judge`. `[verifier.env]` is what actually puts the variable into the container; the export is what makes it visible to litellm. Both are needed.
-- **A diagnostic on the failure path** — a message naming the likely cause (credentials, judge) rather than a bare exit.
+- **rewardkit is actually invoked** — `test.sh` runs `rewardkit /tests` (directly, or via `uvx` / `python3 -m rewardkit`). Without it no verdict is ever produced.
+- **The empty-answer bridge exists** — when no answer file is present, `test.sh` writes a placeholder (e.g. `(no agent output captured)` to the graded path) so a genuine nop is GRADED and fails, rather than aborting. This is a real verdict path (nop = fail), not fabrication, and is expected (see `verifier_bridges_agent_output`).
+- **Credentials forwarded explicitly** — `export OPENROUTER_API_KEY="${OPENROUTER_API_KEY:-}"`, matching both `[verifier.env]` in `task.toml` and the provider in `[judge].judge`. `[verifier.env]` puts the variable into the container; the export makes it visible to litellm. Both are needed.
 - **No credential printed or logged.**
 
-Note what the fallback does NOT excuse: it converts an infrastructure failure into a scoreable 0, which is right for Harbor's bookkeeping but means a broken judge looks like a failing agent. The diagnostic on stderr is what distinguishes them, so it is required, not optional.
+FAIL if:
 
-PASS if every failure path writes a reward file and names its cause on stderr, and credentials are forwarded consistently. FAIL if any path can exit without a reward file, if the install is unguarded, or if the forwarded key does not match the judge's provider."""
+- `test.sh` never invokes rewardkit, so no verdict is ever written;
+- the script FABRICATES a reward on an infrastructure-failure path — a trap or fallback that writes `{"reward": 0.0}` (or any score) to `/logs/verifier/reward.json` when rewardkit, credentials, or the judge fail, masking an infra error as an agent verdict;
+- credentials are not forwarded, or the forwarded key does not match the judge's provider, so the judge cannot run;
+- a credential is printed or logged.
+
+A diagnostic on stderr naming the likely cause (credentials, judge) before aborting is helpful; its absence is worth a NOTE but is not a fail — the correct behaviour on infra failure is simply to abort without a reward.
+
+PASS if rewardkit is invoked, credentials are forwarded consistently, a genuine nop is bridged to a graded fail, and no infrastructure-failure path fabricates a reward. FAIL if rewardkit is never run, if any path fabricates a reward on infra failure, or if credentials are missing or mismatched. Do NOT fail for the absence of a `{"reward": 0.0}` fallback or a missing `mkdir -p /logs/verifier`."""
 
 [[criteria]]
 name = "cross_file_consistency"
@@ -1031,30 +1197,12 @@ Cross-check, explicitly:
 - **Definitions and conventions.** The metric definition in the prompt, the oracle and the rubric must be identical, including the estimator convention where one exists. Where a rubric header corrects an earlier revision's convention, check that nothing else still carries the superseded values — a stale copy of a corrected number is a live trap.
 - **Which source is authoritative.** The prompt's cue, the fixture note, the oracle's stated source, and the setup script's assumption must name the same file.
 - **Mechanisms.** The defects a setup script injects, the defects the oracle explains, and the defects the claims grade must be the same set with the same magnitudes.
-- **Validation commands and thresholds** stated anywhere in the task must match the gate this rubric enforces (oracle >= 0.95, nop <= 0.05).
+- **What a claim says ABOUT a fixture.** A claim description is one of the documents that states facts, so read each one against the file it describes: who authored a note, what a document is, what state a record is in, how many rows a window holds. A claim asserting "her own note" against a notes table with no author column, or "already withdrawn" against a record reading "marked for removal", is drift between the rubric and the environment — and it is the direction that docks the answer describing the fixture correctly. The full treatment is `claim_premises_are_true_of_the_environment`; report it there too.
+- **Validation commands and thresholds** stated anywhere in the task must match the gate this rubric enforces (oracle >= 0.95, nop <= 0.05). A task that documents a different bar, or reports a gate result its current claims cannot produce (a recorded oracle score against a claim the present oracle text does not satisfy), is drift like any other — and it is checkable from the files: re-read the claims and the oracle rather than trusting the recorded number.
 
 Report each drift with both values and say which one you believe is current and why.
 
 PASS if every shared fact is stated identically across all files that state it. FAIL on any numeric, count, definitional, or mechanism drift — including in documentation-only files."""
-
-[[criteria]]
-name = "validation_gates_were_actually_run"
-description = "The two-sided gate was executed and recorded — outside the task folder, since the task folder holds no notes file"
-guidance = """
-A task's numbers are unproven until the gate has been run: **oracle >= 0.95** (the task is solvable and the verifier accepts a correct answer) and **nop <= 0.05** (the rubric cannot be satisfied without doing the work). Both are cheap and both are routinely skipped.
-
-The record must exist, and it must live **outside the task folder** — the PR description, the QA report, the review thread. There is no notes file to put it in, by design (`task_folder_holds_only_task_files`), and it does not belong in a comment inside `reward.toml` either: a validation record is prose about the answer, and a comment is the one place prose about the answer must not go.
-
-What has to be evidenced:
-
-- **The oracle run** — that `solve.sh`'s output was scored by this exact `reward.toml` and cleared the bar, with the reward it got. Not "the oracle should pass": the number.
-- **The nop run** — that an empty answer scores at or near zero. This is the check that catches a claim satisfiable by restating the prompt, and it is the one most often assumed.
-- **A real-agent run**, as the sanity check between them, with the score and which claims it lost. This is what reveals a claim no agent can win.
-- **Re-validation after the last material edit.** A gate run against an earlier revision of the claims proves nothing about the current ones. If the claims, the fixtures, or the instruction changed after the recorded run, the record is stale — treat it as absent and say so.
-
-If no such record is available to you, this criterion is `not_applicable` and you must say which input was missing. Do not pass it on the assumption that someone ran it, and do not fail the task for it either — an unrun gate is an unverified check, not a defect in the task.
-
-PASS if both gates were run against the current revision with their rewards recorded outside the task folder, plus a real-agent run. FAIL if a recorded gate contradicts the bar, or if the record predates a material edit to the claims, fixtures, or instruction. NOT_APPLICABLE if no validation record was provided — naming what was missing."""
 
 [[criteria]]
 name = "task_security_and_secrets"
@@ -1091,9 +1239,12 @@ solution/solve.sh
 solution/**                 (only files solve.sh actually uses)
 tests/reward.toml
 tests/test.sh
+tests/Dockerfile             (only when [verifier].environment_mode = "separate" — builds the separate verifier container)
 ```
 
 **Extra material lives under `environment/` and nowhere else.** That is the one directory whose contents are meant to reach the sandbox, so its contents are reviewed as part of the environment. A file dropped at the task root, or beside `tests/`, has no such review and no defined role.
+
+`tests/Dockerfile` is the one exception to "tests/ holds only reward.toml and test.sh": it is required infrastructure, not data — when `[verifier].environment_mode = "separate"` the verifier runs in its own container, and `tests/Dockerfile` is what builds it (e.g. `FROM python:3.12-slim`, `pip install harbor-rewardkit`, `COPY . /tests/`). It is permitted ONLY in that mode; a task in the default (shared) verifier mode shipping a `tests/Dockerfile` is dead wiring and should be flagged.
 
 FAIL on:
 

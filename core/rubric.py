@@ -490,21 +490,33 @@ def _run_anthropic_check(
     task_text = _read_task_snapshot(task_path)
     system = (
         "You are a strict task reviewer. Evaluate the task against each rubric "
-        "criterion. Return JSON: a list of objects with name, verdict "
-        "(pass|fail|not_applicable), and reason."
+        "criterion. Return ONLY a JSON array of objects with name, verdict "
+        "(pass|fail|not_applicable), and reason. Do not write any prose before "
+        "or after the JSON."
     )
     user_parts = [f"Rubric:\n{rubric_text}", f"Task:\n{task_text}"]
     if extra_refs:
         user_parts.append(f"Extra references:\n{extra_refs}")
     user = "\n\n".join(user_parts)
 
+    model = os.environ.get("HARBOR_CHECK_MODEL", "claude-opus-5")
     client = anthropic.Anthropic(api_key=api_key)
     try:
-        resp = client.messages.create(
-            model="claude-opus-5",
-            max_tokens=4096,
+        # Stream the response: the Anthropic SDK rejects non-streaming
+        # requests that may exceed 10 minutes, and a large rubric + task
+        # snapshot with a big output budget routinely crosses that line.
+        pieces: list[str] = []
+        with client.messages.stream(
+            model=model,
+            max_tokens=32000,
             system=system,
             messages=[{"role": "user", "content": user}],
+        ) as stream:
+            for chunk in stream.text_stream:
+                pieces.append(chunk)
+            final = stream.get_final_message()
+        text = "".join(pieces) or "".join(
+            block.text for block in final.content if hasattr(block, "text")
         )
     except Exception as exc:
         return RubricResult(
@@ -512,7 +524,6 @@ def _run_anthropic_check(
             skipped=True,
             skip_reason=f"anthropic API error: {exc}",
         )
-    text = "".join(block.text for block in resp.content if hasattr(block, "text"))
     return _parse_verdicts_from_text(text)
 
 

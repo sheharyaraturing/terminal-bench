@@ -1,0 +1,143 @@
+You are writing the job-level verdict for one MCP Atlas job run: N trials of the same task,
+usually repeated attempts by one model, sometimes several models. Each trial has already been
+analysed individually against trajectory-analysis.toml.
+
+Your job is NOT to restate the per-trial summaries. It is to answer the question a single
+trial cannot: **is this task sound, and if not, what exactly should change?** Cross-trial
+agreement is the evidence no individual trial has, and it is the whole reason this pass exists.
+
+Here are the individual trial analyses:
+
+{trial_results}
+
+================================================================================
+THE RULE THAT OVERRIDES EVERYTHING ELSE
+================================================================================
+When trials that did what the instruction asked all lose the same claim, that is a benchmark
+gap, not N agent failures. Agreement across trials — and especially across models — is strong
+evidence about the TASK. One agent missing a claim is an agent finding; seven of eight missing
+the same claim while doing the work is a rubric or instruction finding, and it must be
+reported as such no matter how the individual trials were labelled.
+
+Apply the same logic in reverse: a claim every trial earns regardless of answer quality is
+measuring nothing.
+
+================================================================================
+WHAT TO PRODUCE
+================================================================================
+
+1. OUTCOME DISTRIBUTION
+   Trial count, pass/fail against the task's pass bar, and the reward distribution — min,
+   max, median, and the shape (tight cluster, bimodal, long tail). Name the best and worst
+   trials. If several models ran, break the distribution down per model and say what
+   separates them: which claims the weaker model loses that the stronger one earns. That
+   comparison is the task's discrimination, and a task where every model scores the same is
+   not discriminating.
+
+2. PER-CLAIM HEAT MAP  — the most important section
+   For every claim in the rubric, across all trials: how many earned it fully, partially,
+   and not at all. Then classify each claim:
+     - EARNED BY ALL      — routine. Fine in moderation; if most claims are here the task is
+                            too easy or the claims are too weak.
+     - DISCRIMINATING     — earned by some, lost by others, and the split tracks whether the
+                            trial did the hard work. This is what a good claim looks like.
+     - LOST BY ALL        — investigate before concluding anything. Is it unreachable, unfair,
+                            uncued, or misread by the judge? Cite the trials' `claim_fairness`
+                            and `judge_scoring_fidelity` findings. A claim no trial ever earns
+                            is either the hardest thing in the task or broken, and you must
+                            say which.
+     - NOISY              — the same substantive answer scored differently across trials.
+                            Judge nondeterminism; the claim wording is not discriminating.
+   Flag any claim whose weight (`weight = 2.0`) does not match its observed behaviour — a
+   double-weighted claim that everyone earns is not carrying the difficulty it was given.
+
+3. FAILURE ATTRIBUTION ROLL-UP
+   Aggregate every lost claim across trials by owner: agent, infrastructure, task-config,
+   rubric, judge, harness. Give counts, then rank the owners by how much reward they cost.
+   State plainly what fraction of the total lost reward is NOT the agents' fault — that
+   number is the headline of this analysis. If it is material, the task needs work before
+   these results mean anything.
+
+4. TOOL-ERROR AND INFRASTRUCTURE PATTERNS  (verbatim, never paraphrased)
+   For every tool that errored in any trial: the tool name, the EXACT error string, how many
+   trials hit it, and the attempt/retry counts. Copy the literal text — `Access denied - path
+   outside allowed directories: / not in /data` and `Command failed: ... Traceback` are
+   different root causes with different owners, and a paraphrase erases the distinction.
+   Separate the three kinds explicitly:
+     - environment faults (5xx, timeouts, empty responses, offline servers, missing tools,
+       non-200 harness status, LLM errors) → rerun territory;
+     - task-config faults (a correctly-working server that cannot reach required data, a
+       needed tool absent from the allowlist, a permission the task itself misconfigured)
+       → fix-task;
+     - agent faults (its own bad code, bad paths, malformed arguments) → no action.
+   If the same tool error is the proximate cause of a lost claim in several trials, say so
+   plainly — that is the strongest infrastructure signal available. If no tool errored in any
+   trial, say exactly that.
+
+5. TOOL-USE PATTERNS ACROSS TRIALS
+   The route the trials took, aggregated: which tools every trial used, which the allowlist
+   exposes that nobody ever called (dead entries), and which servers the trials preferred
+   when several could do the job. Then:
+     - Did any trial produce a strong score without doing the intended work — reaching the
+       answer through a shortcut, one tool call, or a plausible inference rather than the
+       reconciliation or computation the task is built around? Name it. This is the finding
+       that invalidates a task.
+     - Recurring inefficiency: duplicate calls, retry storms, loops, re-reads. Report the
+       call-count and wall-clock ranges against `target_tool_calls` and the agent timeout, and
+       say whether the targets are set right.
+     - Sequencing patterns: did trials converge on the same phase order, and did any phase
+       cost trials repeatedly (e.g. every trial struggling to parse the currency columns)? A
+       shared stumble is a task finding, not N agent findings.
+
+6. GROUNDING AND INTEGRITY
+   Aggregate `answer_grounded_in_observations` and `reward_hacking` across trials. Report:
+     - any trial whose figures did not trace to observations, with its reward. A trial that
+       scored well on unsupported figures means the rubric can be satisfied without the
+       environment, and that is a task-invalidating finding — lead with it;
+     - whether any trial reached the rubric, the reference answer, or the reward channel, and
+       — just as important — whether it was REACHABLE and simply unused. "The answer key was
+       readable in every trial and no agent touched it" is a finding the next model may not
+       repeat;
+     - any refusals, with the apparent trigger in the instruction. Refusals across trials
+       usually mean the framing needs rewording, not the task redesigning.
+
+7. DIFFICULTY AND CALIBRATION VERDICT
+   Answer these directly:
+     - Did the intended crux decide the outcomes, or did something incidental?
+     - Is the reward genuinely graded, or effectively binary in practice? Look at the distinct
+       reward values actually observed: if trials cluster at two values, partial credit is
+       nominal and the task gives RL little gradient.
+     - How many trials were near misses? Several means the task LOOKS harder than it is —
+       agents are producing substantively correct answers and losing to the rubric's edges
+       rather than the conceptual challenge. Clean failures (agents far from a working answer,
+       never converging) are genuine difficulty, and you should say so when that is the case.
+     - Is the task too easy, well-calibrated, or too hard for the models tested? Support it
+       with the distribution, not with an impression.
+
+8. ACTIONS — ranked, specific, owned
+   A numbered list, most valuable first. Each item states the file to change, the change, and
+   the evidence:
+     - fix-rubric  — a claim to reword, loosen, split, reweight, or delete (name it, and give
+                     the replacement wording where you can);
+     - fix-task    — an instruction cue to strengthen, a fixture to disambiguate, a tool to
+                     add or remove, a timeout or target to reset;
+     - rerun       — trials invalidated by the environment and worth re-running;
+     - none        — findings that are genuinely the agents' and need no change.
+   Say explicitly if the task is sound and no action is needed. Do not pad the list: three
+   real actions are worth more than ten speculative ones.
+
+================================================================================
+HOW TO WRITE IT
+================================================================================
+- Cite specific trial names as evidence for every claim you make. An unattributed assertion
+  is not usable.
+- Quote figures and error strings verbatim. Never paraphrase an error.
+- Distinguish "N trials failed this" from "N trials were failed by this". The direction is
+  the finding.
+- Do not average away a bimodal result. If two trials behaved completely differently, that
+  difference IS the result.
+- Where the individual analyses disagree with each other, or where you disagree with them,
+  say so and explain which reading the evidence supports. You have the cross-trial view they
+  did not.
+- Be concise but complete. Every section above must appear; a section with nothing to report
+  gets one line saying so.

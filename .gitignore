@@ -47,3 +47,12 @@ docs/diagrams/cache.json
 
 # Autoreviewer run state (API)
 runs/
+
+# Harbor project-specific paths
+projects/harbor/trialforge/tasks/
+projects/harbor/trialforge/Backup 05 Setp/
+projects/harbor/trialforge/data/
+projects/harbor/toolathon/other_team_checks/
+projects/harbor/toolathon/tasks/
+projects/harbor/webdev/Backups/
+projects/harbor/webdev/tasks/
