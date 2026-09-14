@@ -13,7 +13,8 @@ judge scoring a broken app as if it were merely imperfect, and a rule for what
 to do when the judge runs out of evidence or budget.
 
 Prompt location differs by shape: the current format inlines prompt_template in
-each tests/<dimension>/judge.toml; the earlier one points at a prompt.md.
+each tests/<dimension>/judge.toml, or points at a prompt file beside it; the
+earlier one points at a prompt.md under tests/rubric/browser/.
 """
 from __future__ import annotations
 
@@ -183,7 +184,22 @@ def check_dimensions(task: Path, err, notes: list[str]) -> None:
         if not isinstance(template, str) or not template.strip():
             # check-rubric-schema.py already reports the missing template.
             continue
-        check_text(str(path), template, err, notes,
+        text = template
+        label = str(path)
+        # A dimension may also carry its prompt in a file beside judge.toml,
+        # the same convention the browser-rubric shape uses.
+        if "\n" not in template and "{" not in template:
+            candidate = path.parent / template.strip()
+            if not candidate.is_file():
+                # check-rubric-schema.py already reports the missing file.
+                continue
+            text = read_text(candidate)
+            label = str(candidate)
+            if not text.strip():
+                err(f"{candidate}: prompt file is empty. The judge falls back "
+                    "to RewardKit's generic system prompt.")
+                continue
+        check_text(label, text, err, notes,
                    require_gate=True, strict_honest=False)
 
 

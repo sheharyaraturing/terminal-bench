@@ -287,16 +287,32 @@ def check_judge_toolchain(path: Path, code: str, task: Path, err, notes) -> None
                 (r"harbor-rewardkit", "the RewardKit runner"),
                 (r"install\b[^\n]*chromium", "a Chromium build for the headless "
                                              "browser")]
-    if package:
-        required.append((re.escape(package), f"the {driver!r} judge driver"))
-    elif driver:
-        notes.append(f"REWARDKIT_JUDGE = {driver!r} is not one of "
-                     f"{sorted(JUDGE_PACKAGE)}; cannot verify its driver is baked.")
-
     for pattern, why in required:
         if not re.search(pattern, installs):
             err(f"{path}: does not install {why}. Installing it at trial time makes "
                 "grading depend on a registry being reachable.")
+
+    # The judge driver is usually an npm package, but not always: RewardKit
+    # 0.2.0 resolves its own pinned codex release under XDG_CACHE_HOME, so an
+    # image may fetch exactly that release with curl instead of installing
+    # @openai/codex. Absence from the install commands is therefore not proof
+    # the driver is missing — it is a confirmation, not a failure.
+    ALT_DRIVER_EVIDENCE = {
+        "codex": r"_CODEX_VERSION|CODEX_INSTALL_DIR|_CODEX_INSTALL_URL",
+    }
+    if package:
+        alt = ALT_DRIVER_EVIDENCE.get(driver)
+        if (not re.search(re.escape(package), installs)
+                and not (alt and re.search(alt, code))):
+            notes.append(f"{path}: the {driver!r} judge driver ({package}) does "
+                         "not appear in the install commands. If it is baked by "
+                         "another method (a pinned release fetched with curl, a "
+                         "COPY from a builder stage), confirm it lands where "
+                         "RewardKit looks — otherwise grading depends on a "
+                         "registry at trial time.")
+    elif driver:
+        notes.append(f"REWARDKIT_JUDGE = {driver!r} is not one of "
+                     f"{sorted(JUDGE_PACKAGE)}; cannot verify its driver is baked.")
 
     if "PLAYWRIGHT_BROWSERS_PATH" not in code:
         notes.append(f"{path}: PLAYWRIGHT_BROWSERS_PATH is not set. Chromium then "

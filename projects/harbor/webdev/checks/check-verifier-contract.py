@@ -25,6 +25,22 @@ from pathlib import Path
 _TRIPLE_QUOTED_RE = re.compile(r'("""|\'\'\')(?:.|\n)*?\1')
 _PY_COMMENT_RE = re.compile(r"(?m)#.*$")
 
+# rewardkit in command position: start of a line, optionally behind `if !`,
+# `env VAR=...`, or a `timeout N` guard. A bare substring search also matches
+# `"name":"rewardkit"` inside the CTRF placeholder JSON that write_zero_reward
+# prints — a string literal, not an invocation — and then reports a readiness
+# probe that precedes the real grading call as coming after it.
+REWARDKIT_CMD_RE = re.compile(
+    r"(?m)^[ \t]*(?:if\s+)?(?:!\s*)?(?:env\s+(?:\w+=\S+\s+)*)?"
+    r"(?:timeout\s+\S+\s+)?rewardkit\b")
+# A wrapper the grading might hide behind: `python3 /opt/judge/run_judge.py`
+# and friends. The check cannot see into the image to confirm the wrapper
+# calls rewardkit, so its presence downgrades the missing-invocation failure
+# to a confirmation request.
+WRAPPER_CMD_RE = re.compile(
+    r"(?m)^[ \t]*(?:if\s+)?(?:!\s*)?(?:env\s+(?:\w+=\S+\s+)*)?"
+    r"(?:timeout\s+\S+\s+)?python3?\s+(\S+\.py)\b")
+
 
 def task_arg() -> Path:
     if len(sys.argv) < 2:
@@ -50,11 +66,39 @@ def read_text(path: Path) -> str:
         return ""
 
 
+def _inside_quote(text: str) -> bool:
+    """True when `text` ends inside an unclosed single or double quote.
+
+    Approximate shell quoting — enough to tell whether a command continues on
+    the next line, not a parser. A literal newline inside a printf format
+    string (`printf '0.0` + newline + `' > "$LOG_DIR/reward.txt"`) is one
+    command on two lines; without joining it, a single-line regex reports a
+    missing write that is plainly there.
+    """
+    quote = ""
+    i = 0
+    while i < len(text):
+        ch = text[i]
+        if quote == "'":
+            if ch == "'":
+                quote = ""
+        elif quote == '"':
+            if ch == "\\":
+                i += 1
+            elif ch == '"':
+                quote = ""
+        elif ch in ("'", '"'):
+            quote = ch
+        i += 1
+    return bool(quote)
+
+
 def join_continuations(text: str) -> str:
-    """Collapse backslash continuations so a single-line regex can see a whole
-    command. `printf '...' \\` + newline + `> "$LOG_DIR/reward.json"` is one
-    statement, and matching it line-by-line reports a missing write that is
-    plainly there."""
+    """Collapse backslash continuations and unclosed quotes so a single-line
+    regex can see a whole command. `printf '...' \\` + newline +
+    `> "$LOG_DIR/reward.json"` is one statement, and so is a printf whose
+    format string carries a literal newline; matching either line-by-line
+    reports a missing write that is plainly there."""
     out: list[str] = []
     buf = ""
     for raw in text.splitlines():
@@ -62,7 +106,11 @@ def join_continuations(text: str) -> str:
         if line.endswith("\\"):
             buf += line[:-1] + " "
             continue
-        out.append(buf + line)
+        buf += line
+        if _inside_quote(buf):
+            buf += " "
+            continue
+        out.append(buf)
         buf = ""
     if buf:
         out.append(buf)
@@ -167,15 +215,25 @@ def check_dimensions(task: Path, err, notes: list[str]) -> None:
     if not sh.strip():
         return
 
-    if not re.search(r"\brewardkit\b", sh):
-        err(f"{path}: never invokes rewardkit. rewardkit is what discovers the "
-            "dimension judges, calls them, and writes the reward; without it the "
-            "verifier grades nothing.")
+    grade = REWARDKIT_CMD_RE.search(sh)
+    if not grade:
+        # A wrapper script can call rewardkit from inside the image, where this
+        # check cannot see. That is a confirmation, not a failure — but a
+        # test.sh with no grading invocation of any kind still grades nothing.
+        wrappers = [m for m in WRAPPER_CMD_RE.finditer(sh)
+                    if Path(m.group(1)).name != "test.py"]
+        if wrappers:
+            notes.append(f"{path}: does not invoke rewardkit directly; it runs "
+                         f"{wrappers[0].group(1)!r}. Confirm the wrapper calls "
+                         "rewardkit — this check cannot see into the image.")
+        else:
+            err(f"{path}: never invokes rewardkit. rewardkit is what discovers the "
+                "dimension judges, calls them, and writes the reward; without it the "
+                "verifier grades nothing.")
 
     # The judge needs a served page. Judging before the app answers turns a slow
     # boot into a rubric-wide zero that looks like a broken submission.
     probe = re.search(r"health|urlopen|curl|wget|nc -z", sh)
-    grade = re.search(r"\brewardkit\b", sh)
     if not probe:
         err(f"{path}: no readiness probe before grading. A submission that boots "
             "slowly is judged against a connection-refused page and scores 0 on "

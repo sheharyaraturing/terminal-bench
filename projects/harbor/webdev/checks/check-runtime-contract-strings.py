@@ -171,10 +171,14 @@ def main() -> int:
                          "static files, the prompt should state the port.")
 
     # ---- 2. app entry ------------------------------------------------------
-    # The launcher also runs its own helpers (test.py, a urllib one-liner);
-    # those are grader machinery, not the submitted app's entrypoint.
-    GRADER_OWN = {"test.py", "test.sh", "solve.py"}
-    entries = {e for e in ENTRY_RE.findall(launcher) if e not in GRADER_OWN}
+    # The launcher also runs its own helpers (test.py, finalize_reward.py, a
+    # /opt judge wrapper, a urllib one-liner); those are grader machinery, not
+    # the submitted app's entrypoint. Anything that lives in tests/ is grader
+    # machinery by definition, which also covers wrapper names not listed here.
+    GRADER_OWN = {"test.py", "test.sh", "solve.py", "finalize_reward.py",
+                  "run_judge.py"}
+    entries = {e for e in ENTRY_RE.findall(launcher)
+               if e not in GRADER_OWN and not (task / "tests" / e).is_file()}
     for entry in sorted(entries):
         if instruction and entry not in instruction:
             notes.append(f"tests/test.sh launches {entry!r} but instruction.md never "

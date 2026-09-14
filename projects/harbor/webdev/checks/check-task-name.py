@@ -5,10 +5,11 @@ The name is the published package id. A last component that has drifted from
 the directory means a rename that did not propagate: the task is still findable
 by directory, but every cross-reference by name dangles.
 
-Two orgs are in use. The current format publishes under "codearena" (see
-tasks/bazaarbridge-marketplace); the earlier browser-rubric tasks publish under
-"webdev". Both are accepted; mixing a shape with the other shape's org is a
-NOTE, since it is usually an unfinished migration rather than a decision.
+Three orgs are in use. The current format publishes under "turing"; the
+earlier dimensions tasks published under "codearena" and the browser-rubric
+tasks under "webdev". All are accepted; mixing a shape with another shape's
+org is a NOTE, since it is usually an unfinished migration rather than a
+decision.
 """
 from __future__ import annotations
 
@@ -22,9 +23,9 @@ from pathlib import Path
 # be read, copied, or run on its own. The cost is a little duplication.
 
 ORGS = {o.strip() for o in
-        os.environ.get("WEBDEV_ORGS", "codearena,webdev").split(",") if o.strip()}
+        os.environ.get("WEBDEV_ORGS", "codearena,webdev,turing").split(",") if o.strip()}
 # The org each task shape publishes under by convention.
-SHAPE_ORG = {"dimensions": "codearena", "browser-rubric": "webdev"}
+SHAPE_ORG = {"dimensions": "turing", "browser-rubric": "webdev"}
 
 
 def task_arg() -> Path:

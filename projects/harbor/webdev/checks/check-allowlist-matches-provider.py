@@ -12,9 +12,11 @@ prompt-injected judge could send data.
 """
 from __future__ import annotations
 
+import re
 import sys
 import tomllib
 from pathlib import Path
+from urllib.parse import urlparse
 
 # --- inlined helpers -------------------------------------------------------
 # This check is standalone: it shares no module with its siblings, so it can
@@ -29,6 +31,14 @@ KEY_HOSTS = {
     "GEMINI_API_KEY": "generativelanguage.googleapis.com",
     "GOOGLE_API_KEY": "generativelanguage.googleapis.com",
 }
+
+# An OpenAI-compatible client can be pointed at another gateway; the key then
+# authenticates against that host, not api.openai.com.
+BASE_URL_KEYS = {
+    "OPENAI_API_KEY": "OPENAI_BASE_URL",
+}
+
+ENV_REF = re.compile(r"^\$\{([A-Z0-9_]+)\}$")
 
 
 def task_arg() -> Path:
@@ -94,8 +104,21 @@ def main() -> int:
         value = venv.get(key)
         # An empty value is a deliberate unset (both shapes do this to stop a
         # client picking up a stray key), not a provider in use.
-        if isinstance(value, str) and value.strip():
-            needed.add(host)
+        if not (isinstance(value, str) and value.strip()):
+            continue
+        # Resolve a simple ${OTHER_KEY} indirection through the same env block.
+        if m := ENV_REF.match(value.strip()):
+            value = venv.get(m.group(1))
+            if not (isinstance(value, str) and value.strip()):
+                continue
+        # A base URL override retargets the client; the key talks to that host.
+        if url_key := BASE_URL_KEYS.get(key):
+            if base_url := venv.get(url_key):
+                if isinstance(base_url, str) and base_url.strip():
+                    parsed = urlparse(base_url.strip())
+                    if parsed.hostname:
+                        host = parsed.hostname
+        needed.add(host)
 
     for host in sorted(needed):
         if not any(host in h or h in host for h in hosts_l):

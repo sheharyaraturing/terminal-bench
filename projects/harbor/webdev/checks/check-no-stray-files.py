@@ -51,9 +51,9 @@ def report(name: str, task: Path, errors: list[str], notes: list[str]) -> int:
 # Extensions that are never part of a webdev task definition.
 BAD_SUFFIXES = {
     ".zip": "a zipped snapshot of the task or of a trial",
-    ".docx": "an authoring document",
-    ".xlsx": "a QC spreadsheet",
-    ".pptx": "an authoring document",
+    ".docx": "an authoring document (seed documents belong under environment/assets/)",
+    ".xlsx": "a QC spreadsheet (seed spreadsheets belong under environment/assets/)",
+    ".pptx": "an authoring document (seed documents belong under environment/assets/)",
     ".pdf": "an authoring document (seed PDFs belong under environment/assets/)",
     ".db": "a built SQLite database — the app must seed its own on first boot",
     ".sqlite": "a built SQLite database",
@@ -64,6 +64,11 @@ BAD_SUFFIXES = {
     ".orig": "a merge leftover",
     ".rej": "a rejected patch hunk",
 }
+
+# Document formats a task may legitimately ship as seed material — input data
+# the brief hands the agent — but only under environment/assets/. Built
+# databases, zips, logs, and editor droppings are never seed material.
+SEED_DOC_SUFFIXES = {".pdf", ".docx", ".xlsx", ".pptx"}
 
 BAD_NAMES = {
     ".DS_Store": "a macOS Finder dropping",
@@ -121,7 +126,8 @@ def main() -> int:
             continue
         if path.suffix.lower() in BAD_SUFFIXES:
             # environment/assets is the one place binary seed material belongs.
-            if path.suffix.lower() == ".pdf" and str(rel).startswith("environment/assets"):
+            if (path.suffix.lower() in SEED_DOC_SUFFIXES
+                    and str(rel).startswith("environment/assets")):
                 continue
             err(f"{path}: {BAD_SUFFIXES[path.suffix.lower()]} must not ship in the "
                 "task folder.")

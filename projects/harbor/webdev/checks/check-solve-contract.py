@@ -15,6 +15,7 @@ frontend to compile, so its oracle must run npm and a build.
 from __future__ import annotations
 
 import re
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -34,7 +35,10 @@ def task_arg() -> Path:
     task = Path(sys.argv[1])
     if not task.is_dir():
         sys.exit(f"FATAL: {task} is not a directory")
-    return task
+    # Resolve to an absolute path: the guard cross-check anchors copy sources
+    # at "<task>/solution", and a relative root would be prepended to itself
+    # when a $(dirname "$0") token is substituted into it.
+    return task.resolve()
 
 
 def task_shape(task: Path) -> str:
@@ -69,6 +73,87 @@ def join_continuations(text: str) -> list[str]:
 
 def strip_comments(lines: list[str]) -> list[str]:
     return [ln for ln in lines if not ln.lstrip().startswith("#")]
+
+
+def shell_assignments(code: str) -> dict[str, str]:
+    """Simple `VAR=value` assignments, for resolving copy sources that hide
+    behind a variable (`SOURCE="$ROOT/app"`)."""
+    out: dict[str, str] = {}
+    for m in re.finditer(r"(?m)^\s*(?:export\s+)?([A-Za-z_]\w*)=(.*)$", code):
+        value = m.group(2).strip()
+        if value[:1] in ("\"", "'"):
+            # Quoted value: take everything up to the LAST matching quote, so
+            # nested quotes inside $() ("$(cd "$(dirname "$0")" && pwd)")
+            # survive. Anything past it is a trailing comment.
+            q = value[0]
+            end = value.rfind(q)
+            value = value[1:end] if end > 0 else value[1:]
+        else:
+            value = re.split(r"[\s#]", value, maxsplit=1)[0]
+        out[m.group(1)] = value
+    return out
+
+
+def resolve_shell_token(token: str, vars_map: dict[str, str],
+                        task: Path) -> str | None:
+    """Map a shell token from solve.sh to a path in the repo's solution/ dir.
+
+    Handles the three ways an oracle refers to its own reference tree:
+    $(dirname "$0"), /solution, and paths relative to the script. Returns None
+    when the token cannot be resolved statically.
+    """
+    root = str(task / "solution")
+    t = token
+    for _ in range(8):
+        m = re.search(r"\$\(([^()]*)\)", t)
+        if m:
+            inner = m.group(1).strip()
+            if "dirname" in inner:
+                repl = root
+            else:
+                cd = re.fullmatch(r"cd\s+(\S+)\s*&&\s*pwd", inner)
+                if not cd:
+                    return None
+                repl = cd.group(1).strip("\"'")
+            t = t[:m.start()] + repl + t[m.end():]
+            continue
+        m = re.search(r"\$(?:\{(\w+)\}|(\w+))", t)
+        if not m:
+            break
+        name = m.group(1) or m.group(2)
+        if name not in vars_map:
+            return None
+        t = t[:m.start()] + vars_map[name] + t[m.end():]
+    if "$" in t:
+        # A substitution we do not model (${VAR:-default}, arithmetic, ...)
+        # survived — say so rather than resolve to a path that cannot exist.
+        return None
+    if t.startswith("/solution"):
+        t = root + t[len("/solution"):]
+    elif not t.startswith("/"):
+        t = f"{root}/{t}"
+    return t
+
+
+def recursive_copies(code: str) -> list[tuple[str, str]]:
+    """(source, destination) pairs from `cp -r/-R/-a` statements."""
+    out: list[tuple[str, str]] = []
+    for line in code.splitlines():
+        for stmt in re.split(r"&&|\|\||;", line):
+            try:
+                tokens = shlex.split(stmt, posix=True)
+            except ValueError:
+                continue
+            if not tokens or tokens[0] != "cp":
+                continue
+            flags = [t for t in tokens[1:] if t.startswith("-")]
+            args = [t for t in tokens[1:] if not t.startswith("-")]
+            if not any(re.search(r"^-[a-zA-Z]*[rRa]", f) or f == "--recursive"
+                       for f in flags):
+                continue
+            if len(args) >= 2:
+                out.extend((src, args[-1]) for src in args[:-1])
+    return out
 
 
 def shell_hygiene(path: Path, err) -> None:
@@ -154,8 +239,16 @@ def main() -> int:
     # held to the same no-install rule the agent is.
     for fetch in ("curl", "wget", "npm install", "npm ci", "pip install",
                   "pip3 install", "apt-get install"):
-        if re.search(rf"(?<![\w-]){re.escape(fetch)}(?![\w-])", code) and \
-                shape == "dimensions":
+        if shape != "dimensions":
+            continue
+        pat = rf"(?<![\w-]){re.escape(fetch)}(?![\w-])"
+        hits = [ln for ln in code.splitlines() if re.search(pat, ln)]
+        if fetch.startswith("npm"):
+            # `npm ci --offline` resolves from the local cache only — no
+            # registry — so it honours the same constraint the agent is held
+            # to. The other fetch commands have no offline flag.
+            hits = [ln for ln in hits if "--offline" not in ln]
+        if hits:
             err(f"{path}: runs {fetch!r}. The agent phase has no network and the "
                 "prompt says dependencies are already available; the reference "
                 "must not need a registry either.")
@@ -169,15 +262,52 @@ def main() -> int:
 
     # ---- the cross-check: does the oracle create what the verifier demands? --
     guards = sorted(set(APP_GUARD_RE.findall(read_text(task / "tests" / "test.sh"))))
+    copies = recursive_copies(code)
+    vars_map = shell_assignments(code)
     for required in guards:
         basename = required.rsplit("/", 1)[-1]
         # Accept either the full path or the basename: `cp x /app/server.js` and
         # `cp -R ./. /app/` with a matching source both satisfy the guard.
-        if required not in code and basename not in code:
-            err(f"{path}: tests/test.sh refuses to grade unless {required} exists, "
-                f"but the oracle never creates it. The oracle would score 0.0 "
-                "without a single criterion being judged, and the task would look "
-                "impossible rather than broken.")
+        if required in code or basename in code:
+            continue
+        # A recursive directory copy can still place the file without naming
+        # it: `cp -r "$(dirname "$0")/public/." /app/public/` creates
+        # /app/public/index.html. Resolve the source against solution/ and
+        # look for the file on disk.
+        satisfied = False
+        unconfirmed: tuple[str, str] | None = None
+        for src, dst in copies:
+            dst = dst.rstrip("/")
+            if not (required == dst or required.startswith(dst + "/")):
+                continue
+            resolved = resolve_shell_token(src, vars_map, task)
+            if resolved is None:
+                unconfirmed = unconfirmed or (src, dst)
+                continue
+            base = resolved.rstrip("/")
+            if base.endswith("/."):
+                base, landing = base[:-2], dst       # contents land in dst
+            else:
+                landing = f"{dst}/{Path(base).name}"  # the directory itself
+            if not (required == landing or required.startswith(landing + "/")):
+                continue
+            rel = required[len(landing):].lstrip("/")
+            if (Path(base) / rel).is_file():
+                satisfied = True
+                break
+        if satisfied:
+            continue
+        if unconfirmed:
+            src, dst = unconfirmed
+            notes.append(f"{path}: tests/test.sh requires {required}; the oracle "
+                         f"copies {src!r} to {dst!r} recursively but the file "
+                         "cannot be confirmed inside it statically. Confirm the "
+                         "copy ships it.")
+            continue
+        err(f"{path}: tests/test.sh refuses to grade unless {required} exists, "
+            f"but the oracle never creates it. The oracle would score 0.0 "
+            "without a single criterion being judged, and the task would look "
+            "impossible rather than broken.")
     if guards:
         notes.append(f"verifier requires under /app: {', '.join(guards)}.")
 

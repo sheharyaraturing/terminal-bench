@@ -1,0 +1,44 @@
+--- a/harbor/agents/installed/claude_code.py
++++ b/harbor/agents/installed/claude_code.py
+@@ -1884,17 +1884,26 @@
+         try:
+             await self._upload_base_settings(environment)
+ 
+-            instruction_shell_var = f"harbor_claude_code_instruction_{uuid.uuid4().hex}"
+-            instruction_env_var = instruction_shell_var.upper()
+-            run_env = {**env, instruction_env_var: instruction}
++            # The instruction can exceed the kernel's per-string exec limit
++            # (MAX_ARG_STRLEN, 128 KiB on Linux) when passed as an environment
++            # variable — e.g. `harbor check` instructions embed a full rubric —
++            # which made the exec fail with "argument list too long". Upload it
++            # as a file and pipe it into the CLI instead.
++            instruction_path = (
++                self.environment_logs_dir / "instruction.md"
++            ).as_posix()
++            await self._upload_config_text(
++                environment,
++                content=instruction,
++                remote_path=instruction_path,
++                filename="instruction.md",
++            )
+ 
+             await self.exec_as_agent(
+                 environment,
+                 command=(
+                     'export PATH="$HOME/.local/bin:$PATH"; '
+-                    f'{instruction_shell_var}="${instruction_env_var}"; '
+-                    f"unset {instruction_env_var}; "
+-                    f'printf "%s" "${instruction_shell_var}" | '
++                    f"cat {shlex.quote(instruction_path)} | "
+                     f"claude --verbose --output-format=stream-json "
+                     f"{settings_flag}"
+                     f"{extra_flags}"
+@@ -1902,7 +1911,7 @@
+                     f"--print 2>&1 | tee "
+                     f"{(self.environment_logs_dir / 'claude-code.txt').as_posix()}"
+                 ),
+-                env=run_env,
++                env=env,
+             )
+         finally:
+             if self.config_source is not None:

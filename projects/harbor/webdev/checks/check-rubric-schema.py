@@ -2,8 +2,9 @@
 """The judge rubric's mechanical contract, for whichever shape the task uses.
 
 Current format: one tests/<dimension>/judge.toml per graded dimension, each a
-self-contained judge with an inline prompt_template and its own criteria.
-Earlier format: a single tests/rubric/browser/browser.toml.
+self-contained judge with an inline prompt_template (or a prompt file beside
+judge.toml) and its own criteria. Earlier format: a single
+tests/rubric/browser/browser.toml.
 
 Whether a criterion actually discriminates a real implementation from a shell
 is the rubric reviewer's job. What is checked here is every field whose absence
@@ -43,7 +44,7 @@ def task_arg() -> Path:
 
 
 def task_shape(task: Path) -> str:
-    if sorted((task / "tests").glob("*/judge.toml")):
+    if sorted((task / "tests").glob("*/judge*.toml")):
         return "dimensions"
     if (task / "tests" / "rubric" / "browser" / "browser.toml").is_file():
         return "browser-rubric"
@@ -170,12 +171,29 @@ def check_dimensions(task: Path, err, notes: list[str]) -> None:
     venv = (task_cfg.get("verifier") or {}).get("env") or {}
     want_judge, want_model = venv.get("REWARDKIT_JUDGE"), venv.get("REWARDKIT_MODEL")
 
-    # A dimension directory with no judge.toml is a dimension that silently
-    # contributes nothing to the weighted mean.
+    # A dimension directory with a prompt but no judge config is a dimension
+    # that silently contributes nothing to the weighted mean. What makes a
+    # directory look like a dimension is the prompt.md; pure-data support
+    # directories (fixtures/, deck/, docs/, __judge__/, assets/) carry none and
+    # are not dimensions. A judge*.toml glob satisfies presence — some
+    # verifiers discover their judges that way — but anything other than
+    # exactly judge.toml is worth a confirmation, because rewardkit's own
+    # discovery looks for judge.toml.
     for d in sorted((task / "tests").iterdir()):
-        if d.is_dir() and d.name != "rubric" and not (d / "judge.toml").is_file():
-            err(f"{d}: dimension directory has no judge.toml, so rewardkit "
-                "discovers nothing here and the dimension contributes nothing.")
+        if not d.is_dir() or d.name in ("rubric", "assets"):
+            continue
+        judges_here = sorted(d.glob("judge*.toml"))
+        if judges_here:
+            if not (d / "judge.toml").is_file():
+                notes.append(f"{d}: dimension uses non-standard judge filename(s) "
+                             f"{', '.join(p.name for p in judges_here)}. rewardkit's "
+                             "own discovery looks for judge.toml — confirm the "
+                             "verifier globs judge*.toml itself.")
+            continue
+        if (d / "prompt.md").is_file():
+            err(f"{d}: dimension directory has a prompt but no judge.toml, so "
+                "rewardkit discovers nothing here and the dimension contributes "
+                "nothing.")
 
     judges = sorted((task / "tests").glob("*/judge.toml"))
     all_ids: dict[str, str] = {}
@@ -232,7 +250,20 @@ def check_dimensions(task: Path, err, notes: list[str]) -> None:
         template = judge.get("prompt_template")
         if not isinstance(template, str) or not template.strip():
             err(f"{path}: [judge].prompt_template is required and must be the "
-                "inline prompt for this dimension.")
+                "inline prompt for this dimension, or a prompt file beside it.")
+        elif "\n" not in template and "{" not in template:
+            # A dimension may also carry its prompt in a file beside judge.toml,
+            # the same convention the browser-rubric shape uses.
+            candidate = path.parent / template.strip()
+            if not candidate.is_file():
+                err(f"{path}: [judge].prompt_template = {template!r} does not "
+                    f"exist at {candidate}.")
+            elif CRITERIA_PLACEHOLDER not in candidate.read_text(encoding="utf-8",
+                                                                 errors="replace"):
+                err(f"{candidate}: prompt file has no {CRITERIA_PLACEHOLDER} "
+                    "placeholder. RewardKit substitutes the criteria there; "
+                    "without it the judge is handed a prompt with NO criteria "
+                    "and scores on nothing.")
         elif CRITERIA_PLACEHOLDER not in template:
             err(f"{path}: [judge].prompt_template has no {CRITERIA_PLACEHOLDER} "
                 "placeholder. RewardKit substitutes the criteria there; without it "

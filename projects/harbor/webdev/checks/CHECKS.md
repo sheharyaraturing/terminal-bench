@@ -128,10 +128,10 @@ every bash common check.
 
 ### `check-task-name.py`
 
-`[task].name` must be `<org>/<dirname>` with org in `{codearena, webdev}`. The
-name is the published id; a drifted last component means a rename that did not
-propagate. NOTEs when a shape uses the other shape's org — usually a
-half-finished migration.
+`[task].name` must be `<org>/<dirname>` with org in `{codearena, webdev,
+turing}` (override with `WEBDEV_ORGS`). The name is the published id; a
+drifted last component means a rename that did not propagate. NOTEs when a
+shape uses another shape's org — usually a half-finished migration.
 
 ### `check-required-files.py`
 
@@ -144,8 +144,11 @@ collapses the reward to one judge's opinion).
 No zips, authoring documents, built `.db` files, `.DS_Store`, `node_modules/`,
 `dist/`, or saved trial output (`result.json`, `trajectory.json`,
 `<slug>__xxxxxxx/`). A saved trajectory is a working solution sitting next to
-the thing being graded. NOTEs a file in `tests/` that nothing reads — but not
-`Dockerfile` or `reward.toml`, which the harness consumes by discovery.
+the thing being graded. Seed documents (`.pdf`, `.docx`, `.xlsx`, `.pptx`)
+are allowed under `environment/assets/` — the one place binary input data
+belongs; built databases, zips, and logs are banned even there. NOTEs a file
+in `tests/` that nothing reads — but not `Dockerfile` or `reward.toml`, which
+the harness consumes by discovery.
 
 ### `check-no-placeholders.sh`
 
@@ -204,6 +207,12 @@ Also caps `[agent].timeout_sec` at 5h and NOTEs a verifier budget past 10h.
 
 
 ### `check-rubric-schema.py`
+
+A dimension is a `tests/` subdirectory carrying a `prompt.md`; it must also
+carry a judge config. `judge.toml` is the name rewardkit discovers — a
+`judge*.toml` variant satisfies presence with a NOTE, because the verifier
+must then be globbing for it itself. Support directories (`fixtures/`,
+`docs/`, `assets/`, ...) carry no `prompt.md` and are not dimensions.
 
 Per dimension: the judge driver and model must match `REWARDKIT_JUDGE` /
 `REWARDKIT_MODEL` (a per-dimension drift means the reward blends two graders
@@ -268,7 +277,11 @@ error rather than a scored 0.0 — thrown away instead of counted, which quietly
 biases the benchmark toward submissions that happen not to crash the verifier.
 No `exec` (it replaces the shell, so the trap never runs); no `set -e` without a
 `trap ... EXIT` (that is the exact path the fallback covers); a readiness probe
-before grading; and for the browser-rubric shape a database wipe and no reading
+before grading — `rewardkit` is matched in command position, so the
+`"name":"rewardkit"` string inside a CTRF placeholder does not count, and a
+test.sh that grades through a wrapper (`python3 /opt/judge/run_judge.py` and
+friends) gets a NOTE to confirm the wrapper calls rewardkit rather than a
+FAIL; and for the browser-rubric shape a database wipe and no reading
 of `/solution`.
 
 ### `check-verifier-sandbox.py`
@@ -293,7 +306,11 @@ The oracle must install an app the verifier can grade — otherwise the task has
 never been validated end to end, and a 0.0 for install reasons reads as "the
 rubric is too hard". The strongest part is a cross-check: the `-f /app/...`
 guards in `test.sh` are extracted and the oracle must create exactly those
-files. Shape-specific expectations differ — the current format installs and
+files — literally, or through a recursive `cp` whose source is resolved
+against `solution/` and found to contain the file on disk (a copy that
+cannot be resolved statically is a NOTE, not a FAIL). `npm ci --offline` is
+allowed: the local cache is not a registry. Shape-specific expectations
+differ — the current format installs and
 builds nothing (dependencies are baked, the agent phase is offline), the
 earlier one must run npm and a frontend build.
 
@@ -314,9 +331,13 @@ a floating `FROM` are NOTEs); no `--platform` pin; no `ENV NODE_ENV=production`
 toolchain); no `COPY` of the solution or grading code; and a `CMD` that keeps
 the agent container alive.
 
-Whichever image the judge runs in must carry its whole toolchain — the driver
-matching `REWARDKIT_JUDGE`, `@playwright/mcp`, `harbor-rewardkit`, Chromium, and
-`PLAYWRIGHT_BROWSERS_PATH`. For a `codex` judge it must also write
+Whichever image the judge runs in must carry its whole toolchain —
+`@playwright/mcp`, `harbor-rewardkit`, Chromium, and
+`PLAYWRIGHT_BROWSERS_PATH`. The driver matching `REWARDKIT_JUDGE` is checked
+against the install commands, but a driver baked another way (RewardKit 0.2.0
+resolves its own pinned codex release, so an image may fetch it with curl at
+build time rather than install `@openai/codex`) is a NOTE to confirm, not a
+FAIL. For a `codex` judge it must also write
 `/root/.codex/config.toml`; codex resolves its model provider from that file, so
 without it `OPENROUTER_API_KEY` is set and never used and every judge call fails
 auth.
