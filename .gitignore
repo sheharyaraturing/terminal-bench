@@ -1,12 +1,11 @@
 *graphify*
 
-*/tasks/*
+*tasks/*
 *data/
 *report*.json
 reports/
 *.ipynb
 *__pycache__/*
-*/tasks/*
 *.zip
 
 
