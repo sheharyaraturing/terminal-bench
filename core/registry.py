@@ -48,6 +48,10 @@ class Project:
     # Some criteria (task_specification, difficulty_crux) need the task files;
     # trajectories-only runs can set this false.
     include_task_in_trajectory_analysis: bool = True
+    # Rubric review consensus: run this many independent reviewers, and fail a
+    # criterion only when at least rubric_min_fail_votes of them flag it.
+    rubric_reviewers: int = 3
+    rubric_min_fail_votes: int = 2
 
 
 def _load_toml(path: Path) -> dict:
@@ -115,6 +119,7 @@ def _project_from_dir(proj_dir: Path, type_default: str) -> Project:
     checks = data.get("checks", {})
     validation = data.get("validation", {})
     trajectory = data.get("trajectory_analysis", {})
+    rubric = data.get("rubric", {})
     ptype = proj.get("type", type_default)
     rubrics_path = proj_dir / paths.get("rubrics", "rubrics/rubrics.toml")
     trajectory_rubric_path = (
@@ -153,6 +158,8 @@ def _project_from_dir(proj_dir: Path, type_default: str) -> Project:
         include_task_in_trajectory_analysis=bool(
             trajectory.get("include_task", True)
         ),
+        rubric_reviewers=int(rubric.get("reviewers", 3)),
+        rubric_min_fail_votes=int(rubric.get("min_fail_votes", 2)),
     )
 
 

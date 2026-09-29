@@ -27,6 +27,16 @@ class EvaluationReport:
         path.write_text(self.to_json() + "\n")
 
 
+def _verdict_dict(v) -> dict:
+    return {
+        "name": v.name,
+        "verdict": v.verdict,
+        "reason": v.reason,
+        "fail_votes": v.fail_votes,
+        "votes": v.votes,
+    }
+
+
 def compile_report(
     project_name: str,
     task_id: str,
@@ -47,9 +57,20 @@ def compile_report(
         "applicable": not rubric.skipped,
         "skipped": rubric.skipped,
         "skip_reason": rubric.skip_reason,
-        "verdicts": [
-            {"name": v.name, "verdict": v.verdict, "reason": v.reason}
-            for v in rubric.verdicts
+        "min_fail_votes": rubric.min_fail_votes,
+        "cost_usd": rubric.cost_usd,
+        # Consensus verdicts; fail_votes/votes show how the reviewers split.
+        "verdicts": [_verdict_dict(v) for v in rubric.verdicts],
+        # Failures reported by too few reviewers to count.
+        "flagged": [_verdict_dict(v) for v in rubric.flagged],
+        "reviewers": [
+            {
+                "label": r.label,
+                "error": r.error,
+                "trial_dir": str(r.trial_dir) if r.trial_dir else None,
+                "verdicts": [_verdict_dict(v) for v in r.verdicts],
+            }
+            for r in rubric.reviewers
         ],
     }
     val = {

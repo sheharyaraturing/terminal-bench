@@ -22,7 +22,7 @@ from core.deterministic import run_deterministic
 from core.progress import RunControl
 from core.registry import REPO_ROOT, list_projects, load_project, resolve_task
 from core.report import compile_report, compile_trajectory_report
-from core.rubric import run_rubric
+from core.rubric import format_rubric_lines, run_rubric
 from core.trajectory import run_trajectory_analysis
 from core.validation import run_validation
 
@@ -208,8 +208,8 @@ def main(argv: list[str] | None = None) -> int:
     if rub.skipped:
         print(f"  skipped: {rub.skip_reason}")
     else:
-        for v in rub.verdicts:
-            print(f"  {v.verdict.upper()}  {v.name}: {v.reason}")
+        for line in format_rubric_lines(rub):
+            print(f"  {line}")
 
     print("\n[3/3] validation")
     val = run_validation(project, task_path, control, jobs_dir=harbor_dir)

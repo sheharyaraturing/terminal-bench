@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import threading
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -24,17 +25,150 @@ class CriterionVerdict:
     name: str
     verdict: str  # pass | fail | not_applicable
     reason: str
+    # How many reviewers marked this criterion "fail", out of how many valid
+    # reviews judged it. A single-review verdict leaves these at 0.
+    fail_votes: int = 0
+    votes: int = 0
+
+
+@dataclass
+class ReviewerResult:
+    """One independent reviewer's verdicts, or the reason it produced none."""
+
+    label: str
+    verdicts: list[CriterionVerdict] = field(default_factory=list)
+    error: str = ""
+    trial_dir: Path | None = None
 
 
 @dataclass
 class RubricResult:
     passed: bool
+    # The consensus verdicts: a criterion is "fail" only when at least
+    # min_fail_votes reviewers flagged it.
     verdicts: list[CriterionVerdict] = field(default_factory=list)
     raw_path: Path | None = None
     skipped: bool = False
     skip_reason: str = ""
     # Durable Harbor jobs directory (check/), when persistence was requested.
     jobs_dir: Path | None = None
+    reviewers: list[ReviewerResult] = field(default_factory=list)
+    min_fail_votes: int = 1
+    # Failures some reviewer reported that did not reach min_fail_votes. They
+    # do not affect `passed`; they are kept so a reader can see the dissent.
+    flagged: list[CriterionVerdict] = field(default_factory=list)
+    cost_usd: float | None = None
+
+
+def combine_reviews(reviewers: list[ReviewerResult], min_fail_votes: int) -> RubricResult:
+    """Merge independent reviews: a criterion fails when >= min_fail_votes flag it.
+
+    Reviewers that errored are left out of the vote. If fewer valid reviews
+    came back than min_fail_votes, no criterion could ever reach consensus, so
+    the review is reported as skipped rather than silently passing.
+    """
+    valid = [r for r in reviewers if not r.error and r.verdicts]
+    if not valid or len(valid) < min_fail_votes:
+        errors = "; ".join(f"{r.label}: {r.error}" for r in reviewers if r.error)
+        return RubricResult(
+            passed=False,
+            skipped=True,
+            skip_reason=(
+                f"only {len(valid)} of {len(reviewers)} reviewers returned a valid "
+                f"review (need at least {max(min_fail_votes, 1)})"
+                + (f" — {errors}" if errors else "")
+            ),
+            reviewers=reviewers,
+            min_fail_votes=min_fail_votes,
+        )
+
+    # Criterion order follows the rubric, as the first valid reviewer saw it.
+    names: list[str] = []
+    by_name: dict[str, list[tuple[str, CriterionVerdict]]] = {}
+    for reviewer in valid:
+        for v in reviewer.verdicts:
+            if v.name not in by_name:
+                names.append(v.name)
+                by_name[v.name] = []
+            by_name[v.name].append((reviewer.label, v))
+
+    verdicts: list[CriterionVerdict] = []
+    flagged: list[CriterionVerdict] = []
+    for name in names:
+        votes = by_name[name]
+        fails = [(label, v) for label, v in votes if v.verdict == "fail"]
+        fail_reason = "\n".join(f"[{label}] {v.reason}" for label, v in fails)
+        if len(fails) >= min_fail_votes:
+            verdicts.append(
+                CriterionVerdict(name, "fail", fail_reason, len(fails), len(votes))
+            )
+            continue
+        # Not a consensus failure: report the most common non-fail outcome
+        # (ties go to "pass"), with the reason one of those reviewers gave.
+        others = [v for _, v in votes if v.verdict != "fail"]
+        n_na = sum(1 for v in others if v.verdict == "not_applicable")
+        outcome = "not_applicable" if n_na > len(others) - n_na else "pass"
+        reason = next((v.reason for v in others if v.verdict == outcome), "")
+        verdicts.append(CriterionVerdict(name, outcome, reason, len(fails), len(votes)))
+        if fails:
+            flagged.append(
+                CriterionVerdict(name, "fail", fail_reason, len(fails), len(votes))
+            )
+
+    return RubricResult(
+        passed=all(v.verdict != "fail" for v in verdicts),
+        verdicts=verdicts,
+        reviewers=reviewers,
+        min_fail_votes=min_fail_votes,
+        flagged=flagged,
+    )
+
+
+def review_settings(project: Project) -> tuple[int, int]:
+    """(reviewers, min_fail_votes) for a project, with env overrides applied.
+
+    Clamped so the vote is always winnable: at least one reviewer, and a
+    threshold between 1 and the number of reviewers.
+    """
+    reviewers = int(os.environ.get("RUBRIC_REVIEWERS") or project.rubric_reviewers)
+    min_votes = int(
+        os.environ.get("RUBRIC_MIN_FAIL_VOTES") or project.rubric_min_fail_votes
+    )
+    reviewers = max(1, reviewers)
+    return reviewers, min(max(1, min_votes), reviewers)
+
+
+def format_rubric_lines(result: RubricResult) -> list[str]:
+    """Human-readable lines for a finished rubric review (CLI and API log)."""
+    lines: list[str] = []
+    n_valid = sum(1 for r in result.reviewers if not r.error and r.verdicts)
+    if len(result.reviewers) > 1:
+        lines.append(
+            f"consensus of {n_valid}/{len(result.reviewers)} reviewers — a criterion "
+            f"fails when at least {result.min_fail_votes} flag it"
+        )
+    for v in result.verdicts:
+        tally = f" ({v.fail_votes}/{v.votes} flagged)" if len(result.reviewers) > 1 else ""
+        lines.append(f"{v.verdict.upper()}{tally}  {v.name}: {v.reason}")
+    if result.flagged:
+        lines.append(
+            f"flagged by fewer than {result.min_fail_votes} reviewers (not counted):"
+        )
+        for v in result.flagged:
+            lines.append(f"  {v.name} ({v.fail_votes}/{v.votes}): {v.reason}")
+    if len(result.reviewers) > 1:
+        for r in result.reviewers:
+            where = f" [{r.trial_dir}]" if r.trial_dir else ""
+            if r.error:
+                lines.append(f"reviewer {r.label}: error — {r.error.splitlines()[0][:200]}{where}")
+            else:
+                failed = [v.name for v in r.verdicts if v.verdict == "fail"]
+                lines.append(
+                    f"reviewer {r.label}: fails {', '.join(failed) or 'nothing'}{where}"
+                )
+    if result.cost_usd is not None:
+        lines.append(f"review cost: ${result.cost_usd:.2f}")
+    return lines
 
 
 # Budget for the reference blob. Delivery managers drop whole spec documents in
@@ -136,6 +270,18 @@ CONTAINER_REFERENCES_PATH = f"{CONTAINER_TASK_PATH}/{EXTRA_REFERENCES_DIRNAME}"
 CHECK_PROMPT_PATH = REPO_ROOT / "prompts" / "check-with-references.txt"
 
 
+def _render_check_prompt(rubric_path: Path) -> str:
+    """The check prompt with the whole rubric file in place of {criteria_guidance}.
+
+    harbor renders {criteria_guidance} as just "- name: guidance" per criterion,
+    dropping descriptions and comments — and the comments carry guidance the
+    evaluator needs. Braces are doubled because harbor runs the result through
+    str.format_map, which would otherwise eat TOML/JSON braces in the rubric.
+    """
+    rubric_text = rubric_path.read_text().replace("{", "{{").replace("}", "}}")
+    return CHECK_PROMPT_PATH.read_text().replace("{criteria_guidance}", rubric_text)
+
+
 def has_extra_references(project: Project) -> bool:
     """True when the project ships at least one real reference file."""
     refs_dir = project.extra_references_dir
@@ -209,11 +355,18 @@ def run_rubric(
         )
 
     extra_refs = _collect_extra_references(project)
+    n_reviewers, min_fail_votes = review_settings(project)
+    if control and n_reviewers > 1:
+        control.emit(
+            f"running {n_reviewers} independent reviewers; a criterion fails when "
+            f"at least {min_fail_votes} flag it"
+        )
 
     # harbor check only supports Harbor-format task directories and needs Docker
     if project.type == "harbor" and _harbor_available() and _docker_available():
         result = _run_harbor_check(
-            project, task_path, rubric_path, extra_refs, control, jobs_dir=jobs_dir
+            project, task_path, rubric_path, extra_refs, control, jobs_dir=jobs_dir,
+            n_reviewers=n_reviewers, min_fail_votes=min_fail_votes,
         )
         # A cancelled run must stop here: killing harbor looks exactly like a
         # harbor failure, and falling back would run the whole review again.
@@ -226,7 +379,9 @@ def run_rubric(
     # Fallback: direct Anthropic call
     if control:
         control.emit("running rubric review via the Anthropic API (no container)")
-    return _run_anthropic_check(project, task_path, rubric_path, extra_refs)
+    return _run_anthropic_check(
+        project, task_path, rubric_path, extra_refs, n_reviewers, min_fail_votes
+    )
 
 
 def _harbor_available() -> bool:
@@ -262,8 +417,14 @@ def _run_harbor_check(
     extra_refs: str,
     control: RunControl | None = None,
     jobs_dir: Path | None = None,
+    n_reviewers: int = 1,
+    min_fail_votes: int = 1,
 ) -> RubricResult:
     """Run `harbor check`, always shipping extra_references/ into the container.
+
+    With ``n_reviewers`` > 1 harbor runs that many independent review trials
+    (``-k``) side by side (``-n``); their verdicts are merged by
+    :func:`combine_reviews`.
 
     The references are staged inside a throwaway copy of the task rather than
     handed to harbor separately: harbor copies whatever directory it is given
@@ -283,7 +444,9 @@ def _run_harbor_check(
             if CHECK_PROMPT_PATH.is_file():
                 # Tells the evaluator the references are reference material, not
                 # task content it should grade.
-                cmd_extra = ["-p", str(CHECK_PROMPT_PATH)]
+                prompt_path = Path(tmp) / "check-prompt.txt"
+                prompt_path.write_text(_render_check_prompt(rubric_path))
+                cmd_extra = ["-p", str(prompt_path)]
 
         # -o is harbor's --jobs-dir: a directory it fills with
         # <timestamp>/check_report.json. Jobs must land *directly* in jobs_dir
@@ -316,6 +479,11 @@ def _run_harbor_check(
             str(config_path),
             "--model",
             os.environ.get("HARBOR_CHECK_MODEL", "claude-opus-5"),
+            # Independent reviewers, all running at once.
+            "-k",
+            str(n_reviewers),
+            "-n",
+            str(n_reviewers),
             *cmd_extra,
         ]
         # Select the Harbor environment backend (docker | modal | daytona | e2b |
@@ -342,8 +510,12 @@ def _run_harbor_check(
                 skip_reason=f"harbor check failed: {output.strip()}",
                 jobs_dir=jobs_dir,
             )
-        result = _parse_check_report(report_path)
+        result = _parse_check_report(report_path, min_fail_votes)
         result.jobs_dir = jobs_dir
+        if jobs_dir is None:
+            # The trial dirs live in a temp dir that is about to be deleted.
+            for reviewer in result.reviewers:
+                reviewer.trial_dir = None
         if control and jobs_dir is not None:
             control.emit(f"  harbor check jobs kept at {harbor_jobs}")
         return result
@@ -420,11 +592,76 @@ def _latest_check_report(jobs_dir: Path) -> Path | None:
     return reports[0] if reports else None
 
 
-def _parse_check_report(path: Path) -> RubricResult:
-    """Parse harbor's check_report.json.
+def _verdicts_from_checks(checks: dict) -> list[CriterionVerdict]:
+    """{"<criterion>": {"outcome", "explanation"}} -> verdicts, in file order."""
+    verdicts: list[CriterionVerdict] = []
+    for name, check in (checks or {}).items():
+        if not isinstance(check, dict):
+            continue
+        verdicts.append(
+            CriterionVerdict(
+                name=str(name),
+                verdict=str(check.get("outcome", "fail")).lower(),
+                reason=str(check.get("explanation", "")),
+            )
+        )
+    return verdicts
 
-    Shape: {"results": [{"task_name", "error", "checks": {
-        "<criterion>": {"outcome": "pass|fail|not_applicable", "explanation": ...}}}]}
+
+def _reviewers_from_trials(job_dir: Path) -> list[ReviewerResult]:
+    """One ReviewerResult per `harbor check` trial dir in a job.
+
+    Read from the trial dirs rather than check_report.json because the report
+    drops the trial name, and the trial name is what ties a reviewer's verdicts
+    to its logs and trajectory. Validity mirrors harbor's own rule: no trial
+    exception, verifier reward 1, and a check-result.json artifact.
+    """
+    reviewers: list[ReviewerResult] = []
+    for trial_dir in sorted(job_dir.iterdir()):
+        result_path = trial_dir / "result.json"
+        if not trial_dir.name.startswith("check-") or not result_path.is_file():
+            continue
+        label = trial_dir.name.rsplit("__", 1)[-1]
+        try:
+            trial = json.loads(result_path.read_text())
+        except Exception as exc:
+            reviewers.append(ReviewerResult(label, error=f"unreadable result.json: {exc}", trial_dir=trial_dir))
+            continue
+        exc_info = trial.get("exception_info")
+        if exc_info:
+            message = str(exc_info.get("exception_message", "")).splitlines()
+            reviewers.append(
+                ReviewerResult(
+                    label,
+                    error=f"{exc_info.get('exception_type', 'error')}: {message[0] if message else ''}",
+                    trial_dir=trial_dir,
+                )
+            )
+            continue
+        rewards = (trial.get("verifier_result") or {}).get("rewards") or {}
+        checks_path = trial_dir / "artifacts" / "check-result.json"
+        if rewards.get("reward") != 1 or not checks_path.is_file():
+            stdout = trial_dir / "verifier" / "test-stdout.txt"
+            why = stdout.read_text().strip() if stdout.is_file() else "no verifier output"
+            reviewers.append(
+                ReviewerResult(label, error=f"no valid result: {why[:300]}", trial_dir=trial_dir)
+            )
+            continue
+        try:
+            verdicts = _verdicts_from_checks(json.loads(checks_path.read_text()))
+        except Exception as exc:
+            reviewers.append(ReviewerResult(label, error=f"invalid check-result.json: {exc}", trial_dir=trial_dir))
+            continue
+        reviewers.append(ReviewerResult(label, verdicts=verdicts, trial_dir=trial_dir))
+    return reviewers
+
+
+def _parse_check_report(path: Path, min_fail_votes: int = 1) -> RubricResult:
+    """Parse a finished `harbor check` job into a consensus RubricResult.
+
+    check_report.json shape: {"results": [{"task_name", "error", "cost_usd",
+    "checks": {"<criterion>": {"outcome": "pass|fail|not_applicable",
+    "explanation": ...}}}]} — one entry per reviewer (harbor's -k).
     """
     try:
         data = json.loads(path.read_text())
@@ -433,41 +670,40 @@ def _parse_check_report(path: Path) -> RubricResult:
             passed=False, skipped=True, skip_reason=f"invalid check_report.json: {exc}"
         )
 
-    results = data.get("results") or []
+    results = [r for r in (data.get("results") or []) if isinstance(r, dict)]
     if not results:
         return RubricResult(
             passed=False, skipped=True, skip_reason="harbor check produced no results"
         )
 
-    verdicts: list[CriterionVerdict] = []
-    errors: list[str] = []
-    for result in results:
-        if not isinstance(result, dict):
-            continue
-        if result.get("error"):
-            # Keep it short: harbor echoes the whole agent command into `error`.
-            errors.append(str(result["error"]).splitlines()[0][:300])
-        for name, check in (result.get("checks") or {}).items():
-            if not isinstance(check, dict):
-                continue
-            verdicts.append(
-                CriterionVerdict(
-                    name=str(name),
-                    verdict=str(check.get("outcome", "fail")).lower(),
-                    reason=str(check.get("explanation", "")),
-                )
+    reviewers = _reviewers_from_trials(path.parent)
+    if not reviewers:
+        # No trial dirs to read (unexpected layout): fall back to the report,
+        # which has the same verdicts but no trial names.
+        reviewers = [
+            ReviewerResult(
+                f"reviewer-{i}",
+                verdicts=_verdicts_from_checks(r.get("checks") or {}),
+                # Keep it short: harbor echoes the whole agent command into `error`.
+                error=str(r.get("error") or "").splitlines()[0][:300] if r.get("error") else "",
             )
+            for i, r in enumerate(results, 1)
+        ]
 
-    if not verdicts:
-        reason = errors[0] if errors else "harbor check returned no criterion verdicts"
-        return RubricResult(passed=False, skipped=True, skip_reason=reason)
-
-    passed = all(v.verdict in {"pass", "not_applicable"} for v in verdicts)
-    return RubricResult(passed=passed, verdicts=verdicts, raw_path=path)
+    result = combine_reviews(reviewers, min_fail_votes)
+    result.raw_path = path
+    costs = [r["cost_usd"] for r in results if isinstance(r.get("cost_usd"), (int, float))]
+    result.cost_usd = sum(costs) if costs else None
+    return result
 
 
 def _run_anthropic_check(
-    project: Project, task_path: Path, rubric_path: Path, extra_refs: str
+    project: Project,
+    task_path: Path,
+    rubric_path: Path,
+    extra_refs: str,
+    n_reviewers: int = 1,
+    min_fail_votes: int = 1,
 ) -> RubricResult:
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
@@ -501,30 +737,37 @@ def _run_anthropic_check(
 
     model = os.environ.get("HARBOR_CHECK_MODEL", "claude-opus-5")
     client = anthropic.Anthropic(api_key=api_key)
-    try:
-        # Stream the response: the Anthropic SDK rejects non-streaming
-        # requests that may exceed 10 minutes, and a large rubric + task
-        # snapshot with a big output budget routinely crosses that line.
-        pieces: list[str] = []
-        with client.messages.stream(
-            model=model,
-            max_tokens=32000,
-            system=system,
-            messages=[{"role": "user", "content": user}],
-        ) as stream:
-            for chunk in stream.text_stream:
-                pieces.append(chunk)
-            final = stream.get_final_message()
-        text = "".join(pieces) or "".join(
-            block.text for block in final.content if hasattr(block, "text")
-        )
-    except Exception as exc:
-        return RubricResult(
-            passed=False,
-            skipped=True,
-            skip_reason=f"anthropic API error: {exc}",
-        )
-    return _parse_verdicts_from_text(text)
+
+    def review(label: str) -> ReviewerResult:
+        try:
+            # Stream the response: the Anthropic SDK rejects non-streaming
+            # requests that may exceed 10 minutes, and a large rubric + task
+            # snapshot with a big output budget routinely crosses that line.
+            pieces: list[str] = []
+            with client.messages.stream(
+                model=model,
+                max_tokens=32000,
+                system=system,
+                messages=[{"role": "user", "content": user}],
+            ) as stream:
+                for chunk in stream.text_stream:
+                    pieces.append(chunk)
+                final = stream.get_final_message()
+            text = "".join(pieces) or "".join(
+                block.text for block in final.content if hasattr(block, "text")
+            )
+        except Exception as exc:
+            return ReviewerResult(label, error=f"anthropic API error: {exc}")
+        parsed = _parse_verdicts_from_text(text)
+        if parsed.skipped:
+            return ReviewerResult(label, error=parsed.skip_reason)
+        return ReviewerResult(label, verdicts=parsed.verdicts)
+
+    # Independent calls, run side by side like harbor's -k trials.
+    labels = [f"api-{i}" for i in range(1, n_reviewers + 1)]
+    with ThreadPoolExecutor(max_workers=n_reviewers) as pool:
+        reviewers = list(pool.map(review, labels))
+    return combine_reviews(reviewers, min_fail_votes)
 
 
 def _read_task_snapshot(task_path: Path, max_chars: int = MAX_TASK_SNAPSHOT_CHARS) -> str:

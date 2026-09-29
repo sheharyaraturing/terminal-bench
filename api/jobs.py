@@ -16,7 +16,7 @@ from core.deterministic import run_deterministic
 from core.progress import RunCancelled, RunControl
 from core.registry import REPO_ROOT, load_project, resolve_task
 from core.report import compile_report, compile_trajectory_report
-from core.rubric import run_rubric
+from core.rubric import format_rubric_lines, run_rubric
 from core.trajectory import run_trajectory_analysis
 from core.validation import run_validation
 
@@ -119,8 +119,8 @@ def _execute(run_id: str, project_name: str, task_id: str) -> None:
             log(f"  skipped: {rub.skip_reason}")
             store.set_leg(run_id, "rubric", "skipped", rub.skip_reason)
         else:
-            for v in rub.verdicts:
-                log(f"  {v.verdict.upper()}  {v.name}: {v.reason}")
+            for line in format_rubric_lines(rub):
+                log(f"  {line}")
             ok_n = sum(1 for v in rub.verdicts if v.verdict in ("pass", "not_applicable"))
             store.set_leg(
                 run_id,

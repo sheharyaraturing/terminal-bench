@@ -28,6 +28,13 @@ include_common = true
 [validation]
 mode = "{{validation_mode}}"  # oracle_nop | skip
 
+[rubric]
+# Run this many independent reviewers in parallel (`harbor check -k`). A
+# criterion fails only when at least min_fail_votes of them flag it.
+# Override per run with RUBRIC_REVIEWERS / RUBRIC_MIN_FAIL_VOTES.
+reviewers = 3
+min_fail_votes = 2
+
 [trajectory_analysis]
 # Copy the task-under-review into the analysis container alongside the
 # trajectories. Criteria like task_specification / difficulty_crux need the

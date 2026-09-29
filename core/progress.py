@@ -198,16 +198,26 @@ def tail_trial_logs(
     offsets: dict[Path, int] = {}
     while not stop.is_set():
         for log_path in sorted(jobs_dir.rglob("trial.log")):
+            label = _trial_label(log_path.parent)
             for line in _read_new_lines(log_path, offsets):
                 message = _describe_setup_line(line)
                 if message:
-                    control.emit(f"  {message}")
+                    control.emit(f"  {label}{message}")
         for log_path in sorted(jobs_dir.rglob("agent/*.txt")):
+            label = _trial_label(log_path.parent.parent)
             for line in _read_new_lines(log_path, offsets):
                 message = describe_agent_event(line)
                 if message:
-                    control.emit(f"  {message}")
+                    control.emit(f"  {label}{message}")
         stop.wait(interval)
+
+
+def _trial_label(trial_dir: Path) -> str:
+    """"[<trial id>] " for a harbor trial dir (<name>__<id>), so lines from
+    trials running side by side can be told apart; "" otherwise."""
+    if "__" not in trial_dir.name:
+        return ""
+    return f"[{trial_dir.name.rsplit('__', 1)[-1]}] "
 
 
 def watch_containers(
